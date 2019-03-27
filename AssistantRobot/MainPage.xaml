@@ -1,0 +1,148 @@
+﻿<Page x:Class="AssistantRobot.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+	  xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+      mc:Ignorable="d" 
+      d:DesignHeight="1080" d:DesignWidth="1920"
+	  Title="MainPage">
+
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="Page.Loaded">
+            <EventTrigger.Actions>
+                <BeginStoryboard>
+                    <Storyboard>
+                        <ThicknessAnimation Duration="0:0:.5" Storyboard.TargetProperty="Margin" From="50,0,-50,0" To="0" AccelerationRatio="0.2" DecelerationRatio="0.2"/>
+                        <DoubleAnimation Duration="0:0:.5" Storyboard.TargetProperty="Opacity" From="0" To="1" AccelerationRatio="0.2" DecelerationRatio="0.2"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger.Actions>
+        </EventTrigger>
+    </Page.Triggers>
+    
+    <Grid Background="White" Margin="0 0 0 4">
+		
+    	<Grid.ColumnDefinitions>
+    		<ColumnDefinition/>
+    		<ColumnDefinition Width="14*"/>
+    		<ColumnDefinition/>
+    	</Grid.ColumnDefinitions>
+
+    	<Grid.RowDefinitions>
+    		<RowDefinition/>
+            <RowDefinition Height="6*"/>
+    	</Grid.RowDefinitions>
+		 
+ 	 	<TextBlock Grid.Row="0" 
+				   Grid.Column="1"
+   				   Text="外科手术辅助机器人控制平台" 
+				   FontSize="48" 
+				   TextAlignment="Center" 
+				   HorizontalAlignment="Center" 
+				   VerticalAlignment="Center" 
+				   Foreground="#FF0071BB"/>
+
+        <Grid Grid.Row="1" Grid.Column="1">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Controls:Tile x:Name="baseControl" 
+						   Grid.Row="0" 
+						   Grid.Column="0"
+						   Title="基本控制"
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FFE1417F" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand"
+                           Click="baseControl_Click" >
+                <iconPacks:PackIconModern Width="160" Height="160" Kind="ControllerXbox" />
+            </Controls:Tile>
+            <Controls:Tile x:Name="ultraHold" 
+						   Grid.Row="0" 
+						   Grid.Column="1"
+						   Title="探头夹持"
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FF41B1E1" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand">
+                <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="HandsHelpingSolid" />
+            </Controls:Tile>
+            <Controls:Tile x:Name="galactophoreCheck" 
+						   Grid.Row="0" 
+						   Grid.Column="2"
+						   Title="乳腺扫查"
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FF3DD8AF" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand" 
+                           Click="galactophoreCheck_Click">
+                <iconPacks:PackIconMaterial Width="160" Height="160" Kind="AccountSearch" />
+            </Controls:Tile>
+            <Controls:Tile x:Name="puncture" 
+						   Grid.Row="1" 
+						   Grid.Column="0"
+						   Title="甲状腺穿刺"
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FF41B1E1" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand">
+                <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="SyringeSolid" />
+            </Controls:Tile>
+            <Controls:Tile x:Name="globalSetting" 
+						   Grid.Row="1" 
+						   Grid.Column="1"
+						   Title="未完待续..."
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FF3DD8AF" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand">
+                <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="EllipsisHSolid" />
+            </Controls:Tile>
+            <Controls:Tile x:Name="wait1" 
+						   Grid.Row="1" 
+						   Grid.Column="2"
+						   Title="未完待续..."
+                           Margin="4"
+                           Controls:ControlsHelper.MouseOverBorderBrush="White"
+                           HorizontalTitleAlignment="Right" 
+						   Background="#FFE1417F" 
+						   Width="Auto" 
+						   Height="Auto" 
+						   TitleFontSize="24"
+                           Cursor="Hand">
+                <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="EllipsisHSolid" />
+            </Controls:Tile>
+        </Grid>
+    </Grid>
+</Page>

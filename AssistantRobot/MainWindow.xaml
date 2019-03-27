@@ -1,8 +1,360 @@
-﻿<Window x:Class="AssistantRobot.MainWindow"
+﻿<Controls:MetroWindow x:Class="AssistantRobot.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
-    </Grid>
-</Window>
+        xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:local="clr-namespace:AssistantRobot"
+        Height="350" 
+        Width="525" 
+        WindowStartupLocation="CenterScreen" 
+        Cursor="Arrow" 
+        Icon="sjtu64.ico" 
+        ShowCloseButton="False"
+        ShowMaxRestoreButton="False"
+        ShowMinButton="False" 
+        ResizeMode="NoResize" 
+        IsWindowDraggable="False" 
+        ShowSystemMenuOnRightClick="False" 
+        TitlebarHeight="45" 
+        Title="外科手术辅助机器人控制器" 
+		WindowState="Maximized"
+        Loaded="MetroWindow_Loaded">
+    
+    <Controls:MetroWindow.TitleForeground>
+        <SolidColorBrush Color="Black" Opacity="0"/>
+    </Controls:MetroWindow.TitleForeground>
+
+    <Controls:MetroWindow.LeftWindowCommands>
+        <Controls:WindowCommands>
+            <TextBlock Text="外科手术辅助机器人控制器" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8 0 0 0"/>
+        </Controls:WindowCommands>
+    </Controls:MetroWindow.LeftWindowCommands>
+
+    <Controls:MetroWindow.RightWindowCommands>
+        <Controls:WindowCommands ShowLastSeparator="False">
+            <Button x:Name="btnGlobalSetting" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnGlobalSetting_Click">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconFontAwesome Width="24" Height="24" Kind="CogSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="全局设置" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="btnPowerOff"  FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Click="btnPowerOff_Click" Cursor="Hand">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconFontAwesome Width="24" Height="24" Kind="PowerOffSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="关闭程序" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Controls:WindowCommands>
+    </Controls:MetroWindow.RightWindowCommands>
+
+	<Controls:MetroWindow.Flyouts>
+        <Controls:FlyoutsControl x:Name="flyoutsControl">
+			
+            <Controls:Flyout x:Name="settingsFlyoutGlobal" Position="Top"
+                             Header="全局设置" Controls:ControlsHelper.HeaderFontSize="24"
+							 IsModal="True" IsPinned="False">
+            </Controls:Flyout>
+
+			<Controls:Flyout x:Name="settingsFlyoutCatch" Position="Right"
+                             Header="探头夹持模块设置" Controls:ControlsHelper.HeaderFontSize="24"
+							 IsModal="True" IsPinned="False">
+            </Controls:Flyout>
+
+			<Controls:Flyout x:Name="settingsFlyoutGalactophore" Position="Right"
+                             Header="乳腺扫描模块设置" Controls:ControlsHelper.HeaderFontSize="24"
+							 IsModal="True" IsPinned="False" IsOpenChanged="settingsFlyoutGalactophore_IsOpenChanged">
+				<Grid Margin="60 10 40 10">
+					
+					<Grid.RowDefinitions>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    					<RowDefinition/>
+    				</Grid.RowDefinitions>
+				
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition/>
+						<ColumnDefinition/>
+					</Grid.ColumnDefinitions>
+				
+					<TextBlock Grid.Row="0" Grid.Column="0"
+						Text="最小探测力(N):" FontSize="18" Margin="0 0 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="0" Grid.Column="1" Margin="5 0 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="minForceSlider"
+                                    Maximum="4" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="minForceText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+					</StackPanel>
+
+					<TextBlock Grid.Row="1" Grid.Column="0"
+						Text="最大探测力(N):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="1" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="maxForceSlider"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="maxForceText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+					</StackPanel>
+
+					<TextBlock Grid.Row="2" Grid.Column="0"
+						Text="最小探测速度(mm/r):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="2" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="minDetectSpeedSlider"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="minDetectSpeedText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+					</StackPanel>
+					
+					<TextBlock Grid.Row="3" Grid.Column="0"
+						Text="过渡段探测力矫正:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<Controls:ToggleSwitch Grid.Row="3" Grid.Column="1" 
+								   x:Name="DFAtTSwitch" Margin="5 5 0 5" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="打开" OnSwitchBrush="#FF4BF8CB"
+								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF4BF8CB" 
+								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
+					
+					<TextBlock Grid.Row="4" Grid.Column="0"
+						Text="探测力大小检查:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<Controls:ToggleSwitch Grid.Row="4" Grid.Column="1" 
+								   x:Name="DFCheckSwitch" Margin="5 5 0 5" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="打开" OnSwitchBrush="#FF4BF8CB"
+								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF4BF8CB" 
+								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
+
+					<TextBlock Grid.Row="5" Grid.Column="0"
+						Text="探头摆动幅度:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="5" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="vibrateDegreeSlider"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="vibrateDegreeText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60"/>
+					</StackPanel>
+
+					<TextBlock Grid.Row="6" Grid.Column="0"
+						Text="扫查运行速度:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="6" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="speedDegreeSlider"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="speedDegreeText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60"/>
+					</StackPanel>
+
+					<TextBlock Grid.Row="7" Grid.Column="0"
+						Text="扫查保持力度:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="7" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="forceDegreeSlider"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="forceDegreeText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60"/>
+					</StackPanel>
+
+					<TextBlock Grid.Row="8" Grid.Column="0"
+						Text="扫查贴合程度:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<Controls:ToggleSwitch Grid.Row="8" Grid.Column="1" 
+								   x:Name="attachSwitch" Margin="5 5 0 5" Cursor="Hand"
+                                   OffLabel="松" OnLabel="紧" OnSwitchBrush="#FF4BF8CB"
+								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF4BF8CB" 
+								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
+
+					<TextBlock Grid.Row="9" Grid.Column="0"
+						Text="自动转存参数配置:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<Controls:ToggleSwitch Grid.Row="9" Grid.Column="1" 
+								   x:Name="autoSaveSwitch" Margin="5 5 0 5" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="打开" OnSwitchBrush="#FF4BF8CB"
+								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF4BF8CB" 
+								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
+
+					<TextBlock Grid.Row="10" Grid.Column="0"
+						Text="扫查乳腺方位:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<Controls:ToggleSwitch Grid.Row="10" Grid.Column="1" 
+								   x:Name="galactophoreDirectionSwitch" Margin="5 5 0 5" Cursor="Hand"
+                                   OffLabel="左侧" OnLabel="右侧" OnSwitchBrush="#FF4BF8CB"
+								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF4BF8CB" 
+								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
+
+					<TextBlock Grid.Row="11" Grid.Column="0"
+						Text="边界确定方式:" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="11" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="borderModeSlider"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="borderModeText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60"/>
+					</StackPanel>
+
+					<TextBlock Grid.Row="12" Grid.Column="0"
+						Text="扫查旋转步长(deg):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+					<StackPanel Grid.Row="12" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+						<Slider x:Name="rotateStepSlider"
+                                    Maximum="45" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									Ticks="0 5 15 30 45" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+						<Label x:Name="rotateStepText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60"/>
+					</StackPanel>
+
+
+
+
+
+
+
+				</Grid>
+            </Controls:Flyout>
+
+			<Controls:Flyout x:Name="settingsFlyoutPuncture" Position="Right"
+                             Header="甲状腺穿刺模块设置" Controls:ControlsHelper.HeaderFontSize="24"
+							 IsModal="True" IsPinned="False">
+            </Controls:Flyout>
+
+        </Controls:FlyoutsControl>
+    </Controls:MetroWindow.Flyouts>
+
+	<Grid>
+		<Grid.RowDefinitions>
+    		<RowDefinition/>
+    		<RowDefinition Height="Auto"/>
+    	</Grid.RowDefinitions>
+
+        <Frame x:Name="frameNav" Grid.Row="0" NavigationUIVisibility="Hidden"/>
+
+        <StatusBar Grid.Row="2">
+            <StatusBarItem x:Name="statusBar" FontSize="18.667"/>
+        </StatusBar>
+	</Grid>
+
+
+
+</Controls:MetroWindow>

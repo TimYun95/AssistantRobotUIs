@@ -1,0 +1,3037 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Threading;
+
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Threading;
+using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
+
+using System.Windows;
+using System.Windows.Data;
+using System.ComponentModel;
+using System.Reflection;
+using LogPrinter;
+using ResourceCheck;
+using URCommunication;
+using MathFunction;
+using URModule;
+using SQLServerConnection;
+using SerialConnection;
+
+
+namespace AssistantRobot
+{
+    public class URVIewModel : INotifyPropertyChanged
+    {
+        #region 枚举
+        /// <summary>
+        /// 末端工具类型
+        /// </summary>
+        public enum ToolType : short
+        {
+            Probe = 1,
+            Needle = 2
+        }
+
+        /// <summary>
+        /// 显示页的标号
+        /// </summary>
+        public enum ShowPage : short
+        {
+            MainNav = 0,
+            BaseControl = 1,
+
+            GalactophoreDetect = 2
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public enum ConfPage : short
+        {
+            GlobalConf = 0,
+            ProbeCatch = 1,
+            GalactophoreDetect = 2
+        }
+        #endregion
+
+        #region Model
+        private SQLServerConnector sqlsc;
+        private SerialConnector sc;
+        private URDataProcessor urdp;
+        private GalactophoreDetector gdr;
+
+        // COM连接
+        private const bool ifUsingSerialPort = false;
+        private const string numOfCOM = "COM3";
+
+        // 所使用硬件版本，不可更改
+        private const URDataProcessor.RobotType currentRobotType = URDataProcessor.RobotType.CBUR3;
+        private const URDataProcessor.RobotProgramType currentRobotProgramType = UR30003Connector.RobotProgramType.SW34;
+        private const OPTODataProcessor.SensorType currentSensorType = OPTO49152Connector.SensorType.OldOptoForce;
+
+        // 各TCP连接点IP地址，不可更改
+        private const string forceSensorIP = "192.168.1.1";
+        private const string forceConnectorIP = "192.168.1.3";
+        private const string robotControllerIP = "192.168.1.5";
+        private const string robotConnectorIP = "192.168.1.7";
+
+        // 部分配置参数，不必更改
+        private const int timeOutDurationMS = 200;
+        private const bool ifProlongTimeOutDurationWhenConnectionBegin = true;
+        private const int autoCheckingConnectableDurationMS = 1000;
+        private const bool ifUsingForceSensor = false;
+        private const bool ifEnableCurrentOverFlowProtect = true;
+        private const bool ifEnableForceOverFlowProtect = true;
+        private const bool ifEnableToolIO = false;
+        private const double currentOverFlowBoundValue = 2.0;
+        private const double forceOverFlowBoundValue = 100.0;
+        private const double torqueOverFlowBoundValue = 15.0;
+        private const int digitalIOVoltage = 0;
+        private const double probeCalibrationMaxAmplitudeDeg = 60.0;
+        private const int punctureUsingAttitudeFlag = 0;
+
+        // 移动最高最低速度和加速度
+        private const double fastSpeedL = 0.2;
+        private const double slowSpeedL = 0.1;
+        private const double minSpeedL = 0.00002;
+        private const double fastAccelerationL = 0.2;
+        private const double slowAccelerationL = 0.1;
+        private const double minAccelerationL = 0.001;
+        private const double fastSpeedj = 0.4;
+        private const double slowSpeedj = 0.2;
+        private const double minSpeedj = 0.0004;
+        private const double fastAccelerationj = 0.4;
+        private const double slowAccelerationj = 0.2;
+        private const double minAccelerationj = 0.002;
+
+        // 当前工具信息
+        private ToolType currentToolType = ToolType.Probe;
+        private bool currentRobotHanged = false;
+        private double[] currentRobotInitialPosJoints = null;
+        private double[,] currentToolForceModifier = null;
+        private URDataProcessor.ForceModifiedMode currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
+        private double[] currentToolTcpEndPointCordinates = null;
+        private double currentToolGravityValue = 0;
+
+
+        #endregion
+
+        #region View
+        private MainWindow mw;
+        private MainPage mp;
+        private BaseControl bc;
+        private GalactophoreDetect gd;
+
+        private bool[] occupyArray = new bool[10] { false, false, false, false, false, false, false, false, false, false };
+        #endregion
+
+        #region ViewModel
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #region Global Controls Enable
+        private bool enableAll = true;
+        /// <summary>
+        /// 允许所有动作
+        /// </summary>
+        public bool EnableAll
+        {
+            get { return enableAll; }
+            set
+            {
+                enableAll = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("EnableAll"));
+                }
+            }
+        }
+        #endregion
+
+        #region StatusBar Content And Color
+        private string statusBarContent = "网络连接未建立";
+        /// <summary>
+        /// 状态栏内容
+        /// </summary>
+        public string StatusBarContent
+        {
+            get { return statusBarContent; }
+            set
+            {
+                statusBarContent = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StatusBarContent"));
+                }
+            }
+        }
+
+        private static readonly SolidColorBrush defaultBlueColor = new SolidColorBrush(Color.FromRgb(0x41, 0xB1, 0xE1));
+        private static readonly SolidColorBrush defaultRedColor = new SolidColorBrush(Color.FromRgb(0xFA, 0x4C, 0x8F));
+        private static readonly SolidColorBrush defaultGreenColor = new SolidColorBrush(Color.FromRgb(0x4B, 0xF8, 0xCB));
+        private SolidColorBrush statusBarBackgroundColor = defaultBlueColor;
+        /// <summary>
+        /// 状态栏背景颜色
+        /// </summary>
+        public SolidColorBrush StatusBarBackgroundColor
+        {
+            get { return statusBarBackgroundColor; }
+            set
+            {
+                statusBarBackgroundColor = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StatusBarBackgroundColor"));
+                }
+            }
+        }
+        #endregion
+
+        #region Base Moving Refrence Cordinate And Moving Speed Ratio
+        private bool baseMoveCordinate = false;
+        /// <summary>
+        /// 基本移动相对的坐标系
+        /// </summary>
+        public bool BaseMoveCordinate
+        {
+            get { return baseMoveCordinate; }
+            set
+            {
+                baseMoveCordinate = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BaseMoveCordinate"));
+                }
+            }
+        }
+
+        private double baseMoveSpeedRatio = 100.0;
+        /// <summary>
+        /// 基本移动速度系数
+        /// </summary>
+        public double BaseMoveSpeedRatio
+        {
+            get { return baseMoveSpeedRatio; }
+            set
+            {
+                baseMoveSpeedRatio = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BaseMoveSpeedRatio"));
+                }
+            }
+        }
+        #endregion
+
+        #region Parameters Needed To Show On Window
+
+        #region Tool TCP Cordinates
+        private double toolTCPCordinateX = 0.0;
+        /// <summary>
+        /// 工具TCP坐标X分量
+        /// </summary>
+        public double ToolTCPCordinateX
+        {
+            get { return toolTCPCordinateX; }
+            set
+            {
+                toolTCPCordinateX = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateX"));
+                }
+            }
+        }
+
+        private double toolTCPCordinateY = 0.0;
+        /// <summary>
+        /// 工具TCP坐标Y分量
+        /// </summary>
+        public double ToolTCPCordinateY
+        {
+            get { return toolTCPCordinateY; }
+            set
+            {
+                toolTCPCordinateY = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateY"));
+                }
+            }
+        }
+
+        private double toolTCPCordinateZ = 0.0;
+        /// <summary>
+        /// 工具TCP坐标Z分量
+        /// </summary>
+        public double ToolTCPCordinateZ
+        {
+            get { return toolTCPCordinateZ; }
+            set
+            {
+                toolTCPCordinateZ = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateZ"));
+                }
+            }
+        }
+
+        private double toolTCPCordinateRX = 0.0;
+        /// <summary>
+        /// 工具TCP坐标RX分量
+        /// </summary>
+        public double ToolTCPCordinateRX
+        {
+            get { return toolTCPCordinateRX; }
+            set
+            {
+                toolTCPCordinateRX = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateRX"));
+                }
+            }
+        }
+
+        private double toolTCPCordinateRY = 0.0;
+        /// <summary>
+        /// 工具TCP坐标RY分量
+        /// </summary>
+        public double ToolTCPCordinateRY
+        {
+            get { return toolTCPCordinateRY; }
+            set
+            {
+                toolTCPCordinateRY = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateRY"));
+                }
+            }
+        }
+
+        private double toolTCPCordinateRZ = 0.0;
+        /// <summary>
+        /// 工具TCP坐标RZ分量
+        /// </summary>
+        public double ToolTCPCordinateRZ
+        {
+            get { return toolTCPCordinateRZ; }
+            set
+            {
+                toolTCPCordinateRZ = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTCPCordinateRZ"));
+                }
+            }
+        }
+        #endregion
+
+        #region Robot Joints Angles
+        private double robotJointBaseAngle = 0.0;
+        /// <summary>
+        /// 机械臂基轴角度
+        /// </summary>
+        public double RobotJointBaseAngle
+        {
+            get { return robotJointBaseAngle; }
+            set
+            {
+                robotJointBaseAngle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointBaseAngle"));
+                }
+            }
+        }
+
+        private double robotJointShoulderAngle = 0.0;
+        /// <summary>
+        /// 机械臂肩轴角度
+        /// </summary>
+        public double RobotJointShoulderAngle
+        {
+            get { return robotJointShoulderAngle; }
+            set
+            {
+                robotJointShoulderAngle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointShoulderAngle"));
+                }
+            }
+        }
+
+        private double robotJointElbowAngle = 0.0;
+        /// <summary>
+        /// 机械臂肘轴角度
+        /// </summary>
+        public double RobotJointElbowAngle
+        {
+            get { return robotJointElbowAngle; }
+            set
+            {
+                robotJointElbowAngle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointElbowAngle"));
+                }
+            }
+        }
+
+        private double robotJointWrist1Angle = 0.0;
+        /// <summary>
+        /// 机械臂腕轴1角度
+        /// </summary>
+        public double RobotJointWrist1Angle
+        {
+            get { return robotJointWrist1Angle; }
+            set
+            {
+                robotJointWrist1Angle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist1Angle"));
+                }
+            }
+        }
+
+        private double robotJointWrist2Angle = 0.0;
+        /// <summary>
+        /// 机械臂腕轴2角度
+        /// </summary>
+        public double RobotJointWrist2Angle
+        {
+            get { return robotJointWrist2Angle; }
+            set
+            {
+                robotJointWrist2Angle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist2Angle"));
+                }
+            }
+        }
+
+        private double robotJointWrist3Angle = 0.0;
+        /// <summary>
+        /// 机械臂腕轴3角度
+        /// </summary>
+        public double RobotJointWrist3Angle
+        {
+            get { return robotJointWrist3Angle; }
+            set
+            {
+                robotJointWrist3Angle = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist3Angle"));
+                }
+            }
+        }
+        #endregion
+
+        #region Robot Joints Temperatures
+        private double robotJointBaseTemperature = 0.0;
+        /// <summary>
+        /// 机械臂基轴温度
+        /// </summary>
+        public double RobotJointBaseTemperature
+        {
+            get { return robotJointBaseTemperature; }
+            set
+            {
+                robotJointBaseTemperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointBaseTemperature"));
+                }
+            }
+        }
+
+        private double robotJointShoulderTemperature = 0.0;
+        /// <summary>
+        /// 机械臂肩轴温度
+        /// </summary>
+        public double RobotJointShoulderTemperature
+        {
+            get { return robotJointShoulderTemperature; }
+            set
+            {
+                robotJointShoulderTemperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointShoulderTemperature"));
+                }
+            }
+        }
+
+        private double robotJointElbowTemperature = 0.0;
+        /// <summary>
+        /// 机械臂肘轴温度
+        /// </summary>
+        public double RobotJointElbowTemperature
+        {
+            get { return robotJointElbowTemperature; }
+            set
+            {
+                robotJointElbowTemperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointElbowTemperature"));
+                }
+            }
+        }
+
+        private double robotJointWrist1Temperature = 0.0;
+        /// <summary>
+        /// 机械臂腕轴1温度
+        /// </summary>
+        public double RobotJointWrist1Temperature
+        {
+            get { return robotJointWrist1Temperature; }
+            set
+            {
+                robotJointWrist1Temperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist1Temperature"));
+                }
+            }
+        }
+
+        private double robotJointWrist2Temperature = 0.0;
+        /// <summary>
+        /// 机械臂腕轴2温度
+        /// </summary>
+        public double RobotJointWrist2Temperature
+        {
+            get { return robotJointWrist2Temperature; }
+            set
+            {
+                robotJointWrist2Temperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist2Temperature"));
+                }
+            }
+        }
+
+        private double robotJointWrist3Temperature = 0.0;
+        /// <summary>
+        /// 机械臂腕轴3温度
+        /// </summary>
+        public double RobotJointWrist3Temperature
+        {
+            get { return robotJointWrist3Temperature; }
+            set
+            {
+                robotJointWrist3Temperature = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist3Temperature"));
+                }
+            }
+        }
+        #endregion
+
+        #region Robot Joints Currents
+        private double robotJointBaseCurrent = 0.0;
+        /// <summary>
+        /// 机械臂基轴电流
+        /// </summary>
+        public double RobotJointBaseCurrent
+        {
+            get { return robotJointBaseCurrent; }
+            set
+            {
+                robotJointBaseCurrent = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointBaseCurrent"));
+                }
+            }
+        }
+
+        private double robotJointShoulderCurrent = 0.0;
+        /// <summary>
+        /// 机械臂肩轴电流
+        /// </summary>
+        public double RobotJointShoulderCurrent
+        {
+            get { return robotJointShoulderCurrent; }
+            set
+            {
+                robotJointShoulderCurrent = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointShoulderCurrent"));
+                }
+            }
+        }
+
+        private double robotJointElbowCurrent = 0.0;
+        /// <summary>
+        /// 机械臂肘轴电流
+        /// </summary>
+        public double RobotJointElbowCurrent
+        {
+            get { return robotJointElbowCurrent; }
+            set
+            {
+                robotJointElbowCurrent = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointElbowCurrent"));
+                }
+            }
+        }
+
+        private double robotJointWrist1Current = 0.0;
+        /// <summary>
+        /// 机械臂腕轴1电流
+        /// </summary>
+        public double RobotJointWrist1Current
+        {
+            get { return robotJointWrist1Current; }
+            set
+            {
+                robotJointWrist1Current = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist1Current"));
+                }
+            }
+        }
+
+        private double robotJointWrist2Current = 0.0;
+        /// <summary>
+        /// 机械臂腕轴2电流
+        /// </summary>
+        public double RobotJointWrist2Current
+        {
+            get { return robotJointWrist2Current; }
+            set
+            {
+                robotJointWrist2Current = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist2Current"));
+                }
+            }
+        }
+
+        private double robotJointWrist3Current = 0.0;
+        /// <summary>
+        /// 机械臂腕轴3电流
+        /// </summary>
+        public double RobotJointWrist3Current
+        {
+            get { return robotJointWrist3Current; }
+            set
+            {
+                robotJointWrist3Current = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotJointWrist3Current"));
+                }
+            }
+        }
+        #endregion
+
+        #region Tool Input Digital IO
+        private bool toolInputDigitialIO1 = false;
+        /// <summary>
+        /// 工具数字IO输入1
+        /// </summary>
+        public bool ToolInputDigitialIO1
+        {
+            get { return toolInputDigitialIO1; }
+            set
+            {
+                toolInputDigitialIO1 = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolInputDigitialIO1"));
+                }
+            }
+        }
+
+        private bool toolInputDigitialIO2 = false;
+        /// <summary>
+        /// 工具数字IO输入2
+        /// </summary>
+        public bool ToolInputDigitialIO2
+        {
+            get { return toolInputDigitialIO2; }
+            set
+            {
+                toolInputDigitialIO2 = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolInputDigitialIO2"));
+                }
+            }
+        }
+        #endregion
+
+        #region Robot Status And Program Status
+        private URDataProcessor.RobotStatus robotCurrentStatus = UR30003Connector.RobotStatus.PowerOff;
+        /// <summary>
+        /// 机械臂当前状态
+        /// </summary>
+        public URDataProcessor.RobotStatus RobotCurrentStatus
+        {
+            get { return robotCurrentStatus; }
+            set
+            {
+                robotCurrentStatus = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotCurrentStatus"));
+                }
+            }
+        }
+
+        private URDataProcessor.RobotProgramStatus robotProgramCurrentStatus = UR30003Connector.RobotProgramStatus.Begin;
+        /// <summary>
+        /// 机械臂程序当前状态
+        /// </summary>
+        public URDataProcessor.RobotProgramStatus RobotProgramCurrentStatus
+        {
+            get { return robotProgramCurrentStatus; }
+            set
+            {
+                robotProgramCurrentStatus = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RobotProgramCurrentStatus"));
+                }
+            }
+        }
+        #endregion
+
+        #region Tool Force And Torque
+        private double toolForceX = 0.0;
+        /// <summary>
+        /// 工具末端X方向力
+        /// </summary>
+        public double ToolForceX
+        {
+            get { return toolForceX; }
+            set
+            {
+                toolForceX = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolForceX"));
+                }
+            }
+        }
+
+        private double toolForceY = 0.0;
+        /// <summary>
+        /// 工具末端Y方向力
+        /// </summary>
+        public double ToolForceY
+        {
+            get { return toolForceY; }
+            set
+            {
+                toolForceY = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolForceY"));
+                }
+            }
+        }
+
+        private double toolForceZ = 0.0;
+        /// <summary>
+        /// 工具末端Z方向力
+        /// </summary>
+        public double ToolForceZ
+        {
+            get { return toolForceZ; }
+            set
+            {
+                toolForceZ = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolForceZ"));
+                }
+            }
+        }
+
+        private double toolTorqueX = 0.0;
+        /// <summary>
+        /// 工具末端X方向力矩
+        /// </summary>
+        public double ToolTorqueX
+        {
+            get { return toolTorqueX; }
+            set
+            {
+                toolTorqueX = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTorqueX"));
+                }
+            }
+        }
+
+        private double toolTorqueY = 0.0;
+        /// <summary>
+        /// 工具末端Y方向力矩
+        /// </summary>
+        public double ToolTorqueY
+        {
+            get { return toolTorqueY; }
+            set
+            {
+                toolTorqueY = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTorqueY"));
+                }
+            }
+        }
+
+        private double toolTorqueZ = 0.0;
+        /// <summary>
+        /// 工具末端Z方向力矩
+        /// </summary>
+        public double ToolTorqueZ
+        {
+            get { return toolTorqueZ; }
+            set
+            {
+                toolTorqueZ = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ToolTorqueZ"));
+                }
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region Nipple Position At Galactophore Detecting
+        private double[] nipplePositionGDR = new double[3];
+        /// <summary>
+        /// 乳腺扫查中的乳头位置
+        /// </summary>
+        public double[] NipplePositionGDR
+        {
+            get { return (double[])nipplePositionGDR.Clone(); }
+            set
+            {
+                nipplePositionGDR = (double[])value.Clone();
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("NipplePositionGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Configuration Parameters Of GalactophoreDetector
+
+        #region Detecting Direction Force Limits And Speed Limits
+        private double detectingErrorForceMinGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向误差力最小值
+        /// </summary>
+        public double DetectingErrorForceMinGDR
+        {
+            get { return detectingErrorForceMinGDR; }
+            set
+            {
+                detectingErrorForceMinGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingErrorForceMinGDR"));
+                }
+            }
+        }
+
+        private double detectingErrorForceMaxGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向误差力最大值
+        /// </summary>
+        public double DetectingErrorForceMaxGDR
+        {
+            get { return detectingErrorForceMaxGDR; }
+            set
+            {
+                detectingErrorForceMaxGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingErrorForceMaxGDR"));
+                }
+            }
+        }
+
+        private double detectingSpeedMinGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向运动速度最小值
+        /// </summary>
+        public double DetectingSpeedMinGDR
+        {
+            get { return detectingSpeedMinGDR; }
+            set
+            {
+                detectingSpeedMinGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingSpeedMinGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Detecting Force Change
+        private bool ifEnableDetectingForceChangeAtTransitionalPartGDR = false;
+        /// <summary>
+        /// 乳腺扫查中过渡段探测力变化开关
+        /// </summary>
+        public bool IfEnableDetectingForceChangeAtTransitionalPartGDR
+        {
+            get { return ifEnableDetectingForceChangeAtTransitionalPartGDR; }
+            set
+            {
+                ifEnableDetectingForceChangeAtTransitionalPartGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableDetectingForceChangeAtTransitionalPartGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Detecting Motion Limits
+        private double nippleForbiddenRadiusGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中乳头防撞禁止半径
+        /// </summary>
+        public double NippleForbiddenRadiusGDR
+        {
+            get { return nippleForbiddenRadiusGDR; }
+            set
+            {
+                nippleForbiddenRadiusGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("NippleForbiddenRadiusGDR"));
+                }
+            }
+        }
+
+        private double detectingStopDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向停止距离
+        /// </summary>
+        public double DetectingStopDistanceGDR
+        {
+            get { return detectingStopDistanceGDR; }
+            set
+            {
+                detectingStopDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingStopDistanceGDR"));
+                }
+            }
+        }
+
+        private double detectingSafetyLiftDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向安全上升距离
+        /// </summary>
+        public double DetectingSafetyLiftDistanceGDR
+        {
+            get { return detectingSafetyLiftDistanceGDR; }
+            set
+            {
+                detectingSafetyLiftDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingSafetyLiftDistanceGDR"));
+                }
+            }
+        }
+
+        private double detectingSinkDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中探测方向下沉距离
+        /// </summary>
+        public double DetectingSinkDistanceGDR
+        {
+            get { return detectingSinkDistanceGDR; }
+            set
+            {
+                detectingSinkDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingSinkDistanceGDR"));
+                }
+            }
+        }
+
+        private bool ifEnableDetectingForceCheckGDR = false;
+        /// <summary>
+        /// 乳腺扫查中探测力大小检查开关
+        /// </summary>
+        public bool IfEnableDetectingForceCheckGDR
+        {
+            get { return ifEnableDetectingForceCheckGDR; }
+            set
+            {
+                ifEnableDetectingForceCheckGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableDetectingForceCheckGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Degree Control Parameters
+        private GalactophoreDetector.VibratingMagnitude vibratingAngleDegreeGDR = GalactophoreDetector.VibratingMagnitude.Medium;
+        /// <summary>
+        /// 乳腺扫查中摆动方向摆动幅度
+        /// </summary>
+        public GalactophoreDetector.VibratingMagnitude VibratingAngleDegreeGDR
+        {
+            get { return vibratingAngleDegreeGDR; }
+            set
+            {
+                vibratingAngleDegreeGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("VibratingAngleDegreeGDR"));
+                }
+            }
+        }
+
+        private GalactophoreDetector.MovingLevel movingSpeedDegreeGDR = GalactophoreDetector.MovingLevel.Medium;
+        /// <summary>
+        /// 乳腺扫查中移动方向移动快慢
+        /// </summary>
+        public GalactophoreDetector.MovingLevel MovingSpeedDegreeGDR
+        {
+            get { return movingSpeedDegreeGDR; }
+            set
+            {
+                movingSpeedDegreeGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MovingSpeedDegreeGDR"));
+                }
+            }
+        }
+
+        private GalactophoreDetector.DetectingIntensity detectingForceDegreeGDR = GalactophoreDetector.DetectingIntensity.SlightlyLight;
+        /// <summary>
+        /// 乳腺扫查中探测方向力度大小
+        /// </summary>
+        public GalactophoreDetector.DetectingIntensity DetectingForceDegreeGDR
+        {
+            get { return detectingForceDegreeGDR; }
+            set
+            {
+                detectingForceDegreeGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingForceDegreeGDR"));
+                }
+            }
+        }
+
+        private GalactophoreDetector.AligningDegree detectingAlignDegreeGDR = GalactophoreDetector.AligningDegree.Loose;
+        /// <summary>
+        /// 乳腺扫查中探测整体贴合程度
+        /// </summary>
+        public GalactophoreDetector.AligningDegree DetectingAlignDegreeGDR
+        {
+            get { return detectingAlignDegreeGDR; }
+            set
+            {
+                detectingAlignDegreeGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingAlignDegreeGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Detecting Edge
+        private GalactophoreDetector.IdentifyBoundary identifyEdgeModeGDR = GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary;
+        /// <summary>
+        /// 乳腺扫查中获得边界的方法
+        /// </summary>
+        public GalactophoreDetector.IdentifyBoundary IdentifyEdgeModeGDR
+        {
+            get { return identifyEdgeModeGDR; }
+            set
+            {
+                identifyEdgeModeGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IdentifyEdgeModeGDR"));
+                }
+            }
+        }
+
+        private double movingUpEdgeDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中移动方向上边界距离
+        /// </summary>
+        public double MovingUpEdgeDistanceGDR
+        {
+            get { return movingUpEdgeDistanceGDR; }
+            set
+            {
+                movingUpEdgeDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MovingUpEdgeDistanceGDR"));
+                }
+            }
+        }
+
+        private double movingLeftEdgeDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中移动方向左边界距离
+        /// </summary>
+        public double MovingLeftEdgeDistanceGDR
+        {
+            get { return movingLeftEdgeDistanceGDR; }
+            set
+            {
+                movingLeftEdgeDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MovingLeftEdgeDistanceGDR"));
+                }
+            }
+        }
+
+        private double movingDownEdgeDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中移动方向下边界距离
+        /// </summary>
+        public double MovingDownEdgeDistanceGDR
+        {
+            get { return movingDownEdgeDistanceGDR; }
+            set
+            {
+                movingDownEdgeDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MovingDownEdgeDistanceGDR"));
+                }
+            }
+        }
+
+        private double movingRightEdgeDistanceGDR = 0.0;
+        /// <summary>
+        /// 乳腺扫查中移动方向右边界距离
+        /// </summary>
+        public double MovingRightEdgeDistanceGDR
+        {
+            get { return movingRightEdgeDistanceGDR; }
+            set
+            {
+                movingRightEdgeDistanceGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MovingRightEdgeDistanceGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Other
+        private bool ifAutoReplaceConfigurationGDR = true;
+        /// <summary>
+        /// 乳腺扫查中文件自动转存开关
+        /// </summary>
+        public bool IfAutoReplaceConfigurationGDR
+        {
+            get { return ifAutoReplaceConfigurationGDR; }
+            set
+            {
+                ifAutoReplaceConfigurationGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfAutoReplaceConfigurationGDR"));
+                }
+            }
+        }
+
+        private GalactophoreDetector.ScanningRegion ifCheckRightGalactophoreGDR = GalactophoreDetector.ScanningRegion.RightGalactophore;
+        /// <summary>
+        /// 乳腺扫查中是否检测右侧乳房
+        /// </summary>
+        public GalactophoreDetector.ScanningRegion IfCheckRightGalactophoreGDR
+        {
+            get { return ifCheckRightGalactophoreGDR; }
+            set
+            {
+                ifCheckRightGalactophoreGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfCheckRightGalactophoreGDR"));
+                }
+            }
+        }
+
+        private double checkingStepGDR = 0.3;
+        /// <summary>
+        /// 乳腺扫查中扫查过程的步长
+        /// </summary>
+        public double CheckingStepGDR
+        {
+            get { return checkingStepGDR; }
+            set
+            {
+                checkingStepGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("CheckingStepGDR"));
+                }
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region GalactophoreDetector Working Status
+        private short galactophoreDetectorWorkStatus = -1;
+        /// <summary>
+        /// 乳腺扫查者工作状态
+        /// </summary>
+        public short GalactophoreDetectorWorkStatus
+        {
+            get { return galactophoreDetectorWorkStatus; }
+            set
+            {
+                galactophoreDetectorWorkStatus = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("GalactophoreDetectorWorkStatus"));
+                }
+            }
+        }
+        #endregion
+
+        #region GalactophoreDetector Parameter Confirm
+        private bool galactophoreDetectorParameterConfirm = false;
+        /// <summary>
+        /// 乳腺扫查者配置参数确认情况
+        /// </summary>
+        public bool GalactophoreDetectorParameterConfirm
+        {
+            get { return galactophoreDetectorParameterConfirm; }
+            set
+            {
+                galactophoreDetectorParameterConfirm = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("GalactophoreDetectorParameterConfirm"));
+                }
+            }
+        }
+        #endregion
+
+        #region GalactophoreDetector ForceSenor Cleared
+        private bool galactophoreDetectorForceSensorCleared = false;
+        /// <summary>
+        ///  乳腺扫查者力传感器清零状况
+        /// </summary>
+        public bool GalactophoreDetectorForceSensorCleared
+        {
+            get { return galactophoreDetectorForceSensorCleared; }
+            set
+            {
+                galactophoreDetectorForceSensorCleared = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("GalactophoreDetectorForceSensorCleared"));
+                }
+            }
+        }
+        #endregion
+
+        #region GalactophoreDetector Parameter Confirm State
+        private byte galactophoreDetectorParameterConfirmState = 0;
+        /// <summary>
+        ///  乳腺扫查者配置参数更新状态
+        /// </summary>
+        public byte GalactophoreDetectorParameterConfirmState
+        {
+            get { return galactophoreDetectorParameterConfirmState; }
+            set
+            {
+                galactophoreDetectorParameterConfirmState = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("GalactophoreDetectorParameterConfirmState"));
+                }
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region Method
+        /// <summary>
+        /// 页导航
+        /// </summary>
+        /// <param name="ShowPageNum">要显示的页</param>
+        public void NavigateToPage(ShowPage ShowPageNum)
+        {
+            switch (ShowPageNum)
+            {
+                case ShowPage.MainNav:
+                    if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                    break;
+                case ShowPage.BaseControl:
+                    mw.frameNav.NavigationService.Navigate(bc);
+                    break;
+
+                case ShowPage.GalactophoreDetect:
+                    mw.frameNav.NavigationService.Navigate(gd);
+                    break;
+                default:
+                    mw.frameNav.NavigationService.Navigate(mp);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 主窗口弹窗
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <param name="title">抬头</param>
+        /// <param name="occupyNum">控制位</param>
+        public async void ShowDialog(string message, string title, int occupyNum)
+        {
+            if (occupyArray[occupyNum]) return;
+            occupyArray[occupyNum] = true;
+
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "确认",
+                ColorScheme = MetroDialogColorScheme.Theme
+            };
+
+            if (mw.CheckAccess())
+            {
+                await mw.ShowMessageAsync(title, message, MessageDialogStyle.Affirmative, mySettings);
+            }
+
+            occupyArray[occupyNum] = false;
+        }
+
+        public delegate void ShowDialogDelegate(string message, string title, int occupyNum);
+        private void ShowDialogTask(string message, string title, int occupyNum)
+        {
+            ShowDialog(message, title, occupyNum);
+        }
+        /// <summary>
+        /// 主窗口弹窗，切换到UI线程运行
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <param name="title">抬头</param>
+        /// <param name="occupyNum">控制位</param>
+        private void ShowDialogAtUIThread(string message, string title, int occupyNum)
+        {
+            mw.Dispatcher.BeginInvoke(
+                new ShowDialogDelegate(ShowDialogTask),
+                DispatcherPriority.Normal,
+                new object[] { message, title, occupyNum });
+        }
+
+
+
+
+
+        /// <summary>
+        /// 开始必要的连接检查和连接
+        /// </summary>
+        public void StartConnection()
+        {
+            if (ifUsingSerialPort) sc.OpenCOMConnection();
+            urdp.StartNetChecking();
+        }
+
+        /// <summary>
+        /// 基本平移开始
+        /// </summary>
+        /// <param name="Axis">移动轴</param>
+        /// <param name="IfPositive">移动方向</param>
+        public void BaseMovingTranslationBegin(char Axis, bool IfPositive)
+        {
+            if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
+
+            int sign = IfPositive ? 1 : -1;
+            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedL;
+            speed = speed < minSpeedL ? minSpeedL : speed;
+            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationL;
+            acceleraton = acceleraton < minAccelerationL ? minAccelerationL : acceleraton;
+
+            if (baseMoveCordinate) // 工具
+            {
+                double[] currentTcpAxis;
+                switch (Axis)
+                {
+                    case 'y':
+                        currentTcpAxis = urdp.YDirectionOfTcpAtBaseReference();
+                        break;
+                    case 'z':
+                        currentTcpAxis = urdp.ZDirectionOfTcpAtBaseReference();
+                        break;
+                    case 'x':
+                    default:
+                        currentTcpAxis = urdp.XDirectionOfTcpAtBaseReference();
+                        break;
+                }
+                direction[0] = (double)sign * speed * currentTcpAxis[0];
+                direction[1] = (double)sign * speed * currentTcpAxis[1];
+                direction[2] = (double)sign * speed * currentTcpAxis[2];
+            }
+            else // 基座
+            {
+                switch (Axis)
+                {
+                    case 'y':
+                        direction[1] = (double)sign * speed;
+                        break;
+                    case 'z':
+                        direction[2] = (double)sign * speed;
+                        break;
+                    case 'x':
+                    default:
+                        direction[0] = (double)sign * speed;
+                        break;
+                }
+            }
+
+            urdp.SendURCommanderSpeedL(direction, acceleraton);
+        }
+
+        /// <summary>
+        /// 基本旋转开始
+        /// </summary>
+        /// <param name="Axis">旋转轴</param>
+        /// <param name="IfPositive">旋转方向</param>
+        public void BaseMovingSpinBegin(char Axis, bool IfPositive)
+        {
+            if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
+
+            int sign = IfPositive ? 1 : -1;
+            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedj;
+            speed = speed < minSpeedj ? minSpeedj : speed;
+            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationj;
+            acceleraton = acceleraton < minAccelerationj ? minAccelerationj : acceleraton;
+
+            if (baseMoveCordinate) // 工具
+            {
+                double[] currentTcpAxis;
+                switch (Axis)
+                {
+                    case 'y':
+                        currentTcpAxis = urdp.YDirectionOfTcpAtBaseReference();
+                        break;
+                    case 'z':
+                        currentTcpAxis = urdp.ZDirectionOfTcpAtBaseReference();
+                        break;
+                    case 'x':
+                    default:
+                        currentTcpAxis = urdp.XDirectionOfTcpAtBaseReference();
+                        break;
+                }
+                direction[3] = (double)sign * speed * currentTcpAxis[0];
+                direction[4] = (double)sign * speed * currentTcpAxis[1];
+                direction[5] = (double)sign * speed * currentTcpAxis[2];
+            }
+            else // 基座
+            {
+                switch (Axis)
+                {
+                    case 'y':
+                        direction[4] = (double)sign * speed;
+                        break;
+                    case 'z':
+                        direction[5] = (double)sign * speed;
+                        break;
+                    case 'x':
+                    default:
+                        direction[3] = (double)sign * speed;
+                        break;
+                }
+            }
+
+            urdp.SendURCommanderSpeedL(direction, acceleraton);
+        }
+
+        /// <summary>
+        /// 基本单轴移动开始
+        /// </summary>
+        /// <param name="Axis">旋转轴</param>
+        /// <param name="IfPositive">旋转方向</param>
+        public void BaseMovingSingleSpinBegin(char Axis, bool IfPositive)
+        {
+            if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
+
+            int sign = IfPositive ? 1 : -1;
+            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedj;
+            speed = speed < minSpeedj ? minSpeedj : speed;
+            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationj;
+            acceleraton = acceleraton < minAccelerationj ? minAccelerationj : acceleraton;
+
+            switch (Axis)
+            {
+                case '2':
+                    direction[1] = (double)sign * speed;
+                    break;
+                case '3':
+                    direction[2] = (double)sign * speed;
+                    break;
+                case '4':
+                    direction[3] = (double)sign * speed;
+                    break;
+                case '5':
+                    direction[4] = (double)sign * speed;
+                    break;
+                case '6':
+                    direction[5] = (double)sign * speed;
+                    break;
+                case '1':
+                default:
+                    direction[0] = (double)sign * speed;
+                    break;
+            }
+
+            urdp.SendURCommanderSpeedJ(direction, acceleraton);
+        }
+
+        /// <summary>
+        /// 基本运动停止
+        /// </summary>
+        public void BaseMovingEnd()
+        {
+            urdp.SendURCommanderStopL();
+        }
+
+        /// <summary>
+        /// 反驱示教模式启停
+        /// </summary>
+        /// <param name="SwitchMode">模式开关</param>
+        public void TeachModeTurn(bool SwitchMode = true)
+        {
+            if (SwitchMode)
+            {
+                urdp.SendURCommanderBeginTeachMode();
+            }
+            else
+            {
+                urdp.SendURCommanderEndTeachMode();
+            }
+        }
+
+        /// <summary>
+        /// 切换乳腺扫查配置窗口
+        /// </summary>
+        public void SwitchGalactophoreOwnConf()
+        {
+            bool nowState = (mw.Flyouts.Items[(int)ConfPage.GalactophoreDetect] as Flyout).IsOpen;
+            (mw.Flyouts.Items[(int)ConfPage.GalactophoreDetect] as Flyout).IsOpen = !nowState;
+        }
+
+        /// <summary>
+        /// 保存该页配置
+        /// </summary>
+        /// <param name="modifyPage">修改的页</param>
+        public void SaveConfParameters(ConfPage modifyPage)
+        {
+            switch (modifyPage)
+            {
+                case ConfPage.GalactophoreDetect:
+                    gdr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                    gdr.LoadParametersFromXmlAndOutput();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 从相应页获取配置参数
+        /// </summary>
+        /// <param name="modifyPage">修改的页</param>
+        /// <returns>返回配置参数</returns>
+        public List<string> PickParametersFormView(ConfPage modifyPage)
+        {
+            List<string> returnConf = new List<string>(30);
+            switch (modifyPage)
+            {
+                case ConfPage.GalactophoreDetect:
+                    returnConf.Add((string)mw.minForceText.Content);
+                    returnConf.Add((string)mw.maxForceText.Content);
+                    returnConf.Add((double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0).ToString("0.0000"));
+                    returnConf.Add(mw.DFAtTSwitch.IsChecked.ToString());
+                    returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSmoothPart
+                    returnConf.Add("-2.0"); // vibratingAttitudeMinAtSteepPart
+                    returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSteepPart
+                    returnConf.Add((double.Parse(gd.minRadius.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add("-2.0"); // movingStopDistance
+                    returnConf.Add((double.Parse(gd.scanDistance.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.liftDistance.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add(mw.DFCheckSwitch.IsChecked.ToString());
+                    returnConf.Add((double.Parse(gd.sinkDistance.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add(Math.Round(mw.vibrateDegreeSlider.Value).ToString("0"));
+                    returnConf.Add(Math.Round(mw.speedDegreeSlider.Value).ToString("0"));
+                    returnConf.Add(Math.Round(mw.forceDegreeSlider.Value).ToString("0"));
+                    returnConf.Add(mw.attachSwitch.IsChecked == true ? "1" : "0");
+                    returnConf.Add((double.Parse(gd.headBound.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.outBound.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.tailBound.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.inBound.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add(mw.autoSaveSwitch.IsChecked.ToString());
+                    returnConf.Add(mw.galactophoreDirectionSwitch.IsChecked == true ? "1" : "0");
+                    returnConf.Add(Math.Round(mw.borderModeSlider.Value).ToString("0"));
+                    returnConf.Add((Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content)).ToString("0.0000"));
+
+                    return returnConf;
+                default:
+                    return null;
+            }
+        }
+
+
+        /// <summary>
+        /// 关闭Model逻辑
+        /// </summary>
+        public void CloseModelLogic()
+        {
+            urdp.ActiveBreakCommunicationConncect();
+            ClearAllEvents(urdp);
+        }
+
+        /// <summary>
+        /// 清空事件绑定
+        /// </summary>
+        /// <param name="objectHasEvents">待清空的对象</param>
+        private void ClearAllEvents(object objectHasEvents)
+        {
+            if (objectHasEvents == null)
+            {
+                return;
+            }
+            try
+            {
+                EventInfo[] events = objectHasEvents.GetType().GetEvents(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (events == null || events.Length < 1)
+                {
+                    return;
+                }
+                for (int i = 0; i < events.Length; i++)
+                {
+                    EventInfo ei = events[i];
+                    FieldInfo fi = ei.DeclaringType.GetField(ei.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (fi != null)
+                    {
+                        fi.SetValue(objectHasEvents, null);
+                    }
+                }
+            }
+            catch
+            {
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Error on disconnect events of object with type \'" + objectHasEvents.GetType().ToString() + "\'.");
+            }
+        }
+
+        #endregion
+
+        #region Preparation
+        private readonly ConverterThatTransformDoubleToString convertD2S = new ConverterThatTransformDoubleToString();
+        private readonly ValueProcesser valueP1000D0 = new ValueProcesser(1000.0, "0");
+        private readonly ValueProcesser valueP1000D1 = new ValueProcesser(1000.0, "0.0");
+        private readonly ValueProcesser valueP1000D2 = new ValueProcesser(1000.0, "0.00");
+        private readonly ValueProcesser valueP1D2 = new ValueProcesser(1.0, "0.00");
+        private readonly ValueProcesser valueP1D3 = new ValueProcesser(1.0, "0.000");
+        private readonly ValueProcesser valueP1D4 = new ValueProcesser(1.0, "0.0000");
+        private readonly ConverterThatTransformDoubleToDoubleSlider convertD2DSlider = new ConverterThatTransformDoubleToDoubleSlider();
+        private const double radToDegRatio = 180.0 / Math.PI;
+        private readonly ConverterThatTransformDoubleArrayToDouble convertDA2D = new ConverterThatTransformDoubleArrayToDouble();
+        private readonly ConverterThatTransformDoubleToDoubleInteger convertD2DI = new ConverterThatTransformDoubleToDoubleInteger();
+        private readonly ConverterThatTransformEnumToDouble convertE2D = new ConverterThatTransformEnumToDouble();
+        private readonly ConverterThatTransformEnumToBool convertE2B = new ConverterThatTransformEnumToBool();
+        private readonly ConverterMultiStatusToEnableBool convertMS2EB = new ConverterMultiStatusToEnableBool();
+
+
+
+        /// <summary>
+        /// 绑定元素
+        /// </summary>
+        public void BindingItems()
+        {
+            BindingItemsGlobalControlsEnable();
+            BindingItemsStatusBarContentAndColor();
+            BindingItemsBaseMovingRefrenceCordinateAndMovingSpeedRatio();
+            BindingItemsParametersNeededToShowOnWindowToolTCPCordinates();
+            BindingItemsParametersNeededToShowOnWindowToolForceAndTorque();
+            BindingItemsParametersNeededToShowOnWindowRobotJointsCurrents();
+            BindingItemsParametersNeededToShowOnWindowRobotJointsAngles();
+            BindingItemsNipplePositionAtGalactophoreDetecting();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingDirectionForceLimitsAndSpeedLimits();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingForceChange();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingMotionLimits();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorDegreeControlParameters();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingEdge();
+            BindingItemsConfigurationParametersOfGalactophoreDetectorOther();
+
+
+            BindingItemsGalactophoreDetectorWorkingStatus();
+
+
+
+        }
+
+        #region SubBindingItems
+        /// <summary>
+        /// 绑定域 --| Global Controls Enable |-- 内元素
+        /// </summary>
+        private void BindingItemsGlobalControlsEnable()
+        {
+            // 绑定：EnableAll {属性} ==> frameNav {MainWindow控件}
+            Binding bindingFromForbiddenAllToFrameNavOfMW = new Binding();
+            bindingFromForbiddenAllToFrameNavOfMW.Source = this;
+            bindingFromForbiddenAllToFrameNavOfMW.Path = new PropertyPath("EnableAll");
+            bindingFromForbiddenAllToFrameNavOfMW.Mode = BindingMode.OneWay;
+            bindingFromForbiddenAllToFrameNavOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.frameNav, Frame.IsEnabledProperty, bindingFromForbiddenAllToFrameNavOfMW);
+        }
+
+        /// <summary>
+        /// 绑定域 --| StatusBar Content And Color |-- 内元素
+        /// </summary>
+        private void BindingItemsStatusBarContentAndColor()
+        {
+            // 绑定：StatusBarContent {属性} ==> statusBar {MainWindow控件}
+            Binding bindingFromStatusBarContentToStatusBarOfMW = new Binding();
+            bindingFromStatusBarContentToStatusBarOfMW.Source = this;
+            bindingFromStatusBarContentToStatusBarOfMW.Path = new PropertyPath("StatusBarContent");
+            bindingFromStatusBarContentToStatusBarOfMW.Mode = BindingMode.OneWay;
+            bindingFromStatusBarContentToStatusBarOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.statusBar, StatusBarItem.ContentProperty, bindingFromStatusBarContentToStatusBarOfMW);
+
+            // 绑定：StatusBarBackgroundColor {属性} ==> statusBar {MainWindow控件}
+            Binding bindingFromStatusBarBackgroundColorToStatusBarOfMW = new Binding();
+            bindingFromStatusBarBackgroundColorToStatusBarOfMW.Source = this;
+            bindingFromStatusBarBackgroundColorToStatusBarOfMW.Path = new PropertyPath("StatusBarBackgroundColor");
+            bindingFromStatusBarBackgroundColorToStatusBarOfMW.Mode = BindingMode.OneWay;
+            bindingFromStatusBarBackgroundColorToStatusBarOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.statusBar, StatusBarItem.BackgroundProperty, bindingFromStatusBarBackgroundColorToStatusBarOfMW);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Base Moving Refrence Cordinate And Moving Speed Ratio |-- 内元素
+        /// </summary>
+        private void BindingItemsBaseMovingRefrenceCordinateAndMovingSpeedRatio()
+        {
+            // 绑定：BaseMoveCordinate {属性} ==> chooseMotionWay {BaseControl控件}
+            Binding bindingFromBaseMoveCordinateToChooseMotionWayOfBC = new Binding();
+            bindingFromBaseMoveCordinateToChooseMotionWayOfBC.Source = this;
+            bindingFromBaseMoveCordinateToChooseMotionWayOfBC.Path = new PropertyPath("BaseMoveCordinate");
+            bindingFromBaseMoveCordinateToChooseMotionWayOfBC.Mode = BindingMode.TwoWay;
+            bindingFromBaseMoveCordinateToChooseMotionWayOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(bc.chooseMotionWay, ToggleSwitch.IsCheckedProperty, bindingFromBaseMoveCordinateToChooseMotionWayOfBC);
+
+            // 绑定：BaseMoveSpeedRatio {属性} ==> speedSlider {BaseControl控件}
+            Binding bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC = new Binding();
+            bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC.Source = this;
+            bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC.Path = new PropertyPath("BaseMoveSpeedRatio");
+            bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC.Mode = BindingMode.TwoWay;
+            bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(bc.speedSlider, Slider.ValueProperty, bindingFromBaseMoveSpeedRatioToSpeedSliderOfBC);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Parameters Needed To Show On Window --> Tool TCP Cordinates |-- 内元素
+        /// </summary>
+        private void BindingItemsParametersNeededToShowOnWindowToolTCPCordinates()
+        {
+            #region BaseControl
+            // 绑定：ToolTCPCordinateX {属性} ==> tcpXMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateXToTcpXMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Path = new PropertyPath("ToolTCPCordinateX");
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateXToTcpXMotionOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXMotionOfBC);
+
+            // 绑定：ToolTCPCordinateY {属性} ==> tcpYMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateYToTcpYMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Path = new PropertyPath("ToolTCPCordinateY");
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateYToTcpYMotionOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYMotionOfBC);
+
+            // 绑定：ToolTCPCordinateZ {属性} ==> tcpZMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateZToTcpZMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Path = new PropertyPath("ToolTCPCordinateZ");
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateZToTcpZMotionOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZMotionOfBC);
+
+            // 绑定：ToolTCPCordinateRX {属性} ==> tcpRXMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateRXToTcpRXMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRX");
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXMotionOfBC);
+
+            // 绑定：ToolTCPCordinateRY {属性} ==> tcpRYMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateRYToTcpRYMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRY");
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYMotionOfBC);
+
+            // 绑定：ToolTCPCordinateRZ {属性} ==> tcpRZMotion {BaseControl控件}
+            Binding bindingFromToolTCPCordinateRZToTcpRZMotionOfBC = new Binding();
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Source = this;
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRZ");
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZMotionOfBC);
+            #endregion
+
+            #region GalactophoreDetect
+            // 绑定：ToolTCPCordinateX {属性} ==> tcpXGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateX");
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC);
+
+            // 绑定：ToolTCPCordinateY {属性} ==> tcpYGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateY");
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC);
+
+            // 绑定：ToolTCPCordinateZ {属性} ==> tcpZGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateZ");
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC);
+
+            // 绑定：ToolTCPCordinateRX {属性} ==> tcpRXGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRX");
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC);
+
+            // 绑定：ToolTCPCordinateRY {属性} ==> tcpRYGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRY");
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC);
+
+            // 绑定：ToolTCPCordinateRZ {属性} ==> tcpRZGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC = new Binding();
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Source = this;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRZ");
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Converter = convertD2S;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC);
+            #endregion
+        }
+
+        /// <summary>
+        /// 绑定域 --| Parameters Needed To Show On Window --> Tool Force And Torque |-- 内元素
+        /// </summary>
+        private void BindingItemsParametersNeededToShowOnWindowToolForceAndTorque()
+        {
+            #region BaseControl
+            // 绑定：ToolForceX {属性} ==> tcpFXMotion {BaseControl控件}
+            Binding bindingFromToolForceXToTcpFXMotion = new Binding();
+            bindingFromToolForceXToTcpFXMotion.Source = this;
+            bindingFromToolForceXToTcpFXMotion.Path = new PropertyPath("ToolForceX");
+            bindingFromToolForceXToTcpFXMotion.Mode = BindingMode.OneWay;
+            bindingFromToolForceXToTcpFXMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceXToTcpFXMotion.Converter = convertD2S;
+            bindingFromToolForceXToTcpFXMotion.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(bc.tcpFXMotion, TextBox.TextProperty, bindingFromToolForceXToTcpFXMotion);
+
+            // 绑定：ToolForceY {属性} ==> tcpFYMotion {BaseControl控件}
+            Binding bindingFromToolForceYToTcpFYMotion = new Binding();
+            bindingFromToolForceYToTcpFYMotion.Source = this;
+            bindingFromToolForceYToTcpFYMotion.Path = new PropertyPath("ToolForceY");
+            bindingFromToolForceYToTcpFYMotion.Mode = BindingMode.OneWay;
+            bindingFromToolForceYToTcpFYMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceYToTcpFYMotion.Converter = convertD2S;
+            bindingFromToolForceYToTcpFYMotion.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(bc.tcpFYMotion, TextBox.TextProperty, bindingFromToolForceYToTcpFYMotion);
+
+            // 绑定：ToolForceZ {属性} ==> tcpFZMotion {BaseControl控件}
+            Binding bindingFromToolForceZToTcpFZMotion = new Binding();
+            bindingFromToolForceZToTcpFZMotion.Source = this;
+            bindingFromToolForceZToTcpFZMotion.Path = new PropertyPath("ToolForceZ");
+            bindingFromToolForceZToTcpFZMotion.Mode = BindingMode.OneWay;
+            bindingFromToolForceZToTcpFZMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceZToTcpFZMotion.Converter = convertD2S;
+            bindingFromToolForceZToTcpFZMotion.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(bc.tcpFZMotion, TextBox.TextProperty, bindingFromToolForceZToTcpFZMotion);
+
+            // 绑定：ToolTorqueX {属性} ==> tcpTXMotion {BaseControl控件}
+            Binding bindingFromToolTorqueXToTcpTXMotion = new Binding();
+            bindingFromToolTorqueXToTcpTXMotion.Source = this;
+            bindingFromToolTorqueXToTcpTXMotion.Path = new PropertyPath("ToolTorqueX");
+            bindingFromToolTorqueXToTcpTXMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTorqueXToTcpTXMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTorqueXToTcpTXMotion.Converter = convertD2S;
+            bindingFromToolTorqueXToTcpTXMotion.ConverterParameter = valueP1D3;
+            BindingOperations.SetBinding(bc.tcpTXMotion, TextBox.TextProperty, bindingFromToolTorqueXToTcpTXMotion);
+
+            // 绑定：ToolTorqueY {属性} ==> tcpTYMotion {BaseControl控件}
+            Binding bindingFromToolTorqueYToTcpTYMotion = new Binding();
+            bindingFromToolTorqueYToTcpTYMotion.Source = this;
+            bindingFromToolTorqueYToTcpTYMotion.Path = new PropertyPath("ToolTorqueY");
+            bindingFromToolTorqueYToTcpTYMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTorqueYToTcpTYMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTorqueYToTcpTYMotion.Converter = convertD2S;
+            bindingFromToolTorqueYToTcpTYMotion.ConverterParameter = valueP1D3;
+            BindingOperations.SetBinding(bc.tcpTYMotion, TextBox.TextProperty, bindingFromToolTorqueYToTcpTYMotion);
+
+            // 绑定：ToolTorqueZ {属性} ==> tcpTZMotion {BaseControl控件}
+            Binding bindingFromToolTorqueZToTcpTZMotion = new Binding();
+            bindingFromToolTorqueZToTcpTZMotion.Source = this;
+            bindingFromToolTorqueZToTcpTZMotion.Path = new PropertyPath("ToolTorqueZ");
+            bindingFromToolTorqueZToTcpTZMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTorqueZToTcpTZMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTorqueZToTcpTZMotion.Converter = convertD2S;
+            bindingFromToolTorqueZToTcpTZMotion.ConverterParameter = valueP1D3;
+            BindingOperations.SetBinding(bc.tcpTZMotion, TextBox.TextProperty, bindingFromToolTorqueZToTcpTZMotion);
+            #endregion
+
+            #region GalactophoreDetect
+            // 绑定：ToolForceX {属性} ==> tcpFXGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolForceXToTcpFXGalactophore = new Binding();
+            bindingFromToolForceXToTcpFXGalactophore.Source = this;
+            bindingFromToolForceXToTcpFXGalactophore.Path = new PropertyPath("ToolForceX");
+            bindingFromToolForceXToTcpFXGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolForceXToTcpFXGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceXToTcpFXGalactophore.Converter = convertD2S;
+            bindingFromToolForceXToTcpFXGalactophore.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(gd.tcpFXGalactophore, TextBox.TextProperty, bindingFromToolForceXToTcpFXGalactophore);
+
+            // 绑定：ToolForceY {属性} ==> tcpFYGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolForceYToTcpFYGalactophore = new Binding();
+            bindingFromToolForceYToTcpFYGalactophore.Source = this;
+            bindingFromToolForceYToTcpFYGalactophore.Path = new PropertyPath("ToolForceY");
+            bindingFromToolForceYToTcpFYGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolForceYToTcpFYGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceYToTcpFYGalactophore.Converter = convertD2S;
+            bindingFromToolForceYToTcpFYGalactophore.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(gd.tcpFYGalactophore, TextBox.TextProperty, bindingFromToolForceYToTcpFYGalactophore);
+
+            // 绑定：ToolForceZ {属性} ==> tcpFZGalactophore {GalactophoreDetect控件}
+            Binding bindingFromToolForceZToTcpFZGalactophore = new Binding();
+            bindingFromToolForceZToTcpFZGalactophore.Source = this;
+            bindingFromToolForceZToTcpFZGalactophore.Path = new PropertyPath("ToolForceZ");
+            bindingFromToolForceZToTcpFZGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolForceZToTcpFZGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceZToTcpFZGalactophore.Converter = convertD2S;
+            bindingFromToolForceZToTcpFZGalactophore.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(gd.tcpFZGalactophore, TextBox.TextProperty, bindingFromToolForceZToTcpFZGalactophore);
+            #endregion
+        }
+
+        /// <summary>
+        /// 绑定域 --| Parameters Needed To Show On Window --> Robot Joints Currents |-- 内元素
+        /// </summary>
+        private void BindingItemsParametersNeededToShowOnWindowRobotJointsCurrents()
+        {
+            // 绑定：RobotJointBaseCurrent {属性} ==> baseCurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointBaseCurrentToBaseCurrentMotion = new Binding();
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.Source = this;
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.Path = new PropertyPath("RobotJointBaseCurrent");
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointBaseCurrentToBaseCurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.baseCurrentMotion, TextBox.TextProperty, bindingFromRobotJointBaseCurrentToBaseCurrentMotion);
+
+            // 绑定：RobotJointShoulderCurrent {属性} ==> shoulderCurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion = new Binding();
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.Source = this;
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.Path = new PropertyPath("RobotJointShoulderCurrent");
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.shoulderCurrentMotion, TextBox.TextProperty, bindingFromRobotJointShoulderCurrentToShoulderCurrentMotion);
+
+            // 绑定：RobotJointElbowCurrent {属性} ==> elbowCurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointElbowCurrentToElbowCurrentMotion = new Binding();
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.Source = this;
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.Path = new PropertyPath("RobotJointElbowCurrent");
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointElbowCurrentToElbowCurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.elbowCurrentMotion, TextBox.TextProperty, bindingFromRobotJointElbowCurrentToElbowCurrentMotion);
+
+            // 绑定：RobotJointWrist1Current {属性} ==> wrist1CurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion = new Binding();
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.Source = this;
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.Path = new PropertyPath("RobotJointWrist1Current");
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.wrist1CurrentMotion, TextBox.TextProperty, bindingFromRobotJointWrist1CurrentToWrist1CurrentMotion);
+
+            // 绑定：RobotJointWrist2Current {属性} ==> wrist2CurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion = new Binding();
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.Source = this;
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.Path = new PropertyPath("RobotJointWrist2Current");
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.wrist2CurrentMotion, TextBox.TextProperty, bindingFromRobotJointWrist2CurrentToWrist2CurrentMotion);
+
+            // 绑定：RobotJointWrist3Current {属性} ==> wrist3CurrentMotion {BaseControl控件}
+            Binding bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion = new Binding();
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.Source = this;
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.Path = new PropertyPath("RobotJointWrist3Current");
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.Converter = convertD2S;
+            bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion.ConverterParameter = valueP1000D1;
+            BindingOperations.SetBinding(bc.wrist3CurrentMotion, TextBox.TextProperty, bindingFromRobotJointWrist3CurrentToWrist3CurrentMotion);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Parameters Needed To Show On Window --> Robot Joints Angles |-- 内元素
+        /// </summary>
+        private void BindingItemsParametersNeededToShowOnWindowRobotJointsAngles()
+        {
+            // 绑定：RobotJointBaseAngle {属性} ==> j1Silder {BaseControl控件}
+            Binding bindingFromRobotJointBaseAngleToJ1Silder = new Binding();
+            bindingFromRobotJointBaseAngleToJ1Silder.Source = this;
+            bindingFromRobotJointBaseAngleToJ1Silder.Path = new PropertyPath("RobotJointBaseAngle");
+            bindingFromRobotJointBaseAngleToJ1Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointBaseAngleToJ1Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointBaseAngleToJ1Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointBaseAngleToJ1Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j1Silder, Slider.ValueProperty, bindingFromRobotJointBaseAngleToJ1Silder);
+
+            // 绑定：RobotJointShoulderAngle {属性} ==> j2Silder {BaseControl控件}
+            Binding bindingFromRobotJointShoulderAngleToJ2Silder = new Binding();
+            bindingFromRobotJointShoulderAngleToJ2Silder.Source = this;
+            bindingFromRobotJointShoulderAngleToJ2Silder.Path = new PropertyPath("RobotJointShoulderAngle");
+            bindingFromRobotJointShoulderAngleToJ2Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointShoulderAngleToJ2Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointShoulderAngleToJ2Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointShoulderAngleToJ2Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j2Silder, Slider.ValueProperty, bindingFromRobotJointShoulderAngleToJ2Silder);
+
+            // 绑定：RobotJointElbowAngle {属性} ==> j3Silder {BaseControl控件}
+            Binding bindingFromRobotJointElbowAngleToJ3Silder = new Binding();
+            bindingFromRobotJointElbowAngleToJ3Silder.Source = this;
+            bindingFromRobotJointElbowAngleToJ3Silder.Path = new PropertyPath("RobotJointElbowAngle");
+            bindingFromRobotJointElbowAngleToJ3Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointElbowAngleToJ3Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointElbowAngleToJ3Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointElbowAngleToJ3Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j3Silder, Slider.ValueProperty, bindingFromRobotJointElbowAngleToJ3Silder);
+
+            // 绑定：RobotJointWrist1Angle {属性} ==> j4Silder {BaseControl控件}
+            Binding bindingFromRobotJointWrist1AngleToJ4Silder = new Binding();
+            bindingFromRobotJointWrist1AngleToJ4Silder.Source = this;
+            bindingFromRobotJointWrist1AngleToJ4Silder.Path = new PropertyPath("RobotJointWrist1Angle");
+            bindingFromRobotJointWrist1AngleToJ4Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist1AngleToJ4Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist1AngleToJ4Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointWrist1AngleToJ4Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j4Silder, Slider.ValueProperty, bindingFromRobotJointWrist1AngleToJ4Silder);
+
+            // 绑定：RobotJointWrist2Angle {属性} ==> j5Silder {BaseControl控件}
+            Binding bindingFromRobotJointWrist2AngleToJ5Silder = new Binding();
+            bindingFromRobotJointWrist2AngleToJ5Silder.Source = this;
+            bindingFromRobotJointWrist2AngleToJ5Silder.Path = new PropertyPath("RobotJointWrist2Angle");
+            bindingFromRobotJointWrist2AngleToJ5Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist2AngleToJ5Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist2AngleToJ5Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointWrist2AngleToJ5Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j5Silder, Slider.ValueProperty, bindingFromRobotJointWrist2AngleToJ5Silder);
+
+            // 绑定：RobotJointWrist3Angle {属性} ==> j6Silder {BaseControl控件}
+            Binding bindingFromRobotJointWrist3AngleToJ6Silder = new Binding();
+            bindingFromRobotJointWrist3AngleToJ6Silder.Source = this;
+            bindingFromRobotJointWrist3AngleToJ6Silder.Path = new PropertyPath("RobotJointWrist3Angle");
+            bindingFromRobotJointWrist3AngleToJ6Silder.Mode = BindingMode.OneWay;
+            bindingFromRobotJointWrist3AngleToJ6Silder.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromRobotJointWrist3AngleToJ6Silder.Converter = convertD2DSlider;
+            bindingFromRobotJointWrist3AngleToJ6Silder.ConverterParameter = radToDegRatio;
+            BindingOperations.SetBinding(bc.j6Silder, Slider.ValueProperty, bindingFromRobotJointWrist3AngleToJ6Silder);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Nipple Position At Galactophore Detecting |-- 内元素
+        /// </summary>
+        private void BindingItemsNipplePositionAtGalactophoreDetecting()
+        {
+            // 绑定：NipplePositionGDR {属性} ==> nippleX {GalactophoreDetect控件}
+            Binding bindingFromNipplePositionGDRToNippleX = new Binding();
+            bindingFromNipplePositionGDRToNippleX.Source = this;
+            bindingFromNipplePositionGDRToNippleX.Path = new PropertyPath("NipplePositionGDR");
+            bindingFromNipplePositionGDRToNippleX.Mode = BindingMode.OneWay;
+            bindingFromNipplePositionGDRToNippleX.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromNipplePositionGDRToNippleX.Converter = convertDA2D;
+            bindingFromNipplePositionGDRToNippleX.ConverterParameter = new int[] { 0, 1000 };
+            BindingOperations.SetBinding(gd.nippleX, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleX);
+
+            // 绑定：NipplePositionGDR {属性} ==> nippleY {GalactophoreDetect控件}
+            Binding bindingFromNipplePositionGDRToNippleY = new Binding();
+            bindingFromNipplePositionGDRToNippleY.Source = this;
+            bindingFromNipplePositionGDRToNippleY.Path = new PropertyPath("NipplePositionGDR");
+            bindingFromNipplePositionGDRToNippleY.Mode = BindingMode.OneWay;
+            bindingFromNipplePositionGDRToNippleY.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromNipplePositionGDRToNippleY.Converter = convertDA2D;
+            bindingFromNipplePositionGDRToNippleY.ConverterParameter = new int[] { 1, 1000 };
+            BindingOperations.SetBinding(gd.nippleY, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleY);
+
+            // 绑定：NipplePositionGDR {属性} ==> nippleZ {GalactophoreDetect控件}
+            Binding bindingFromNipplePositionGDRToNippleZ = new Binding();
+            bindingFromNipplePositionGDRToNippleZ.Source = this;
+            bindingFromNipplePositionGDRToNippleZ.Path = new PropertyPath("NipplePositionGDR");
+            bindingFromNipplePositionGDRToNippleZ.Mode = BindingMode.OneWay;
+            bindingFromNipplePositionGDRToNippleZ.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromNipplePositionGDRToNippleZ.Converter = convertDA2D;
+            bindingFromNipplePositionGDRToNippleZ.ConverterParameter = new int[] { 2, 1000 };
+            BindingOperations.SetBinding(gd.nippleZ, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleZ);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Direction Force Limits And Speed Limits |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingDirectionForceLimitsAndSpeedLimits()
+        {
+            // 绑定：DetectingErrorForceMinGDR {属性} ==> minForceSlider {Flyout控件}
+            Binding bindingFromDetectingErrorForceMinGDRToMinForceSlider = new Binding();
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.Source = this;
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.Path = new PropertyPath("DetectingErrorForceMinGDR");
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.Mode = BindingMode.OneWay;
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.Converter = convertD2DI;
+            bindingFromDetectingErrorForceMinGDRToMinForceSlider.ConverterParameter = new double[] { 0.0, 4.0 };
+            BindingOperations.SetBinding(mw.minForceSlider, Slider.ValueProperty, bindingFromDetectingErrorForceMinGDRToMinForceSlider);
+
+            // 绑定：DetectingErrorForceMaxGDR {属性} ==> maxForceSlider {Flyout控件}
+            Binding bindingFromDetectingErrorForceMaxGDRToMaxForceSlider = new Binding();
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.Source = this;
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.Path = new PropertyPath("DetectingErrorForceMaxGDR");
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.Mode = BindingMode.OneWay;
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.Converter = convertD2DI;
+            bindingFromDetectingErrorForceMaxGDRToMaxForceSlider.ConverterParameter = new double[] { -1.5, 2.0 };
+            BindingOperations.SetBinding(mw.maxForceSlider, Slider.ValueProperty, bindingFromDetectingErrorForceMaxGDRToMaxForceSlider);
+
+            // 绑定：DetectingSpeedMinGDR {属性} ==> minDetectSpeedSlider {Flyout控件}
+            Binding bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider = new Binding();
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.Source = this;
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.Path = new PropertyPath("DetectingSpeedMinGDR");
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.Mode = BindingMode.OneWay;
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.Converter = convertD2DI;
+            bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider.ConverterParameter = new double[] { 0.0, 10000.0 };
+            BindingOperations.SetBinding(mw.minDetectSpeedSlider, Slider.ValueProperty, bindingFromDetectingSpeedMinGDRToMinDetectSpeedSlider);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Force Change |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingForceChange()
+        {
+            // 绑定：IfEnableDetectingForceChangeAtTransitionalPartGDR {属性} ==> DFAtTSwitch {Flyout控件}
+            Binding bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch = new Binding();
+            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Source = this;
+            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Path = new PropertyPath("IfEnableDetectingForceChangeAtTransitionalPartGDR");
+            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.DFAtTSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Motion Limits |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingMotionLimits()
+        {
+            // 绑定：NippleForbiddenRadiusGDR {属性} ==> minRadius {GalactophoreDetect控件}
+            Binding bindingFromNippleForbiddenRadiusGDRToMinRadius = new Binding();
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.Source = this;
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.Path = new PropertyPath("NippleForbiddenRadiusGDR");
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.Mode = BindingMode.OneWay;
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.Converter = convertD2S;
+            bindingFromNippleForbiddenRadiusGDRToMinRadius.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.minRadius, TextBox.TextProperty, bindingFromNippleForbiddenRadiusGDRToMinRadius);
+
+            // 绑定：DetectingStopDistanceGDR {属性} ==> scanDistance {GalactophoreDetect控件}
+            Binding bindingFromDetectingStopDistanceGDRToScanDistance = new Binding();
+            bindingFromDetectingStopDistanceGDRToScanDistance.Source = this;
+            bindingFromDetectingStopDistanceGDRToScanDistance.Path = new PropertyPath("DetectingStopDistanceGDR");
+            bindingFromDetectingStopDistanceGDRToScanDistance.Mode = BindingMode.OneWay;
+            bindingFromDetectingStopDistanceGDRToScanDistance.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingStopDistanceGDRToScanDistance.Converter = convertD2S;
+            bindingFromDetectingStopDistanceGDRToScanDistance.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.scanDistance, TextBox.TextProperty, bindingFromDetectingStopDistanceGDRToScanDistance);
+
+            // 绑定：DetectingSafetyLiftDistanceGDR {属性} ==> liftDistance {GalactophoreDetect控件}
+            Binding bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance = new Binding();
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.Source = this;
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.Path = new PropertyPath("DetectingSafetyLiftDistanceGDR");
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.Mode = BindingMode.OneWay;
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.Converter = convertD2S;
+            bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.liftDistance, TextBox.TextProperty, bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance);
+
+            // 绑定：DetectingSinkDistanceGDR {属性} ==> sinkDistance {GalactophoreDetect控件}
+            Binding bindingFromDetectingSinkDistanceGDRToSinkDistance = new Binding();
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.Source = this;
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.Path = new PropertyPath("DetectingSinkDistanceGDR");
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.Mode = BindingMode.OneWay;
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.Converter = convertD2S;
+            bindingFromDetectingSinkDistanceGDRToSinkDistance.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.sinkDistance, TextBox.TextProperty, bindingFromDetectingSinkDistanceGDRToSinkDistance);
+
+            // 绑定：IfEnableDetectingForceCheckGDR {属性} ==> DFCheckSwitch {Flyout控件}
+            Binding bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch = new Binding();
+            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Source = this;
+            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Path = new PropertyPath("IfEnableDetectingForceCheckGDR");
+            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.DFCheckSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Degree Control Parameters |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDegreeControlParameters()
+        {
+            // 绑定：VibratingAngleDegreeGDR {属性} ==> vibrateDegreeSlider {Flyout控件}
+            Binding bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider = new Binding();
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.Source = this;
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.Path = new PropertyPath("VibratingAngleDegreeGDR");
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.Mode = BindingMode.OneWay;
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.Converter = convertE2D;
+            bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider.ConverterParameter = typeof(GalactophoreDetector.VibratingMagnitude);
+            BindingOperations.SetBinding(mw.vibrateDegreeSlider, Slider.ValueProperty, bindingFromVibratingAngleDegreeGDRToVibrateDegreeSlider);
+
+            // 绑定：MovingSpeedDegreeGDR {属性} ==> speedDegreeSlider {Flyout控件}
+            Binding bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider = new Binding();
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.Source = this;
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.Path = new PropertyPath("MovingSpeedDegreeGDR");
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.Mode = BindingMode.OneWay;
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.Converter = convertE2D;
+            bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider.ConverterParameter = typeof(GalactophoreDetector.MovingLevel);
+            BindingOperations.SetBinding(mw.speedDegreeSlider, Slider.ValueProperty, bindingFromMovingSpeedDegreeGDRToSpeedDegreeSlider);
+
+            // 绑定：DetectingForceDegreeGDR {属性} ==> forceDegreeSlider {Flyout控件}
+            Binding bindingFromDetectingForceDegreeGDRToForceDegreeSlider = new Binding();
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.Source = this;
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.Path = new PropertyPath("DetectingForceDegreeGDR");
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.Mode = BindingMode.OneWay;
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.Converter = convertE2D;
+            bindingFromDetectingForceDegreeGDRToForceDegreeSlider.ConverterParameter = typeof(GalactophoreDetector.DetectingIntensity);
+            BindingOperations.SetBinding(mw.forceDegreeSlider, Slider.ValueProperty, bindingFromDetectingForceDegreeGDRToForceDegreeSlider);
+
+            // 绑定：DetectingAlignDegreeGDR {属性} ==> attachSwitch {Flyout控件}
+            Binding bindingFromDetectingAlignDegreeGDRToAttachSwitch = new Binding();
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.Source = this;
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.Path = new PropertyPath("DetectingAlignDegreeGDR");
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.Mode = BindingMode.OneWay;
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.Converter = convertE2B;
+            bindingFromDetectingAlignDegreeGDRToAttachSwitch.ConverterParameter = typeof(GalactophoreDetector.AligningDegree);
+            BindingOperations.SetBinding(mw.attachSwitch, ToggleSwitch.IsCheckedProperty, bindingFromDetectingAlignDegreeGDRToAttachSwitch);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Edge |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingEdge()
+        {
+            // 绑定：IdentifyEdgeModeGDR {属性} ==> borderModeSlider {Flyout控件}
+            Binding bindingFromIdentifyEdgeModeGDRToBorderModeSlider = new Binding();
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.Source = this;
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.Path = new PropertyPath("IdentifyEdgeModeGDR");
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.Mode = BindingMode.OneWay;
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.Converter = convertE2D;
+            bindingFromIdentifyEdgeModeGDRToBorderModeSlider.ConverterParameter = typeof(GalactophoreDetector.IdentifyBoundary);
+            BindingOperations.SetBinding(mw.borderModeSlider, Slider.ValueProperty, bindingFromIdentifyEdgeModeGDRToBorderModeSlider);
+
+            // 绑定：MovingUpEdgeDistanceGDR {属性} ==> headBound {GalactophoreDetect控件}
+            Binding bindingFromMovingUpEdgeDistanceGDRToHeadBound = new Binding();
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.Source = this;
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.Path = new PropertyPath("MovingUpEdgeDistanceGDR");
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.Mode = BindingMode.OneWay;
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.Converter = convertD2S;
+            bindingFromMovingUpEdgeDistanceGDRToHeadBound.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.headBound, TextBox.TextProperty, bindingFromMovingUpEdgeDistanceGDRToHeadBound);
+
+            // 绑定：MovingDownEdgeDistanceGDR {属性} ==> tailBound {GalactophoreDetect控件}
+            Binding bindingFromMovingDownEdgeDistanceGDRToTailBound = new Binding();
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.Source = this;
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.Path = new PropertyPath("MovingDownEdgeDistanceGDR");
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.Mode = BindingMode.OneWay;
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.Converter = convertD2S;
+            bindingFromMovingDownEdgeDistanceGDRToTailBound.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.tailBound, TextBox.TextProperty, bindingFromMovingDownEdgeDistanceGDRToTailBound);
+
+            // 绑定：MovingLeftEdgeDistanceGDR {属性} ==> outBound {GalactophoreDetect控件}
+            Binding bindingFromMovingLeftEdgeDistanceGDRToOutBound = new Binding();
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.Source = this;
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.Path = new PropertyPath("MovingLeftEdgeDistanceGDR");
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.Mode = BindingMode.OneWay;
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.Converter = convertD2S;
+            bindingFromMovingLeftEdgeDistanceGDRToOutBound.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.outBound, TextBox.TextProperty, bindingFromMovingLeftEdgeDistanceGDRToOutBound);
+
+            // 绑定：MovingRightEdgeDistanceGDR {属性} ==> inBound {GalactophoreDetect控件}
+            Binding bindingFromMovingRightEdgeDistanceGDRToInBound = new Binding();
+            bindingFromMovingRightEdgeDistanceGDRToInBound.Source = this;
+            bindingFromMovingRightEdgeDistanceGDRToInBound.Path = new PropertyPath("MovingRightEdgeDistanceGDR");
+            bindingFromMovingRightEdgeDistanceGDRToInBound.Mode = BindingMode.OneWay;
+            bindingFromMovingRightEdgeDistanceGDRToInBound.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMovingRightEdgeDistanceGDRToInBound.Converter = convertD2S;
+            bindingFromMovingRightEdgeDistanceGDRToInBound.ConverterParameter = valueP1000D0;
+            BindingOperations.SetBinding(gd.inBound, TextBox.TextProperty, bindingFromMovingRightEdgeDistanceGDRToInBound);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Other |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfGalactophoreDetectorOther()
+        {
+            // 绑定：IfAutoReplaceConfigurationGDR {属性} ==> autoSaveSwitch {Flyout控件}
+            Binding bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch = new Binding();
+            bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch.Source = this;
+            bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch.Path = new PropertyPath("IfAutoReplaceConfigurationGDR");
+            bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.autoSaveSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfAutoReplaceConfigurationGDRToAutoSaveSwitch);
+
+            // 绑定：IfCheckRightGalactophoreGDR {属性} ==> galactophoreDirectionSwitch {Flyout控件}
+            Binding bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch = new Binding();
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.Source = this;
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.Path = new PropertyPath("IfCheckRightGalactophoreGDR");
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.Converter = convertE2B;
+            bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch.ConverterParameter = typeof(GalactophoreDetector.ScanningRegion);
+            BindingOperations.SetBinding(mw.galactophoreDirectionSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfCheckRightGalactophoreGDRToGalactophoreDirectionSwitch);
+
+            // 绑定：CheckingStepGDR {属性} ==> rotateStepSlider {Flyout控件}
+            Binding bindingFromCheckingStepGDRToRotateStepSlider = new Binding();
+            bindingFromCheckingStepGDRToRotateStepSlider.Source = this;
+            bindingFromCheckingStepGDRToRotateStepSlider.Path = new PropertyPath("CheckingStepGDR");
+            bindingFromCheckingStepGDRToRotateStepSlider.Mode = BindingMode.OneWay;
+            bindingFromCheckingStepGDRToRotateStepSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromCheckingStepGDRToRotateStepSlider.Converter = convertD2DI;
+            bindingFromCheckingStepGDRToRotateStepSlider.ConverterParameter = new double[] { -Math.PI / 12.0, radToDegRatio };
+            BindingOperations.SetBinding(mw.rotateStepSlider, Slider.ValueProperty, bindingFromCheckingStepGDRToRotateStepSlider);
+        }
+
+        /// <summary>
+        /// 联合绑定
+        /// 绑定域 --| GalactophoreDetector Working Status |-- 内元素
+        /// 绑定域 --| GalactophoreDetector Paramete Confirm |-- 内元素
+        /// 绑定域 --| GalactophoreDetector ForceSenor Cleared |-- 内元素
+        /// 绑定域 --| GalactophoreDetector Parameter Confirm State |-- 内元素
+        /// </summary>
+        private void BindingItemsGalactophoreDetectorWorkingStatus()
+        {
+            // 绑定：GalactophoreDetectorWorkStatus {属性} ==> {i} {GalactophorDetect控件}
+            Binding bindingFromGalactophoreDetectorWorkStatus = new Binding();
+            bindingFromGalactophoreDetectorWorkStatus.Source = this;
+            bindingFromGalactophoreDetectorWorkStatus.Path = new PropertyPath("GalactophoreDetectorWorkStatus");
+            bindingFromGalactophoreDetectorWorkStatus.Mode = BindingMode.OneWay;
+            bindingFromGalactophoreDetectorWorkStatus.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：GalactophoreDetectorParameterConfirm {属性} ==> {i} {GalactophorDetect控件}
+            Binding bindingFromGalactophoreDetectorParameterConfirm = new Binding();
+            bindingFromGalactophoreDetectorParameterConfirm.Source = this;
+            bindingFromGalactophoreDetectorParameterConfirm.Path = new PropertyPath("GalactophoreDetectorParameterConfirm");
+            bindingFromGalactophoreDetectorParameterConfirm.Mode = BindingMode.OneWay;
+            bindingFromGalactophoreDetectorParameterConfirm.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：GalactophoreDetectorForceSensorCleared {属性} ==> {i} {GalactophorDetect控件}
+            Binding bindingFromGalactophoreDetectorForceSensorCleared = new Binding();
+            bindingFromGalactophoreDetectorForceSensorCleared.Source = this;
+            bindingFromGalactophoreDetectorForceSensorCleared.Path = new PropertyPath("GalactophoreDetectorForceSensorCleared");
+            bindingFromGalactophoreDetectorForceSensorCleared.Mode = BindingMode.OneWay;
+            bindingFromGalactophoreDetectorForceSensorCleared.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：GalactophoreDetectorParameterConfirmState {属性} ==> {i} {GalactophorDetect控件}
+            Binding bindingFromGalactophoreDetectorParameterConfirmState = new Binding();
+            bindingFromGalactophoreDetectorParameterConfirmState.Source = this;
+            bindingFromGalactophoreDetectorParameterConfirmState.Path = new PropertyPath("GalactophoreDetectorParameterConfirmState");
+            bindingFromGalactophoreDetectorParameterConfirmState.Mode = BindingMode.OneWay;
+            bindingFromGalactophoreDetectorParameterConfirmState.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 1. iconBackGalactophore
+            MultiBinding mbindingToIconBackGalactophore = new MultiBinding();
+            mbindingToIconBackGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconBackGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconBackGalactophore.Converter = convertMS2EB;
+            mbindingToIconBackGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.CanDoWork } };
+            BindingOperations.SetBinding(gd.iconBackGalactophore, IconButton.IsEnabledProperty, mbindingToIconBackGalactophore);
+
+            // 2. iconForceToZeroGalactophore
+            MultiBinding mbindingToIconForceToZeroGalactophore = new MultiBinding();
+            mbindingToIconForceToZeroGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconForceToZeroGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconForceToZeroGalactophore.Converter = convertMS2EB;
+            mbindingToIconForceToZeroGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.CanDoWork } };
+            BindingOperations.SetBinding(gd.iconForceToZeroGalactophore, IconButton.IsEnabledProperty, mbindingToIconForceToZeroGalactophore);
+
+            // 3. iconFromZeroToConfGalactophore
+            MultiBinding mbindingToIconFromZeroToConfGalactophore = new MultiBinding();
+            mbindingToIconFromZeroToConfGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconFromZeroToConfGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconFromZeroToConfGalactophore.Bindings.Add(bindingFromGalactophoreDetectorForceSensorCleared);
+            mbindingToIconFromZeroToConfGalactophore.Converter = convertMS2EB;
+            mbindingToIconFromZeroToConfGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(gd.iconFromZeroToConfGalactophore, IconButton.IsEnabledProperty, mbindingToIconFromZeroToConfGalactophore);
+
+            // 4. iconConfGalactophore
+            MultiBinding mbindingToIconConfGalactophore = new MultiBinding();
+            mbindingToIconConfGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconConfGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfGalactophore.Bindings.Add(bindingFromGalactophoreDetectorForceSensorCleared);
+            mbindingToIconConfGalactophore.Converter = convertMS2EB;
+            mbindingToIconConfGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(gd.iconConfGalactophore, IconButton.IsEnabledProperty, mbindingToIconConfGalactophore);
+
+            // 5. iconFromConfToParaGalactophore
+            MultiBinding mbindingToIconFromConfToParaGalactophore = new MultiBinding();
+            mbindingToIconFromConfToParaGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconFromConfToParaGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconFromConfToParaGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconFromConfToParaGalactophore.Converter = convertMS2EB;
+            mbindingToIconFromConfToParaGalactophore.ConverterParameter = new object[] { new byte[] { 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconFromConfToParaGalactophore, IconButton.IsEnabledProperty, mbindingToIconFromConfToParaGalactophore);
+
+            // 6. iconConfNipple
+            MultiBinding mbindingToIconConfNipple = new MultiBinding();
+            mbindingToIconConfNipple.Mode = BindingMode.OneWay;
+            mbindingToIconConfNipple.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfNipple.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfNipple.Converter = convertMS2EB;
+            mbindingToIconConfNipple.ConverterParameter = new object[] { new byte[] { 1, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfNipple, IconButton.IsEnabledProperty, mbindingToIconConfNipple);
+
+            // 7. iconConfLift
+            MultiBinding mbindingToIconConfLift = new MultiBinding();
+            mbindingToIconConfLift.Mode = BindingMode.OneWay;
+            mbindingToIconConfLift.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfLift.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfLift.Converter = convertMS2EB;
+            mbindingToIconConfLift.ConverterParameter = new object[] { new byte[] { 2, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfLift, IconButton.IsEnabledProperty, mbindingToIconConfLift);
+
+            // 8. iconConfForbidden
+            MultiBinding mbindingToIconConfForbidden = new MultiBinding();
+            mbindingToIconConfForbidden.Mode = BindingMode.OneWay;
+            mbindingToIconConfForbidden.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfForbidden.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfForbidden.Converter = convertMS2EB;
+            mbindingToIconConfForbidden.ConverterParameter = new object[] { new byte[] { 3, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfForbidden, IconButton.IsEnabledProperty, mbindingToIconConfForbidden);
+
+            // 9. iconConfScan
+            MultiBinding mbindingToIconConfScan = new MultiBinding();
+            mbindingToIconConfScan.Mode = BindingMode.OneWay;
+            mbindingToIconConfScan.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfScan.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfScan.Converter = convertMS2EB;
+            mbindingToIconConfScan.ConverterParameter = new object[] { new byte[] { 4, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfScan, IconButton.IsEnabledProperty, mbindingToIconConfScan);
+
+            // 10. iconConfUp
+            MultiBinding mbindingToIconConfUp = new MultiBinding();
+            mbindingToIconConfUp.Mode = BindingMode.OneWay;
+            mbindingToIconConfUp.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfUp.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfUp.Converter = convertMS2EB;
+            mbindingToIconConfUp.ConverterParameter = new object[] { new byte[] { 5, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfUp, IconButton.IsEnabledProperty, mbindingToIconConfUp);
+
+            // 11. iconConfDown
+            MultiBinding mbindingToIconConfDown = new MultiBinding();
+            mbindingToIconConfDown.Mode = BindingMode.OneWay;
+            mbindingToIconConfDown.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfDown.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfDown.Converter = convertMS2EB;
+            mbindingToIconConfDown.ConverterParameter = new object[] { new byte[] { 6, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfDown, IconButton.IsEnabledProperty, mbindingToIconConfDown);
+
+            // 12. iconConfLeft
+            MultiBinding mbindingToIconConfLeft = new MultiBinding();
+            mbindingToIconConfLeft.Mode = BindingMode.OneWay;
+            mbindingToIconConfLeft.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfLeft.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfLeft.Converter = convertMS2EB;
+            mbindingToIconConfLeft.ConverterParameter = new object[] { new byte[] { 7, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfLeft, IconButton.IsEnabledProperty, mbindingToIconConfLeft);
+
+            // 13. iconConfRight
+            MultiBinding mbindingToIconConfRight = new MultiBinding();
+            mbindingToIconConfRight.Mode = BindingMode.OneWay;
+            mbindingToIconConfRight.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfRight.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfRight.Converter = convertMS2EB;
+            mbindingToIconConfRight.ConverterParameter = new object[] { new byte[] { 8, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfRight, IconButton.IsEnabledProperty, mbindingToIconConfRight);
+
+            // 14. iconConfSink
+            MultiBinding mbindingToIconConfSink = new MultiBinding();
+            mbindingToIconConfSink.Mode = BindingMode.OneWay;
+            mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfSink.Converter = convertMS2EB;
+            mbindingToIconConfSink.ConverterParameter = new object[] { new byte[] { 9, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfSink, IconButton.IsEnabledProperty, mbindingToIconConfSink);
+
+            // 15. iconFromParaToConfirmGalactophore
+            MultiBinding mbindingToIconFromParaToConfirmGalactophore = new MultiBinding();
+            mbindingToIconFromParaToConfirmGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconFromParaToConfirmGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconFromParaToConfirmGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconFromParaToConfirmGalactophore.Converter = convertMS2EB;
+            mbindingToIconFromParaToConfirmGalactophore.ConverterParameter = new object[] { new byte[] { Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconFromParaToConfirmGalactophore, IconButton.IsEnabledProperty, mbindingToIconFromParaToConfirmGalactophore);
+
+            // 16. iconConfConfirmGalactophore
+            MultiBinding mbindingToIconConfConfirmGalactophore = new MultiBinding();
+            mbindingToIconConfConfirmGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconConfConfirmGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconConfConfirmGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToIconConfConfirmGalactophore.Converter = convertMS2EB;
+            mbindingToIconConfConfirmGalactophore.ConverterParameter = new object[] { new byte[] { Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconConfConfirmGalactophore, IconButton.IsEnabledProperty, mbindingToIconConfConfirmGalactophore);
+
+            // 17. iconFromConfirmToRunGalactophore
+            MultiBinding mbindingToIconFromConfirmToRunGalactophore = new MultiBinding();
+            mbindingToIconFromConfirmToRunGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconFromConfirmToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconFromConfirmToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorForceSensorCleared);
+            mbindingToIconFromConfirmToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirm);
+            mbindingToIconFromConfirmToRunGalactophore.Converter = convertMS2EB;
+            mbindingToIconFromConfirmToRunGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconFromConfirmToRunGalactophore, IconButton.IsEnabledProperty, mbindingToIconFromConfirmToRunGalactophore);
+
+            // 18. iconFromZeroToRunGalactophore
+            MultiBinding mbindingToIconFromZeroToRunGalactophore = new MultiBinding();
+            mbindingToIconFromZeroToRunGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconFromZeroToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconFromZeroToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorForceSensorCleared);
+            mbindingToIconFromZeroToRunGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirm);
+            mbindingToIconFromZeroToRunGalactophore.Converter = convertMS2EB;
+            mbindingToIconFromZeroToRunGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(gd.iconFromZeroToRunGalactophore, IconButton.IsEnabledProperty, mbindingToIconFromZeroToRunGalactophore);
+
+            // 19. iconBeginGalactophore
+            MultiBinding mbindingToIconBeginGalactophore = new MultiBinding();
+            mbindingToIconBeginGalactophore.Mode = BindingMode.OneWay;
+            mbindingToIconBeginGalactophore.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToIconBeginGalactophore.Bindings.Add(bindingFromGalactophoreDetectorForceSensorCleared);
+            mbindingToIconBeginGalactophore.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirm);
+            mbindingToIconBeginGalactophore.Converter = convertMS2EB;
+            mbindingToIconBeginGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice, OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.iconBeginGalactophore, IconButton.IsEnabledProperty, mbindingToIconBeginGalactophore);
+        }
+
+        #endregion
+
+
+
+
+        /// <summary>
+        /// View赋值
+        /// </summary>
+        /// <param name="MW">主窗口</param>
+        /// <param name="MP">主导航页</param>
+        /// <param name="BC">基本控制页</param>
+        /// <param name="GD">乳腺扫描页</param>
+        public void DefineViews(MainWindow MW, MainPage MP, BaseControl BC, GalactophoreDetect GD)
+        {
+            mw = MW;
+            mp = MP;
+            bc = BC;
+            gd = GD;
+        }
+
+        /// <summary>
+        /// Model初始化
+        /// </summary>
+        public void ModelInitialization()
+        {
+            if (!ResourceChecker.ResourceChecking())
+            {
+                EnableAll = false;
+                ShowDialog("资源配置检查过程出错！", "错误", 1);
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Resource directories or files are not correct.");
+                return;
+            }
+
+            if (!DataBaseInitialization()) return;
+            if (ifUsingSerialPort) SerialPortInitialization();
+            URExecutorInitialization();
+
+            GalactophoreDetectorInitialization();
+
+        }
+
+        /// <summary>
+        /// 初始化数据库连接和数据
+        /// </summary>
+        /// <returns>返回初始化结果</returns>
+        private bool DataBaseInitialization()
+        {
+            sqlsc = new SQLServerConnector();
+            sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
+
+            return ToolParameterRefresh();
+        }
+
+        /// <summary>
+        /// 工具参数根据数据库读取结果更新
+        /// </summary>
+        /// <returns>返回更新结果</returns>
+        private bool ToolParameterRefresh(ToolType NeededToolType = ToolType.Probe)
+        {
+            double[] searchBase = sqlsc.SearchToolBaseInformation((int)NeededToolType);
+            var collectionWithAbnormalParameters =
+                from element in searchBase
+                where element < -0.5
+                select element;
+            if (collectionWithAbnormalParameters.Count<double>() == searchBase.Length)
+            {
+                return false;
+            }
+
+            double[] searchPosition = sqlsc.SearchToolPositionInformation((int)NeededToolType);
+            collectionWithAbnormalParameters =
+                from element in searchPosition
+                where element < -0.5
+                select element;
+            if (collectionWithAbnormalParameters.Count<double>() == searchPosition.Length)
+            {
+                return false;
+            }
+
+            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType);
+            collectionWithAbnormalParameters =
+                from element in searchForce.Cast<double>()
+                where element < -0.5
+                select element;
+            if (collectionWithAbnormalParameters.Count<double>() == searchForce.Length)
+            {
+                return false;
+            }
+
+            currentToolType = NeededToolType;
+            if (currentRobotHanged =
+                (
+                Math.Abs(searchPosition[1]) + Math.Abs(searchPosition[2]) +
+                Math.Abs(searchPosition[3]) + Math.Abs(searchPosition[4]) +
+                Math.Abs(searchPosition[5]) + Math.Abs(searchPosition[6])
+                ) > Double.Epsilon * 10.0 ? true : false)
+            {
+                currentRobotInitialPosJoints = new double[] {
+                    searchPosition[1], searchPosition[2], searchPosition[3],
+                    searchPosition[4], searchPosition[5], searchPosition[6] };
+            }
+            else
+            {
+                currentRobotInitialPosJoints = new double[] {
+                    searchPosition[8], searchPosition[9], searchPosition[10],
+                    searchPosition[11], searchPosition[12], searchPosition[13] };
+            }
+            currentToolForceModifier = (double[,])searchForce.Clone();
+            currentToolForceModifyingMode = (UR30003Connector.ForceModifiedMode)((byte)currentToolType);
+            currentToolTcpEndPointCordinates = new double[] {
+                searchBase[0], searchBase[1], searchBase[2],
+                searchBase[3], searchBase[4], searchBase[5] };
+            currentToolGravityValue = searchBase[6];
+
+            return true;
+        }
+
+        /// <summary>
+        /// 初始化串口连接
+        /// </summary>
+        private void SerialPortInitialization()
+        {
+            sc = new SerialConnector(numOfCOM);
+            sc.OnSendCOMInvalid += new SerialBase.SendVoid(SerialPortCanNotBeAttached);
+        }
+
+        /// <summary>
+        /// 初始化UR连接、控制和信息传输的基本处理类
+        /// </summary>
+        private void URExecutorInitialization()
+        {
+            urdp = new URDataProcessor(
+                currentRobotType, currentRobotProgramType, currentSensorType,
+                robotControllerIP, forceSensorIP, forceConnectorIP,
+                timeOutDurationMS, ifProlongTimeOutDurationWhenConnectionBegin,
+                autoCheckingConnectableDurationMS, ifUsingForceSensor,
+                ifEnableCurrentOverFlowProtect, ifEnableForceOverFlowProtect,
+                ifEnableToolIO, new double[] { currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue },
+                new double[] { forceOverFlowBoundValue, torqueOverFlowBoundValue },
+                currentRobotHanged, digitalIOVoltage,
+                currentToolForceModifier, currentToolForceModifyingMode,
+                probeCalibrationMaxAmplitudeDeg, punctureUsingAttitudeFlag,
+                currentToolTcpEndPointCordinates, currentToolGravityValue);
+
+            urdp.OnSendEmergencyInformation += new UR30003Connector.SendShort(UREmergencyStatus);
+            urdp.OnSendURBrokenOrConnected += new UR30003Connector.SendShort(URNetState);
+            urdp.OnSendParams += new UR30003Connector.SendDoubleArray(URRefreshParams);
+            urdp.OnSendZeroedForceCompeleted += new URDataProcessor.SendVoid(URNullEventHandler);
+            urdp.OnSendPreciseCalibrationProcess += new UR30003Connector.SendShort(URNullEventHandler);
+            urdp.OnSendPreciseCalibrationDatas += new URDataProcessor.SendDoubleMatrix(URNullEventHandler);
+            urdp.OnSendNearSingularPoint += new UR30003Connector.SendShort(URSingularState);
+        }
+
+        /// <summary>
+        /// 初始化乳腺扫查类
+        /// </summary>
+        private void GalactophoreDetectorInitialization()
+        {
+            gdr = new GalactophoreDetector(urdp,
+                currentRobotInitialPosJoints, currentToolTcpEndPointCordinates,
+                currentRobotHanged, currentToolGravityValue);
+
+            gdr.OnSendModuleParameters += new GalactophoreDetector.SendStringList(GDRConfParams);
+            gdr.OnSendWorkingStatus += new OperateModuleBase.SendShort(GDRWorkStatus);
+            gdr.OnSendConfirmParametersStatus += new OperateModuleBase.SendBool(GDRParameterConfirmStatus);
+            gdr.OnSendForceClearedStatus += new OperateModuleBase.SendBool(GDRForceClearedStatus);
+
+            gdr.LoadParametersFromXmlAndOutput();
+        }
+
+
+
+
+        #endregion
+
+        #region BoundEvent
+        /// <summary>
+        /// 数据库连接出错
+        /// </summary>
+        private void DataBaseCanNotBeAttached()
+        {
+            EnableAll = false;
+            ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
+            return;
+        }
+
+        /// <summary>
+        /// COM口连接出错
+        /// </summary>
+        private void SerialPortCanNotBeAttached()
+        {
+            EnableAll = false;
+            ShowDialogAtUIThread("无法连接到串口" + numOfCOM + "！", "错误", 3);
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Post " + numOfCOM + " can not be attached.");
+            return;
+        }
+
+        /// <summary>
+        /// UR反馈状态异常
+        /// </summary>
+        /// <param name="AbnormalStatus">异常状态</param>
+        private void UREmergencyStatus(short AbnormalStatus)
+        {
+            string showStr;
+            if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ProtectiveStop)
+            {
+                showStr = "机械臂触发保护停止！";
+            }
+            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.EmergencyStop)
+            {
+                showStr = "机械臂触发紧急停止！";
+            }
+            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.CurrentOverflow)
+            {
+                showStr = "机械臂关节电流偏离超限，已停止断电！";
+            }
+            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ForceOverflow)
+            {
+                showStr = "机械臂末端力和力矩过大，已停止断电！";
+            }
+            else showStr = "机械臂发生未知的紧急状况！";
+
+            ShowDialogAtUIThread(showStr, "紧急状态", 4);
+
+            string outputStatus = ((URDataProcessor.RobotEmergency)AbnormalStatus).ToString();
+            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Robot Emergency status: " + outputStatus + ".");
+            return;
+        }
+
+        /// <summary>
+        /// UR网络连接状态反馈
+        /// </summary>
+        /// <param name="NetState">网络连接状态</param>
+        private void URNetState(short NetState)
+        {
+            if (NetState == (short)URDataProcessor.NetConnection.Broken)
+            {
+                if (ifUsingSerialPort) sc.SendOpenRelay(); // 急停按钮按下
+                StatusBarContent = "网络连接异常中断";
+                StatusBarBackgroundColor = defaultRedColor;
+                EnableAll = false;
+                ShowDialogAtUIThread("网络连接由于未知原因发生中断，机械臂急停！", "错误", 5);
+                Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is unexpectly broken.");
+            }
+            else if (NetState == (short)URDataProcessor.NetConnection.Connected)
+            {
+                if (ifUsingSerialPort) sc.SendCloseRelay(); // 急停按钮松开
+                StatusBarContent = "网络连接正常";
+                StatusBarBackgroundColor = defaultGreenColor;
+                if (!EnableAll) EnableAll = true;
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is established automatically.");
+            }
+            else if (NetState == (short)URDataProcessor.NetConnection.ActiveBroken)
+            {
+                StatusBarContent = "网络连接被主动中断";
+                StatusBarBackgroundColor = defaultBlueColor;
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is established automatically.");
+            }
+        }
+
+        /// <summary>
+        /// UR相关数据反馈
+        /// </summary>
+        /// <param name="Parameters">反馈数据</param>
+        private void URRefreshParams(double[] Parameters)
+        {
+            ToolTCPCordinateX = Parameters[0];
+            ToolTCPCordinateY = Parameters[1];
+            ToolTCPCordinateZ = Parameters[2];
+            ToolTCPCordinateRX = Parameters[3];
+            ToolTCPCordinateRY = Parameters[4];
+            ToolTCPCordinateRZ = Parameters[5];
+
+            RobotJointBaseAngle = Parameters[6];
+            RobotJointShoulderAngle = Parameters[7];
+            RobotJointElbowAngle = Parameters[8];
+            RobotJointWrist1Angle = Parameters[9];
+            RobotJointWrist2Angle = Parameters[10];
+            RobotJointWrist3Angle = Parameters[11];
+
+            RobotJointBaseTemperature = Parameters[12];
+            RobotJointShoulderTemperature = Parameters[13];
+            RobotJointElbowTemperature = Parameters[14];
+            RobotJointWrist1Temperature = Parameters[15];
+            RobotJointWrist2Temperature = Parameters[16];
+            RobotJointWrist3Temperature = Parameters[17];
+
+            RobotJointBaseCurrent = Parameters[18];
+            RobotJointShoulderCurrent = Parameters[19];
+            RobotJointElbowCurrent = Parameters[20];
+            RobotJointWrist1Current = Parameters[21];
+            RobotJointWrist2Current = Parameters[22];
+            RobotJointWrist3Current = Parameters[23];
+
+            ToolInputDigitialIO1 = Parameters[24] > 0.5 ? true : false;
+            ToolInputDigitialIO2 = Parameters[25] > 0.5 ? true : false;
+
+            RobotCurrentStatus = (URDataProcessor.RobotStatus)Parameters[26];
+            RobotProgramCurrentStatus = (URDataProcessor.RobotProgramStatus)Parameters[27];
+
+            ToolForceX = Parameters[28];
+            ToolForceY = Parameters[29];
+            ToolForceZ = Parameters[30];
+            ToolTorqueX = Parameters[31];
+            ToolTorqueY = Parameters[32];
+            ToolTorqueZ = Parameters[33];
+        }
+
+        /// <summary>
+        /// UR奇异点临近状态反馈
+        /// </summary>
+        /// <param name="SingularState">奇异点临近状态</param>
+        private void URSingularState(short SingularState)
+        {
+            string showStr;
+            switch (SingularState)
+            {
+                case 1:
+                    showStr = "临近肩部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at shoulder.");
+                    break;
+                case 2:
+                    showStr = "临近肘部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at elbow.");
+                    break;
+                case 3:
+                    showStr = "临近腕部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at wrist.");
+                    break;
+                default:
+                    showStr = "临近未知奇异位置，已停止相关运动，请断电检查程序奇异点定义！";
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near unknown singular point.");
+                    break;
+            }
+            ShowDialogAtUIThread(showStr, "紧急状态", 6);
+            return;
+        }
+
+        /// <summary>
+        /// GDR相关配置参数反馈
+        /// </summary>
+        /// <param name="Parameters">反馈的配置参数</param>
+        private void GDRConfParams(List<string[]> Parameters)
+        {
+            DetectingErrorForceMinGDR = double.Parse(Parameters[0][0]);
+            DetectingErrorForceMaxGDR = double.Parse(Parameters[1][0]);
+            DetectingSpeedMinGDR = double.Parse(Parameters[2][0]);
+            IfEnableDetectingForceChangeAtTransitionalPartGDR = bool.Parse(Parameters[3][0]);
+            // {vibratingAttitudeMaxAtSmoothPart}
+            // {vibratingAttitudeMinAtSteepPart}
+            // {vibratingAttitudeMaxAtSteepPart}
+            NippleForbiddenRadiusGDR = double.Parse(Parameters[7][0]);
+            // {movingStopDistance}
+            DetectingStopDistanceGDR = double.Parse(Parameters[9][0]);
+            DetectingSafetyLiftDistanceGDR = double.Parse(Parameters[10][0]);
+            IfEnableDetectingForceCheckGDR = bool.Parse(Parameters[11][0]);
+            DetectingSinkDistanceGDR = double.Parse(Parameters[12][0]);
+            VibratingAngleDegreeGDR = (GalactophoreDetector.VibratingMagnitude)Enum.Parse(typeof(GalactophoreDetector.VibratingMagnitude), Parameters[13][0]);
+            MovingSpeedDegreeGDR = (GalactophoreDetector.MovingLevel)Enum.Parse(typeof(GalactophoreDetector.MovingLevel), Parameters[14][0]);
+            DetectingForceDegreeGDR = (GalactophoreDetector.DetectingIntensity)Enum.Parse(typeof(GalactophoreDetector.DetectingIntensity), Parameters[15][0]);
+            DetectingAlignDegreeGDR = (GalactophoreDetector.AligningDegree)Enum.Parse(typeof(GalactophoreDetector.AligningDegree), Parameters[16][0]);
+            MovingUpEdgeDistanceGDR = double.Parse(Parameters[17][0]);
+            MovingLeftEdgeDistanceGDR = double.Parse(Parameters[18][0]);
+            MovingDownEdgeDistanceGDR = double.Parse(Parameters[19][0]);
+            MovingRightEdgeDistanceGDR = double.Parse(Parameters[20][0]);
+            IfAutoReplaceConfigurationGDR = bool.Parse(Parameters[21][0]);
+            IfCheckRightGalactophoreGDR = (GalactophoreDetector.ScanningRegion)Enum.Parse(typeof(GalactophoreDetector.ScanningRegion), Parameters[22][0]);
+            IdentifyEdgeModeGDR = (GalactophoreDetector.IdentifyBoundary)Enum.Parse(typeof(GalactophoreDetector.IdentifyBoundary), Parameters[23][0]);
+            CheckingStepGDR = double.Parse(Parameters[24][0]);
+        }
+
+        /// <summary>
+        /// GDR工作状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的工作状态</param>
+        private void GDRWorkStatus(short Status)
+        {
+            GalactophoreDetectorWorkStatus = Status;
+        }
+
+        /// <summary>
+        /// GDR参数确认状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的参数确认状态</param>
+        private void GDRParameterConfirmStatus(bool Status)
+        {
+            GalactophoreDetectorParameterConfirm = Status;
+        }
+
+        /// <summary>
+        /// GDR力清零状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的力清零状态</param>
+        private void GDRForceClearedStatus(bool Status)
+        {
+            GalactophoreDetectorForceSensorCleared = Status;
+        }
+
+
+        #region Null Event Callback Functions
+        private void URNullEventHandler()
+        { return; }
+        private void URNullEventHandler(short nullShort)
+        { return; }
+        private void URNullEventHandler(object nullObject)
+        { return; }
+        #endregion
+
+        #endregion
+
+    }
+}
