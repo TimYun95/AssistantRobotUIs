@@ -109,9 +109,9 @@ namespace AssistantRobot
     }
 
     /// <summary>
-    /// double[]数据转化为double，按照index选择并放大
+    /// double[]数据转化为string，按照index选择并放大和取相应位数
     /// </summary>
-    public class ConverterThatTransformDoubleArrayToDouble : IValueConverter
+    public class ConverterThatTransformDoubleArrayToString : IValueConverter
     {
         // source --> target
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -119,7 +119,17 @@ namespace AssistantRobot
             double[] dataFromSource = (double[])value;
             int index = ((int[])parameter)[0];
             int prop = ((int[])parameter)[1];
-            double dataToTarget = dataFromSource[index] * (double)prop;
+            int deci = ((int[])parameter)[2];
+            string formatDecimal = "0";
+            if (deci >= 1)
+            {
+                formatDecimal += ".";
+                for (int i = 0; i < deci; ++i)
+                {
+                    formatDecimal += "0"; 
+                }
+            }
+            string dataToTarget = (dataFromSource[index] * (double)prop).ToString(formatDecimal);
             return dataToTarget;
         }
 

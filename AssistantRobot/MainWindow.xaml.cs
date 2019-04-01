@@ -155,12 +155,13 @@ namespace AssistantRobot
         private void btnPowerOff_Click(object sender, RoutedEventArgs e)
         {
             urvm.CloseModelLogic();
-            this.Close();
         }
 
-        private void btnGlobalSetting_Click(object sender, RoutedEventArgs e)
+        private void btnElectricContorl_Click(object sender, RoutedEventArgs e)
         {
+            urvm.SwitchElectricControlFly();
 
+            e.Handled = true;
         }
 
         private void settingsFlyoutGalactophore_IsOpenChanged(object sender, RoutedEventArgs e)
@@ -170,6 +171,36 @@ namespace AssistantRobot
 
             e.Handled = true;
         }
+
+        private void powerOnBtn_Click(object sender, RoutedEventArgs e)
+        {
+            urvm.RobotPowerOn();
+
+            e.Handled = true;
+        }
+
+        private void brakeLessBtn_Click(object sender, RoutedEventArgs e)
+        {
+            urvm.BrakeLess();
+
+            e.Handled = true;
+        }
+
+        private void powerOffBtn_Click(object sender, RoutedEventArgs e)
+        {
+            urvm.RobotPowerOff();
+
+            e.Handled = true;
+        }
+
+        private void powerDownBtn_Click(object sender, RoutedEventArgs e)
+        {
+            urvm.ControllerBoxPowerOff();
+
+            e.Handled = true;
+        }
+
+
 
 
 

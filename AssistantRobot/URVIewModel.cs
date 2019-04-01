@@ -55,7 +55,7 @@ namespace AssistantRobot
         /// </summary>
         public enum ConfPage : short
         {
-            GlobalConf = 0,
+            ElecCtrl = 0,
             ProbeCatch = 1,
             GalactophoreDetect = 2
         }
@@ -86,7 +86,7 @@ namespace AssistantRobot
         private const int timeOutDurationMS = 200;
         private const bool ifProlongTimeOutDurationWhenConnectionBegin = true;
         private const int autoCheckingConnectableDurationMS = 1000;
-        private const bool ifUsingForceSensor = false;
+        private const bool ifUsingForceSensor = true;
         private const bool ifEnableCurrentOverFlowProtect = true;
         private const bool ifEnableForceOverFlowProtect = true;
         private const bool ifEnableToolIO = false;
@@ -120,7 +120,14 @@ namespace AssistantRobot
         private double[] currentToolTcpEndPointCordinates = null;
         private double currentToolGravityValue = 0;
 
+        // 当前位置缓存
+        private double[] posCacheNow = new double[6];
 
+        // 指示是否正在检查下沉距离
+        private bool ifCheckingSinkDistance = false;
+
+        // 指示是否首次运行本程序
+        private bool ifFirstOpenTheProg = true;
         #endregion
 
         #region View
@@ -129,14 +136,17 @@ namespace AssistantRobot
         private BaseControl bc;
         private GalactophoreDetect gd;
 
-        private bool[] occupyArray = new bool[10] { false, false, false, false, false, false, false, false, false, false };
+        private bool[] occupyArray = new bool[20] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+        private const double titleSize = 18;
+        private const double messageSize = 22;
+
         #endregion
 
         #region ViewModel
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region Global Controls Enable
-        private bool enableAll = true;
+        private bool enableAll = false;
         /// <summary>
         /// 允许所有动作
         /// </summary>
@@ -1297,6 +1307,66 @@ namespace AssistantRobot
 
         #region Method
         /// <summary>
+        /// 机械臂上电
+        /// </summary>
+        public void RobotPowerOn()
+        {
+            if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
+            {
+                Task.Run(new Action(() =>
+                {
+                    urdp.SendURBaseControllerPowerOn();
+                }));
+            }
+        }
+
+        /// <summary>
+        /// 制动器松开
+        /// </summary>
+        public void BrakeLess()
+        {
+            if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
+            {
+                Task.Run(new Action(() =>
+                {
+                    urdp.SendURBaseControllerBrakeRelease();
+                }));
+            }
+        }
+
+        /// <summary>
+        /// 机械臂断电
+        /// </summary>
+        public void RobotPowerOff()
+        {
+            if (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
+            {
+                Task.Run(new Action(() =>
+                {
+                    urdp.SendURBaseControllerPowerOff();
+                }));
+            }
+        }
+
+        /// <summary>
+        /// 控制箱关闭
+        /// </summary>
+        public async void ControllerBoxPowerOff()
+        {
+            bool result = await ShowBranchDialog("是否确认关闭控制箱？", "提问");
+            if (result) Task.Run(new Action(() => { urdp.SendURBaseControllerShutDown(); }));
+        }
+
+        /// <summary>
+        /// 电气控制打开
+        /// </summary>
+        public void SwitchElectricControlFly()
+        {
+            bool nowState = (mw.Flyouts.Items[(int)ConfPage.ElecCtrl] as Flyout).IsOpen;
+            (mw.Flyouts.Items[(int)ConfPage.ElecCtrl] as Flyout).IsOpen = !nowState;
+        }
+
+        /// <summary>
         /// 页导航
         /// </summary>
         /// <param name="ShowPageNum">要显示的页</param>
@@ -1321,19 +1391,69 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 主窗口分支弹窗
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <param name="title">抬头</param>
+        /// <returns>返回bool值，指示是否点击确定或者可以弹窗</returns>
+        public async Task<bool> ShowBranchDialog(string message, string title)
+        {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "是",
+                NegativeButtonText = "否",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            };
+
+            if (mw.CheckAccess())
+            {
+                MessageDialogResult result = await mw.ShowMessageAsync(title, message, MessageDialogStyle.AffirmativeAndNegative, mySettings);
+                return result == MessageDialogResult.Affirmative;
+            }
+
+            return false;
+        }
+
+        public delegate void ShowBranchDialogDelegate(string message, string title, DealBranchDialogDelegate dealFunction);
+        public delegate void DealBranchDialogDelegate(bool messageResult);
+        private async void ShowBranchDialogTask(string message, string title, DealBranchDialogDelegate dealFunction)
+        {
+            bool result = await ShowBranchDialog(message, title);
+            dealFunction(result);
+        }
+        /// <summary>
+        /// 主窗口分支弹窗，切换到UI线程运行
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <param name="title">抬头</param>
+        /// <param name="dealFunction">信息获取后的回调函数</param>
+        private void ShowBranchDialogAtUIThread(string message, string title, DealBranchDialogDelegate dealFunction)
+        {
+            mw.Dispatcher.BeginInvoke(
+                new ShowBranchDialogDelegate(ShowBranchDialogTask),
+                DispatcherPriority.Normal,
+                new object[] { message, title, dealFunction });
+        }
+
+        /// <summary>
         /// 主窗口弹窗
         /// </summary>
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
         /// <param name="occupyNum">控制位</param>
-        public async void ShowDialog(string message, string title, int occupyNum)
+        /// <returns>返回bool值，指示是否已经点击确定</returns>
+        public async Task<bool> ShowDialog(string message, string title, int occupyNum)
         {
-            if (occupyArray[occupyNum]) return;
+            if (occupyArray[occupyNum]) return false;
             occupyArray[occupyNum] = true;
 
             var mySettings = new MetroDialogSettings()
             {
                 AffirmativeButtonText = "确认",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
                 ColorScheme = MetroDialogColorScheme.Theme
             };
 
@@ -1343,6 +1463,7 @@ namespace AssistantRobot
             }
 
             occupyArray[occupyNum] = false;
+            return true;
         }
 
         public delegate void ShowDialogDelegate(string message, string title, int occupyNum);
@@ -1363,10 +1484,6 @@ namespace AssistantRobot
                 DispatcherPriority.Normal,
                 new object[] { message, title, occupyNum });
         }
-
-
-
-
 
         /// <summary>
         /// 开始必要的连接检查和连接
@@ -1556,6 +1673,47 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 检查当前工具是否合适
+        /// </summary>
+        /// <param name="AimTool">目标工具</param>
+        /// <returns>返回是否已经调整到合适状态</returns>
+        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool)
+        {
+            if (currentToolType == AimTool) return true;
+            SetToolParameter(AimTool);
+            return true;
+        }
+
+        /// <summary>
+        /// 设置工具参数到模块
+        /// <param name="AimTool">目标工具</param>
+        /// </summary>
+        private async void SetToolParameter(ToolType AimTool)
+        {
+            await Task.Run(new Action(() =>
+            {
+                if (!ToolParameterRefresh(AimTool)) return;
+
+                urdp.SetInstallation(currentRobotHanged);
+                gdr.InstallHanged = currentRobotHanged;
+
+                gdr.InitialJointAngles = currentRobotInitialPosJoints;
+
+                urdp.SetToolGravityModify(currentToolForceModifier, currentToolForceModifyingMode);
+
+                urdp.SetToolTCP(currentToolTcpEndPointCordinates);
+                gdr.InstallTcpPosition = currentToolTcpEndPointCordinates;
+
+                urdp.SetToolGravity(currentToolGravityValue);
+                gdr.ToolMass = currentToolGravityValue;
+
+                urdp.SendURCommanderBaseSetting();
+            }));
+        }
+
+        #region GalactophoreDetect
+
+        /// <summary>
         /// 切换乳腺扫查配置窗口
         /// </summary>
         public void SwitchGalactophoreOwnConf()
@@ -1563,6 +1721,340 @@ namespace AssistantRobot
             bool nowState = (mw.Flyouts.Items[(int)ConfPage.GalactophoreDetect] as Flyout).IsOpen;
             (mw.Flyouts.Items[(int)ConfPage.GalactophoreDetect] as Flyout).IsOpen = !nowState;
         }
+
+        /// <summary>
+        /// 进入乳腺扫查模块
+        /// </summary>
+        public void EnterGalactophoreDetectModule()
+        {
+            if (!CheckWhetherCurrentToolSuitable(ToolType.Probe)) return;
+
+            Task.Run(new Action(() =>
+            {
+                gdr.ActiveModule();
+            }));
+        }
+
+        /// <summary>
+        /// 退出乳腺扫查模块
+        /// </summary>
+        public void ExitGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.FreezeModule();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块清零力传感器
+        /// </summary>
+        public void ForceClearGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.InitialForceSensor();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块配置参数
+        /// </summary>
+        public void ConfParamsGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.EnterParameterConfiguration();
+                ConfParamsNextParamsGalactophoreDetectModule();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找乳头
+        /// </summary>
+        public void NippleFindGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                SaveCachePos();
+                gdr.FindNippleTcpPosition();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块找到乳头
+        /// </summary>
+        public void NippleFoundGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.ConfirmNippleTcpPositionFound();
+                Thread.Sleep(40);
+                double[] nippleNow = urdp.PositionsTcpActual;
+                NipplePositionGDR = new double[] { nippleNow[0], nippleNow[1], nippleNow[2] };
+                //SaveCachePos(nippleNow);
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找抬升距离
+        /// </summary>
+        public void LiftDistanceFindGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                SaveCachePos();
+                gdr.FindSafetyLiftDistance();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块找到抬升距离
+        /// </summary>
+        public void LiftDistanceFoundGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.EndFindSafetyLiftDistance();
+                Thread.Sleep(40);
+                double[] posNow = urdp.PositionsTcpActual;
+                double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
+                DetectingSafetyLiftDistanceGDR = distanceBias;
+                //SaveCachePos(posNow);
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找最小半径
+        /// </summary>
+        public void MinRadiusFindGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                SaveCachePos();
+                gdr.FindMostConfigurationParameters();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块找到最小半径
+        /// </summary>
+        public void MinRadiusFoundGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.EndMostConfigurationParameters();
+                Thread.Sleep(40);
+                double[] posNow = urdp.PositionsTcpActual;
+                double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
+                NippleForbiddenRadiusGDR = distanceBias;
+                //SaveCachePos(posNow);
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找探测深度
+        /// </summary>
+        public void ScanDeepFindGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                SaveCachePos();
+                gdr.FindMostConfigurationParameters();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块找到探测深度
+        /// </summary>
+        public void ScanDeepFoundGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.EndMostConfigurationParameters();
+                Thread.Sleep(40);
+                double[] posNow = urdp.PositionsTcpActual;
+                double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
+                DetectingStopDistanceGDR = distanceBias;
+                //SaveCachePos(posNow);
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找四侧距离
+        /// </summary>
+        /// <param name="Side">四侧距离指示，"head"=头侧，"tail"=尾侧，"out"=外侧，"in"=内侧</param>
+        /// <returns>返回是否执行操作</returns>
+        public bool BoundFindGalactophoreDetectModule(string Side)
+        {
+            bool givenBackResult = false;
+            if (Side == "head") givenBackResult = true;
+            if (Side == "tail" && identifyEdgeModeGDR != GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary) givenBackResult = true;
+            if (Side == "out" && identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.AllBoundary) givenBackResult = true;
+            if (Side == "in" && identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.AllBoundary) givenBackResult = true;
+
+            if (givenBackResult)
+            {
+                Task.Run(new Action(() =>
+                {
+                    SaveCachePos();
+                    gdr.FindMostConfigurationParameters();
+                }));
+            }
+
+            return givenBackResult;
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块找到四侧距离
+        /// </summary>
+        /// <param name="Side">四侧距离指示，"head"=头侧，"tail"=尾侧，"out"=外侧，"in"=内侧</param>
+        public void BoundFoundGalactophoreDetectModule(string Side)
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.EndMostConfigurationParameters();
+                Thread.Sleep(40);
+                double[] posNow = urdp.PositionsTcpActual;
+                double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
+                if (Side == "tail") MovingDownEdgeDistanceGDR = distanceBias;
+                else if (Side == "out") MovingLeftEdgeDistanceGDR = distanceBias;
+                else if (Side == "in") MovingRightEdgeDistanceGDR = distanceBias;
+                else MovingUpEdgeDistanceGDR = distanceBias;
+                //SaveCachePos(posNow);
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块寻找下沉距离
+        /// </summary>
+        /// <returns>返回执行Task</returns>
+        public async void SinkDeepFindGalactophoreDetectModule()
+        {
+            if (!ifEnableDetectingForceCheckGDR) return;
+
+            if (ifCheckingSinkDistance) return;
+            ifCheckingSinkDistance = true;
+
+            SaveCachePos();
+            double radius = Double.Parse(gd.minRadius.Text.Trim()) / 1000.0;
+
+            await gdr.ScanForceCheck(radius, DetectingForceDegreeGDR);
+
+            double[] posNow = urdp.PositionsTcpActual;
+            double distanceBias = Math.Abs(posNow[2] - nipplePositionGDR[2]);
+            DetectingSinkDistanceGDR = distanceBias;
+            //SaveCachePos(posNow);
+
+            ifCheckingSinkDistance = false;
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块确认配置参数
+        /// </summary>
+        public void ConfirmConfParamsGalactophoreDetectModule()
+        {
+            List<string> conf = PickParametersFormView(ConfPage.GalactophoreDetect);
+
+            Task.Run(new Action(() =>
+            {
+                gdr.ConfirmConfigurationParameters(conf);
+                gdr.LoadParametersFromXmlAndOutput();
+                ConfParamsNextParamsGalactophoreDetectModule();
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块准备并开始
+        /// </summary>
+        public void ReadyAndStartGalactophoreDetectModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.BeReadyToWork();
+                gdr.StartModuleNow();
+            }));
+        }
+
+        /// <summary>
+        /// 立即停止所有乳腺扫查模块中的活动
+        /// </summary>
+        public async void StopMotionNowGalactophoreDetectModule()
+        {
+            GalactophoreDetectorParameterConfirmState = 0;
+
+            Task.Run(new Action(() =>
+            {
+                gdr.EndModuleNow();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
+            }));
+
+            await ShowDialog("乳腺扫查模块被紧急停止，请按下确定恢复控制权！", "紧急状态", 7);
+
+            Task.Run(new Action(() =>
+            {
+                gdr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
+            }));
+        }
+
+        /// <summary>
+        /// 乳腺扫查模块转到下一个配置参数
+        /// </summary>
+        public async void ConfParamsNextParamsGalactophoreDetectModule()
+        {
+            switch (galactophoreDetectorParameterConfirmState)
+            {
+                case 1:
+                    if (nipplePositionGDR[0] * nipplePositionGDR[1] * nipplePositionGDR[2] > Double.Epsilon * 10.0) GalactophoreDetectorParameterConfirmState += 1;
+                    break;
+                case 5:
+                    if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary)
+                    {
+                        if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
+                        else GalactophoreDetectorParameterConfirmState = 10;
+                    }
+                    else GalactophoreDetectorParameterConfirmState += 1;
+                    break;
+                case 6:
+                    if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.UpDownBoundary)
+                    {
+                        if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
+                        else GalactophoreDetectorParameterConfirmState = 10;
+                    }
+                    else
+                    {
+                        GalactophoreDetectorParameterConfirmState = 0;
+                        await gdr.LongitudinalToHorizontalCheck();
+                        GalactophoreDetectorParameterConfirmState = 7;
+                    }
+                    break;
+                case 8:
+                    GalactophoreDetectorParameterConfirmState = 0;
+                    await gdr.LongitudinalToHorizontalCheck(true);
+                    if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
+                    else GalactophoreDetectorParameterConfirmState = 10;
+                    break;
+                case 9:
+                    if (!ifCheckingSinkDistance) GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
+                    break;
+                case Byte.MaxValue:
+                    GalactophoreDetectorParameterConfirmState = 0;
+                    break;
+                case 0:
+                case 2:
+                case 3:
+                case 4:
+                case 7:
+                default:
+                    GalactophoreDetectorParameterConfirmState += 1;
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region SaveModuleConfParams
 
         /// <summary>
         /// 保存该页配置
@@ -1600,20 +2092,20 @@ namespace AssistantRobot
                     returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSmoothPart
                     returnConf.Add("-2.0"); // vibratingAttitudeMinAtSteepPart
                     returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSteepPart
-                    returnConf.Add((double.Parse(gd.minRadius.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.minRadius.Text.Trim()) / 1000.0).ToString("0.000"));
                     returnConf.Add("-2.0"); // movingStopDistance
-                    returnConf.Add((double.Parse(gd.scanDistance.Text) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.liftDistance.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.scanDistance.Text.Trim()) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.liftDistance.Text.Trim()) / 1000.0).ToString("0.000"));
                     returnConf.Add(mw.DFCheckSwitch.IsChecked.ToString());
-                    returnConf.Add((double.Parse(gd.sinkDistance.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.sinkDistance.Text.Trim()) / 1000.0).ToString("0.000"));
                     returnConf.Add(Math.Round(mw.vibrateDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.speedDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.forceDegreeSlider.Value).ToString("0"));
                     returnConf.Add(mw.attachSwitch.IsChecked == true ? "1" : "0");
-                    returnConf.Add((double.Parse(gd.headBound.Text) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.outBound.Text) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.tailBound.Text) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.inBound.Text) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.headBound.Text.Trim()) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.outBound.Text.Trim()) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.tailBound.Text.Trim()) / 1000.0).ToString("0.000"));
+                    returnConf.Add((double.Parse(gd.inBound.Text.Trim()) / 1000.0).ToString("0.000"));
                     returnConf.Add(mw.autoSaveSwitch.IsChecked.ToString());
                     returnConf.Add(mw.galactophoreDirectionSwitch.IsChecked == true ? "1" : "0");
                     returnConf.Add(Math.Round(mw.borderModeSlider.Value).ToString("0"));
@@ -1625,14 +2117,92 @@ namespace AssistantRobot
             }
         }
 
+        #endregion
+
+
+
+        /// <summary>
+        /// 缓存当前位置
+        /// </summary>
+        private void SaveCachePos(double[] InputPos = null)
+        {
+            if (Object.Equals(InputPos, null)) InputPos = urdp.PositionsTcpActual;
+            for (int i = 0; i < 6; ++i)
+            {
+                posCacheNow[i] = InputPos[i];
+            }
+        }
+
 
         /// <summary>
         /// 关闭Model逻辑
         /// </summary>
-        public void CloseModelLogic()
+        public async void CloseModelLogic()
         {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "关闭程序",
+                NegativeButtonText = " + 机械臂断电",
+                FirstAuxiliaryButtonText = " + 控制箱关闭",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                CustomResourceDictionary = new ResourceDictionary(),
+                ColorScheme = MetroDialogColorScheme.Theme
+            };
+
+            MessageDialogResult result = await mw.ShowMessageAsync("选择", "请选择想要的关闭方式！",
+                MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, mySettings);
+
+            if (result == MessageDialogResult.Affirmative)
+            {
+                await Task.Delay(100);
+            }
+            else if (result == MessageDialogResult.Negative)
+            {
+                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂断电。。。", settings: new MetroDialogSettings()
+                {
+                    AnimateShow = false,
+                    AnimateHide = false,
+                    DialogTitleFontSize = titleSize,
+                    DialogMessageFontSize = messageSize,
+                    ColorScheme = MetroDialogColorScheme.Theme
+                });
+
+                controller.SetIndeterminate();
+                RobotPowerOff(); 
+                while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
+                {
+                    await Task.Delay(200);
+                }
+                await controller.CloseAsync();
+            }
+            else
+            {
+                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂断电。。。", settings: new MetroDialogSettings()
+                {
+                    AnimateShow = false,
+                    AnimateHide = false,
+                    DialogTitleFontSize = titleSize,
+                    DialogMessageFontSize = messageSize,
+                    ColorScheme = MetroDialogColorScheme.Theme
+                });
+
+                controller.SetIndeterminate();
+                RobotPowerOff();
+                while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
+                {
+                    await Task.Delay(200);
+                }
+                await controller.CloseAsync();
+                urdp.SendURBaseControllerShutDown(); 
+                await Task.Delay(25);
+            }
+
             urdp.ActiveBreakCommunicationConncect();
             ClearAllEvents(urdp);
+
+            await Task.Delay(200);
+            mw.Close();
         }
 
         /// <summary>
@@ -1680,7 +2250,7 @@ namespace AssistantRobot
         private readonly ValueProcesser valueP1D4 = new ValueProcesser(1.0, "0.0000");
         private readonly ConverterThatTransformDoubleToDoubleSlider convertD2DSlider = new ConverterThatTransformDoubleToDoubleSlider();
         private const double radToDegRatio = 180.0 / Math.PI;
-        private readonly ConverterThatTransformDoubleArrayToDouble convertDA2D = new ConverterThatTransformDoubleArrayToDouble();
+        private readonly ConverterThatTransformDoubleArrayToString convertDA2S = new ConverterThatTransformDoubleArrayToString();
         private readonly ConverterThatTransformDoubleToDoubleInteger convertD2DI = new ConverterThatTransformDoubleToDoubleInteger();
         private readonly ConverterThatTransformEnumToDouble convertE2D = new ConverterThatTransformEnumToDouble();
         private readonly ConverterThatTransformEnumToBool convertE2B = new ConverterThatTransformEnumToBool();
@@ -2147,8 +2717,8 @@ namespace AssistantRobot
             bindingFromNipplePositionGDRToNippleX.Path = new PropertyPath("NipplePositionGDR");
             bindingFromNipplePositionGDRToNippleX.Mode = BindingMode.OneWay;
             bindingFromNipplePositionGDRToNippleX.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromNipplePositionGDRToNippleX.Converter = convertDA2D;
-            bindingFromNipplePositionGDRToNippleX.ConverterParameter = new int[] { 0, 1000 };
+            bindingFromNipplePositionGDRToNippleX.Converter = convertDA2S;
+            bindingFromNipplePositionGDRToNippleX.ConverterParameter = new int[] { 0, 1000, 2 };
             BindingOperations.SetBinding(gd.nippleX, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleX);
 
             // 绑定：NipplePositionGDR {属性} ==> nippleY {GalactophoreDetect控件}
@@ -2157,8 +2727,8 @@ namespace AssistantRobot
             bindingFromNipplePositionGDRToNippleY.Path = new PropertyPath("NipplePositionGDR");
             bindingFromNipplePositionGDRToNippleY.Mode = BindingMode.OneWay;
             bindingFromNipplePositionGDRToNippleY.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromNipplePositionGDRToNippleY.Converter = convertDA2D;
-            bindingFromNipplePositionGDRToNippleY.ConverterParameter = new int[] { 1, 1000 };
+            bindingFromNipplePositionGDRToNippleY.Converter = convertDA2S;
+            bindingFromNipplePositionGDRToNippleY.ConverterParameter = new int[] { 1, 1000, 2 };
             BindingOperations.SetBinding(gd.nippleY, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleY);
 
             // 绑定：NipplePositionGDR {属性} ==> nippleZ {GalactophoreDetect控件}
@@ -2167,8 +2737,8 @@ namespace AssistantRobot
             bindingFromNipplePositionGDRToNippleZ.Path = new PropertyPath("NipplePositionGDR");
             bindingFromNipplePositionGDRToNippleZ.Mode = BindingMode.OneWay;
             bindingFromNipplePositionGDRToNippleZ.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromNipplePositionGDRToNippleZ.Converter = convertDA2D;
-            bindingFromNipplePositionGDRToNippleZ.ConverterParameter = new int[] { 2, 1000 };
+            bindingFromNipplePositionGDRToNippleZ.Converter = convertDA2S;
+            bindingFromNipplePositionGDRToNippleZ.ConverterParameter = new int[] { 2, 1000, 2 };
             BindingOperations.SetBinding(gd.nippleZ, TextBox.TextProperty, bindingFromNipplePositionGDRToNippleZ);
         }
 
@@ -2620,6 +3190,87 @@ namespace AssistantRobot
             mbindingToIconBeginGalactophore.Converter = convertMS2EB;
             mbindingToIconBeginGalactophore.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice, OperateModuleBase.WorkStatus.ParametersConfiguration } };
             BindingOperations.SetBinding(gd.iconBeginGalactophore, IconButton.IsEnabledProperty, mbindingToIconBeginGalactophore);
+
+            // 20. nippleNextBtn
+            MultiBinding mbindingToNippleNextBtn = new MultiBinding();
+            mbindingToNippleNextBtn.Mode = BindingMode.OneWay;
+            mbindingToNippleNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToNippleNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToNippleNextBtn.Converter = convertMS2EB;
+            mbindingToNippleNextBtn.ConverterParameter = new object[] { new byte[] { 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.nippleNextBtn, IconButton.IsEnabledProperty, mbindingToNippleNextBtn);
+
+            // 21. liftDistanceNextBtn
+            MultiBinding mbindingToLiftDistanceNextBtn = new MultiBinding();
+            mbindingToLiftDistanceNextBtn.Mode = BindingMode.OneWay;
+            mbindingToLiftDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToLiftDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToLiftDistanceNextBtn.Converter = convertMS2EB;
+            mbindingToLiftDistanceNextBtn.ConverterParameter = new object[] { new byte[] { 2 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.liftDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToLiftDistanceNextBtn);
+
+            // 22. minRadiusNextBtn
+            MultiBinding mbindingToMinRadiusNextBtn = new MultiBinding();
+            mbindingToMinRadiusNextBtn.Mode = BindingMode.OneWay;
+            mbindingToMinRadiusNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToMinRadiusNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToMinRadiusNextBtn.Converter = convertMS2EB;
+            mbindingToMinRadiusNextBtn.ConverterParameter = new object[] { new byte[] { 3 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.minRadiusNextBtn, IconButton.IsEnabledProperty, mbindingToMinRadiusNextBtn);
+
+            // 23. scanDistanceNextBtn
+            MultiBinding mbindingToScanDistanceNextBtn = new MultiBinding();
+            mbindingToScanDistanceNextBtn.Mode = BindingMode.OneWay;
+            mbindingToScanDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToScanDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToScanDistanceNextBtn.Converter = convertMS2EB;
+            mbindingToScanDistanceNextBtn.ConverterParameter = new object[] { new byte[] { 4 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.scanDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToScanDistanceNextBtn);
+
+            // 24. headBoundNextBtn
+            MultiBinding mbindingToHeadBoundNextBtn = new MultiBinding();
+            mbindingToHeadBoundNextBtn.Mode = BindingMode.OneWay;
+            mbindingToHeadBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToHeadBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToHeadBoundNextBtn.Converter = convertMS2EB;
+            mbindingToHeadBoundNextBtn.ConverterParameter = new object[] { new byte[] { 5 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.headBoundNextBtn, IconButton.IsEnabledProperty, mbindingToHeadBoundNextBtn);
+
+            // 25. tailBoundNextBtn
+            MultiBinding mbindingToTailBoundNextBtn = new MultiBinding();
+            mbindingToTailBoundNextBtn.Mode = BindingMode.OneWay;
+            mbindingToTailBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToTailBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToTailBoundNextBtn.Converter = convertMS2EB;
+            mbindingToTailBoundNextBtn.ConverterParameter = new object[] { new byte[] { 6 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.tailBoundNextBtn, IconButton.IsEnabledProperty, mbindingToTailBoundNextBtn);
+
+            // 26. outBoundNextBtn
+            MultiBinding mbindingToOutBoundNextBtn = new MultiBinding();
+            mbindingToOutBoundNextBtn.Mode = BindingMode.OneWay;
+            mbindingToOutBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToOutBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToOutBoundNextBtn.Converter = convertMS2EB;
+            mbindingToOutBoundNextBtn.ConverterParameter = new object[] { new byte[] { 7 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.outBoundNextBtn, IconButton.IsEnabledProperty, mbindingToOutBoundNextBtn);
+
+            // 27. inBoundNextBtn
+            MultiBinding mbindingToInBoundNextBtn = new MultiBinding();
+            mbindingToInBoundNextBtn.Mode = BindingMode.OneWay;
+            mbindingToInBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToInBoundNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToInBoundNextBtn.Converter = convertMS2EB;
+            mbindingToInBoundNextBtn.ConverterParameter = new object[] { new byte[] { 8 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.inBoundNextBtn, IconButton.IsEnabledProperty, mbindingToInBoundNextBtn);
+
+            // 28. sinkDistanceNextBtn
+            MultiBinding mbindingToSinkDistanceNextBtn = new MultiBinding();
+            mbindingToSinkDistanceNextBtn.Mode = BindingMode.OneWay;
+            mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            mbindingToSinkDistanceNextBtn.Converter = convertMS2EB;
+            mbindingToSinkDistanceNextBtn.ConverterParameter = new object[] { new byte[] { 9 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(gd.sinkDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToSinkDistanceNextBtn);
         }
 
         #endregion
@@ -2884,6 +3535,68 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 处理首次连接网络的问题
+        /// </summary>
+        /// <param name="result">操作指示标志</param>
+        private async void DealWithFirstNetConnection(bool result)
+        {
+            if (result)
+            {
+                if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
+                {
+                    var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂上电。。。", settings: new MetroDialogSettings()
+                    {
+                        AnimateShow = false,
+                        AnimateHide = false,
+                        DialogTitleFontSize = titleSize,
+                        DialogMessageFontSize = messageSize,
+                        ColorScheme = MetroDialogColorScheme.Theme
+                    });
+
+                    controller.SetIndeterminate();
+                    urdp.SendURBaseControllerPowerOn();
+                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Idle)
+                    {
+                        await Task.Delay(200);
+                    }
+
+                    controller.SetMessage("正在释放机械臂的制动器。。。");
+
+                    urdp.SendURBaseControllerBrakeRelease();
+                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+                    {
+                        await Task.Delay(200);
+                    }
+
+                    await controller.CloseAsync();
+
+                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                }
+                else if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
+                {
+                    var controller = await mw.ShowProgressAsync("请稍后", "正在释放机械臂的制动器。。。", settings: new MetroDialogSettings()
+                    {
+                        AnimateShow = false,
+                        AnimateHide = false,
+                        DialogTitleFontSize = titleSize,
+                        DialogMessageFontSize = messageSize,
+                        ColorScheme = MetroDialogColorScheme.Theme
+                    });
+
+                    urdp.SendURBaseControllerBrakeRelease();
+                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+                    {
+                        await Task.Delay(200);
+                    }
+
+                    await controller.CloseAsync();
+
+                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                }
+            }
+        }
+
+        /// <summary>
         /// UR相关数据反馈
         /// </summary>
         /// <param name="Parameters">反馈数据</param>
@@ -2929,6 +3642,16 @@ namespace AssistantRobot
             ToolTorqueX = Parameters[31];
             ToolTorqueY = Parameters[32];
             ToolTorqueZ = Parameters[33];
+
+            if (ifFirstOpenTheProg)
+            {
+                ifFirstOpenTheProg = false;
+
+                if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+                {
+                    ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
+                }
+            }
         }
 
         /// <summary>

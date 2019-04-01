@@ -40,8 +40,8 @@ namespace AssistantRobot
         {
             urvm.NavigateToPage(URVIewModel.ShowPage.GalactophoreDetect);
 
-            // test
-            urvm.GalactophoreDetectorWorkStatus = 0;
+            // 进入乳腺扫查模块
+            urvm.EnterGalactophoreDetectModule();
 
             e.Handled = true;
         }

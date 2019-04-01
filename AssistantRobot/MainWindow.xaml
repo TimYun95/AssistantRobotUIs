@@ -32,10 +32,10 @@
 
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands ShowLastSeparator="False">
-            <Button x:Name="btnGlobalSetting" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnGlobalSetting_Click">
+            <Button x:Name="btnElectricContorl" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnElectricContorl_Click">
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconFontAwesome Width="24" Height="24" Kind="CogSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="全局设置" HorizontalAlignment="Center" />
+                    <iconPacks:PackIconOcticons Width="24" Height="24" Kind="CircuitBoard" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="电气控制" HorizontalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button x:Name="btnPowerOff"  FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Click="btnPowerOff_Click" Cursor="Hand">
@@ -51,8 +51,75 @@
         <Controls:FlyoutsControl x:Name="flyoutsControl">
 			
             <Controls:Flyout x:Name="settingsFlyoutGlobal" Position="Top"
-                             Header="全局设置" Controls:ControlsHelper.HeaderFontSize="24"
+                             Header="电气控制" Controls:ControlsHelper.HeaderFontSize="24"
 							 IsModal="True" IsPinned="False">
+                <Grid Margin="20">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="powerOnBtn" Grid.Column="0"
+                        Margin="5" FontSize="22" BorderThickness="1"
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_Green}" Click="powerOnBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconEntypo x:Name="powerOnIcon" Kind="PowerPlug" 
+                                                      Width="{Binding ActualHeight, ElementName=powerOnIcon}" 
+                                                      Height="{Binding ActualHeight, ElementName=powerOnText}" 
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="powerOnText"  Text="机械臂上电" FontSize="22" Width="Auto" Height="Auto"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="brakeLessBtn" Grid.Column="1"
+                        Margin="5" FontSize="22" BorderThickness="1"
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_Blue}" Click="brakeLessBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconFontAwesome x:Name="brakeLessIcon" Kind="LockOpenSolid"
+                                                      Width="{Binding ActualHeight, ElementName=brakeLessIcon}" 
+                                                      Height="{Binding ActualHeight, ElementName=brakeLessText}" 
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="brakeLessText" Text="制动器松开" FontSize="22" Width="Auto" Height="Auto"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="powerOffBtn" Grid.Column="2"
+                        Margin="5" FontSize="22" BorderThickness="1"
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_Red}" Click="powerOffBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial x:Name="powerOffIcon" Kind="PowerPlugOff"
+                                                      Width="{Binding ActualHeight, ElementName=powerOffIcon}" 
+                                                      Height="{Binding ActualHeight, ElementName=powerOffText}" 
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="powerOffText" Text="机械臂断电" FontSize="22" Width="Auto" Height="Auto"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="powerDownBtn" Grid.Column="3"
+                        Margin="5" FontSize="22" BorderThickness="1"
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_DarkBlue}" Click="powerDownBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial x:Name="powerDownIcon" Kind="PowerCycle" 
+                                                      Width="{Binding ActualHeight, ElementName=powerDownIcon}" 
+                                                      Height="{Binding ActualHeight, ElementName=powerDownText}" 
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="powerDownText" Text="控制箱关闭" FontSize="22" Width="Auto" Height="Auto"
+                                       VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+
+                </Grid>
             </Controls:Flyout>
 
 			<Controls:Flyout x:Name="settingsFlyoutCatch" Position="Right"
