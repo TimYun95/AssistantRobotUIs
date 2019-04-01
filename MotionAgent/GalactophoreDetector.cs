@@ -173,7 +173,7 @@ namespace URModule
         protected double movingSpeed = 0.0; // 移动速度
         protected double detectingBasicPreservedForce = 0.0; // 探测基准保持力大小
         protected bool ifEnableDetectingForceChangeAtTransitionalPart = false; // 过渡段探测力变化开关
-        protected const double detectingForceChangeAtTransitionalPartDeclineProportion = 0.5; // 过渡段探测力变化开关
+        protected const double detectingForceChangeAtTransitionalPartDeclineProportion = 0.2; // 过渡段探测力变化开关
         protected double vibratingAttitudeMaxAtSmoothPart = 0.0; // 平滑段摆动姿态角最大值
         protected double vibratingAttitudeMinAtSteepPart = 0.0; // 陡峭段摆动姿态角最小值
         protected double vibratingAttitudeMaxAtSteepPart = 0.0; // 陡峭段摆动姿态角最大值
