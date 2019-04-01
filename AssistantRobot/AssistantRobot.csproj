@@ -78,13 +78,13 @@
       <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
     </Reference>
     <Reference Include="DataBaseAgent">
-      <HintPath>..\..\DLL\DataBaseConnector\DataBaseAgent\DataBaseAgent\bin\x64\Release\DataBaseAgent.dll</HintPath>
+      <HintPath>..\DataBaseAgent\bin\x64\Release\DataBaseAgent.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\..\DLL\LogConnector\LogAgent\LogAgent\bin\x64\Release\log4net.dll</HintPath>
+      <HintPath>..\LogAgent\bin\x64\Release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="LogAgent">
-      <HintPath>..\..\DLL\LogConnector\LogAgent\LogAgent\bin\x64\Release\LogAgent.dll</HintPath>
+      <HintPath>..\LogAgent\bin\x64\Release\LogAgent.dll</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro">
       <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net45\MahApps.Metro.dll</HintPath>
@@ -93,16 +93,16 @@
       <HintPath>..\packages\MahApps.Metro.IconPacks.2.3.0\lib\net45\MahApps.Metro.IconPacks.dll</HintPath>
     </Reference>
     <Reference Include="MathAgent">
-      <HintPath>..\..\DLL\MathConnector\MathAgent\MathAgent\bin\x64\Release\MathAgent.dll</HintPath>
+      <HintPath>..\MathAgent\bin\x64\Release\MathAgent.dll</HintPath>
     </Reference>
     <Reference Include="MotionAgent">
-      <HintPath>..\..\DLL\MotionModule\MotionAgent\MotionAgent\bin\x64\Release\MotionAgent.dll</HintPath>
+      <HintPath>..\MotionAgent\bin\x64\Release\MotionAgent.dll</HintPath>
     </Reference>
     <Reference Include="ResourceAgent">
-      <HintPath>..\..\DLL\ResourceKeeper\ResourceAgent\ResourceAgent\bin\x64\Release\ResourceAgent.dll</HintPath>
+      <HintPath>..\ResourceAgent\bin\x64\Release\ResourceAgent.dll</HintPath>
     </Reference>
     <Reference Include="SerialAgent">
-      <HintPath>..\..\DLL\SerialConnector\SerialAgent\SerialAgent\bin\x64\Release\SerialAgent.dll</HintPath>
+      <HintPath>..\SerialAgent\bin\x64\Release\SerialAgent.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -120,14 +120,11 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="URAgent">
-      <HintPath>..\..\DLL\URConnector\URAgent\URAgent\bin\x64\Release\URAgent.dll</HintPath>
+      <HintPath>..\URAgent\bin\x64\Release\URAgent.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="XMLAgent">
-      <HintPath>..\..\DLL\XMLConnector\XMLAgent\XMLAgent\bin\x64\Release\XMLAgent.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
