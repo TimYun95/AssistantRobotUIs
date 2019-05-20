@@ -1,0 +1,1163 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+	xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+    xmlns:options="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+    xmlns:local="clr-namespace:AssistantRobot">
+
+    <Style x:Key="AccentedSquareButtonStyle_Green"
+           BasedOn="{StaticResource SquareButtonStyle}"
+           TargetType="{x:Type ButtonBase}">
+        <Setter Property="Background" Value="#FF3DD8AF" />
+        <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}" />
+    </Style>
+
+    <Style x:Key="AccentedSquareButtonStyle_Blue"
+           BasedOn="{StaticResource SquareButtonStyle}"
+           TargetType="{x:Type ButtonBase}">
+        <Setter Property="Background" Value="#FF41B1E1" />
+        <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}" />
+    </Style>
+    
+    <Style x:Key="AccentedSquareButtonStyle_Red"
+           BasedOn="{StaticResource SquareButtonStyle}"
+           TargetType="{x:Type ButtonBase}">
+        <Setter Property="Background" Value="#FFE1417F" />
+        <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}" />
+    </Style>
+
+    <Style x:Key="AccentedSquareButtonStyle_DarkBlue"
+           BasedOn="{StaticResource SquareButtonStyle}"
+           TargetType="{x:Type ButtonBase}">
+        <Setter Property="Background" Value="#FF0070BB" />
+        <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}" />
+    </Style>
+    
+    <SolidColorBrush x:Key="TransparentBrush" Color="{StaticResource Gray8}"  Opacity="0" options:Freeze="True" />
+
+    <Style x:Key="BackIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="ArrowCircleLeftSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+							<Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="SetIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="DotsHorizontalCircle" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+							<Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="LeftBoldIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconEntypo x:Name="icon" Kind="ArrowLeft" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="RightBoldIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconEntypo x:Name="icon" Kind="ArrowRight" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="UpBoldIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconEntypo x:Name="icon" Kind="ArrowUp" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="DownBoldIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconEntypo x:Name="icon" Kind="ArrowDown" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="LeftSlimIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="ArrowLeftThick" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="RightSlimIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="ArrowRightThick" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="UpSlimIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="ArrowUpThick" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="DownSlimIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="ArrowDownThick" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="LeftCaretIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="CaretLeftSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="RightCaretIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="CaretRightSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="AbandonIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconModern x:Name="icon" Kind="SignStop" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="NextIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="ArrowDownBoldBox" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+							<Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="CircleIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconMaterial x:Name="icon" Kind="Circle" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="icon" Property="Foreground" Value="{Binding MouseDownForeground, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+							<Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="DoubleUpIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="AngleDoubleUpSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="DoubleDownIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="AngleDoubleDownSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+	<Style x:Key="DoubleLeftIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="AngleDoubleLeftSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="DoubleRightIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconFontAwesome x:Name="icon" Kind="AngleDoubleRightSolid" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource GrayBrush8}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+    <Style x:Key="MarkIconBtn" TargetType="{x:Type local:IconButton}">
+        <Style.Setters>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="MouseOverBackground"  Value="Black"/>
+            <Setter Property="MouseDownForeground" Value="Black"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MouseOverBackground" Value="Transparent"/>
+            <Setter Property="MouseDownBackground" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MouseOverBorderBrush" Value="Transparent"/>
+            <Setter Property="MouseDownBorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="TextContent" Value=""/>
+            <Setter Property="TextSize" Value="18"/>
+            <Setter Property="TextHorizontalAlignment" Value="Center"/>
+            <Setter Property="TextVerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type local:IconButton}">
+                        <Border x:Name="basePanel"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}">
+                            <Grid>
+                                <iconPacks:PackIconModern x:Name="icon" Kind="DrawMarkerReflection" 
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    Height="Auto" Width="Auto"
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="word" 
+                                                  Text="{TemplateBinding TextContent}" 
+                                                  Foreground="{TemplateBinding TextColor}" 
+                                                  FontSize="{TemplateBinding TextSize}"
+                                                  VerticalAlignment="{TemplateBinding TextVerticalAlignment}" 
+                                                  HorizontalAlignment="{TemplateBinding TextHorizontalAlignment}"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource TransparentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style.Setters>
+    </Style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</ResourceDictionary>
