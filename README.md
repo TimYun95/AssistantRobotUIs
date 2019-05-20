@@ -1,2 +1,2 @@
-# AssistantRobotLocalUI
-Local UI for assistant robot.
+# AssistantRobotUIs
+UIs for assistant robot.
