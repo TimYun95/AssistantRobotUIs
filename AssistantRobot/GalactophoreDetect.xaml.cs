@@ -185,12 +185,12 @@ namespace AssistantRobot
             e.Handled = true;
         }
 
-        private void sinkDistanceBtn_Click(object sender, RoutedEventArgs e)
-        {
-            urvm.SinkDeepFindGalactophoreDetectModule();
+        //private void sinkDistanceBtn_Click(object sender, RoutedEventArgs e)
+        //{
+        //    urvm.SinkDeepFindGalactophoreDetectModule();
 
-            e.Handled = true;
-        }
+        //    e.Handled = true;
+        //}
 
         private void nextBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -234,6 +234,5 @@ namespace AssistantRobot
             
             e.Handled = true;
         }
- 
     }
 }

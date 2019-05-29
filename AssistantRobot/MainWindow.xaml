@@ -223,10 +223,10 @@
 					</StackPanel>
 					
 					<TextBlock Grid.Row="3" Grid.Column="0"
-						Text="过渡段探测力矫正:" FontSize="18" Margin="0 5 5 5"
+						Text="姿态角矫正:" FontSize="18" Margin="0 5 5 5"
 						VerticalAlignment="Center" HorizontalAlignment="Right"/>
 					<Controls:ToggleSwitch Grid.Row="3" Grid.Column="1" 
-								   x:Name="DFAtTSwitch" Margin="5 5 0 5" Cursor="Hand"
+								   x:Name="ARectifySwitch" Margin="5 5 0 5" Cursor="Hand"
                                    OffLabel="关闭" OnLabel="打开" OnSwitchBrush="#FF4BF8CB"
 								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
                                    Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
@@ -234,10 +234,10 @@
 								   ContentDirection="RightToLeft" OffSwitchBrush="#FF9D9D9D"/>
 					
 					<TextBlock Grid.Row="4" Grid.Column="0"
-						Text="探测力大小检查:" FontSize="18" Margin="0 5 5 5"
+						Text="初始姿态角检查:" FontSize="18" Margin="0 5 5 5"
 						VerticalAlignment="Center" HorizontalAlignment="Right"/>
 					<Controls:ToggleSwitch Grid.Row="4" Grid.Column="1" 
-								   x:Name="DFCheckSwitch" Margin="5 5 0 5" Cursor="Hand"
+								   x:Name="IACheckSwitch" Margin="5 5 0 5" Cursor="Hand"
                                    OffLabel="关闭" OnLabel="打开" OnSwitchBrush="#FF4BF8CB"
 								   FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"
                                    Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
@@ -372,9 +372,9 @@
 					<TextBlock Grid.Row="12" Grid.Column="0"
 						Text="扫查旋转步长(deg):" FontSize="18" Margin="0 5 5 5"
 						VerticalAlignment="Center" HorizontalAlignment="Right"/>
-					<StackPanel Grid.Row="12" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+                    <StackPanel Grid.Row="12" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
 						VerticalAlignment="Center" HorizontalAlignment="Left">
-						<Slider x:Name="rotateStepSlider"
+                        <Slider x:Name="rotateStepSlider"
                                     Maximum="45" Minimum="0"
                                     Orientation="Horizontal"
                                     SmallChange="1" LargeChange="1"
@@ -388,17 +388,11 @@
 									Controls:SliderHelper.ThumbFillBrush="White" 
 									Controls:SliderHelper.ThumbFillPressedBrush="White" 
 									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
-						<Label x:Name="rotateStepText" FontSize="18" 
+                        <Label x:Name="rotateStepText" FontSize="18" 
 							Margin="2 0 0 0" MinWidth="60"/>
-					</StackPanel>
+                    </StackPanel>
 
-
-
-
-
-
-
-				</Grid>
+                </Grid>
             </Controls:Flyout>
 
 			<Controls:Flyout x:Name="settingsFlyoutPuncture" Position="Right"

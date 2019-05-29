@@ -22,18 +22,18 @@
             </EventTrigger.Actions>
         </EventTrigger>
     </Page.Triggers>
-    
-    <Grid Background="White">
-    	<Grid.ColumnDefinitions>
-    		<ColumnDefinition/>
-    		<ColumnDefinition Width="14*"/>
-    		<ColumnDefinition/>
-    	</Grid.ColumnDefinitions>
 
-    	<Grid.RowDefinitions>
-    		<RowDefinition/>
-    		<RowDefinition Height="6*"/>
-    	</Grid.RowDefinitions>
+    <Grid Background="White">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="14*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="6*"/>
+        </Grid.RowDefinitions>
 
         <local:IconButton x:Name="iconBackGalactophore" Grid.Row="0" Grid.Column="0"
 			Foreground="#FF0070BB" Style="{StaticResource BackIconBtn}"
@@ -42,7 +42,7 @@
 			Width="{Binding ActualHeight, ElementName=iconBackGalactophore}"
 			HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconBackGalactophore_Click"/>
 
-		<TextBlock x:Name="subTitleGalactophore" Grid.Row="0" Grid.ColumnSpan="4"
+        <TextBlock x:Name="subTitleGalactophore" Grid.Row="0" Grid.ColumnSpan="4"
    				   Text="乳腺扫查" 
 				   FontSize="48" 
 				   TextAlignment="Center" 
@@ -50,7 +50,7 @@
 				   VerticalAlignment="Center" 
 				   Foreground="#FF0071BB"/>
 
-		<local:IconButton x:Name="iconSetGalactophore" Grid.Row="0" Grid.Column="3"
+        <local:IconButton x:Name="iconSetGalactophore" Grid.Row="0" Grid.Column="3"
 			Foreground="#FF0070BB" Style="{StaticResource SetIconBtn}"
             MouseOverForeground="#FF41B1E1" MouseDownForeground="#FF0070BB"
 			Height="{Binding ActualHeight, ElementName=iconBackGalactophore}"
@@ -58,44 +58,44 @@
             IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"
             HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconSetGalactophore_Click"/>
 
-		<Grid Grid.Row="1" Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
 
-			<Grid.RowDefinitions>
-				<RowDefinition Height="*"/>
-				<RowDefinition Height="3*"/>
-			</Grid.RowDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="3*"/>
+            </Grid.RowDefinitions>
 
-			<Grid Grid.Row="0" Margin="0 4 0 4">
-				
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="*"/>
-				</Grid.ColumnDefinitions>
-				
-				<Border Grid.Column="0" Grid.ColumnSpan="3" 
+            <Grid Grid.Row="0" Margin="0 4 0 4">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Grid.ColumnSpan="3" 
 					BorderBrush="#FFB4B4B4" BorderThickness="1"
 					CornerRadius="20" Margin="0 4 0 4"/>
 
-				<Grid Grid.Column="0" Margin="10 20 5 20">
-					
-					<Grid.RowDefinitions>
-						<RowDefinition/>
-						<RowDefinition/>
-						<RowDefinition/>
-					</Grid.RowDefinitions>
+                <Grid Grid.Column="0" Margin="10 20 5 20">
 
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="Auto"/>
-						<ColumnDefinition/>
-						<ColumnDefinition Width="Auto"/>
-					</Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
 
-					<Label Grid.Row="0" Grid.Column="0"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
 						Content="末端工具位置坐标X:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpXGalactophore" Grid.Row="0" Grid.Column="1" 
+                    <TextBox x:Name="tcpXGalactophore" Grid.Row="0" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -104,11 +104,11 @@
 						Content="mm" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-					<Label Grid.Row="1" Grid.Column="0"
+                    <Label Grid.Row="1" Grid.Column="0"
 						Content="末端工具位置坐标Y:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpYGalactophore" Grid.Row="1" Grid.Column="1" 
+                    <TextBox x:Name="tcpYGalactophore" Grid.Row="1" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -117,11 +117,11 @@
 						Content="mm" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-					<Label Grid.Row="2" Grid.Column="0"
+                    <Label Grid.Row="2" Grid.Column="0"
 						Content="末端工具位置坐标Z:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpZGalactophore" Grid.Row="2" Grid.Column="1" 
+                    <TextBox x:Name="tcpZGalactophore" Grid.Row="2" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -129,27 +129,27 @@
                     <Label Grid.Row="2" Grid.Column="2" 
 						Content="mm" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
-				</Grid>
+                </Grid>
 
-				<Grid Grid.Column="1" Margin="5 20 5 20">
-					
-					<Grid.RowDefinitions>
-						<RowDefinition/>
-						<RowDefinition/>
-						<RowDefinition/>
-					</Grid.RowDefinitions>
+                <Grid Grid.Column="1" Margin="5 20 5 20">
 
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="Auto"/>
-						<ColumnDefinition/>
-						<ColumnDefinition Width="Auto"/>
-					</Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
 
-					<Label Grid.Row="0" Grid.Column="0"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
 						Content="末端工具姿态坐标RX:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpRXGalactophore" Grid.Row="0" Grid.Column="1" 
+                    <TextBox x:Name="tcpRXGalactophore" Grid.Row="0" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -158,11 +158,11 @@
 						Content="rad" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-					<Label Grid.Row="1" Grid.Column="0"
+                    <Label Grid.Row="1" Grid.Column="0"
 						Content="末端工具姿态坐标RY:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpRYGalactophore" Grid.Row="1" Grid.Column="1" 
+                    <TextBox x:Name="tcpRYGalactophore" Grid.Row="1" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -170,12 +170,12 @@
                     <Label Grid.Row="1" Grid.Column="2" 
 						Content="rad" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
-					
-					<Label Grid.Row="2" Grid.Column="0"
+
+                    <Label Grid.Row="2" Grid.Column="0"
 						Content="末端工具姿态坐标RZ:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpRZGalactophore" Grid.Row="2" Grid.Column="1" 
+                    <TextBox x:Name="tcpRZGalactophore" Grid.Row="2" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -183,27 +183,27 @@
                     <Label Grid.Row="2" Grid.Column="2" 
 						Content="rad" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
-				</Grid>
+                </Grid>
 
-				<Grid Grid.Column="2" Margin="5 20 10 20">
-					
-					<Grid.RowDefinitions>
-						<RowDefinition/>
-						<RowDefinition/>
-						<RowDefinition/>
-					</Grid.RowDefinitions>
+                <Grid Grid.Column="2" Margin="5 20 10 20">
 
-					<Grid.ColumnDefinitions>
-						<ColumnDefinition Width="Auto"/>
-						<ColumnDefinition/>
-						<ColumnDefinition Width="Auto"/>
-					</Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
 
-					<Label Grid.Row="0" Grid.Column="0"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
 						Content="末端工具单向力FX:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpFXGalactophore" Grid.Row="0" Grid.Column="1" 
+                    <TextBox x:Name="tcpFXGalactophore" Grid.Row="0" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -212,11 +212,11 @@
 						Content="N" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-					<Label Grid.Row="1" Grid.Column="0"
+                    <Label Grid.Row="1" Grid.Column="0"
 						Content="末端工具单向力FY:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpFYGalactophore" Grid.Row="1" Grid.Column="1" 
+                    <TextBox x:Name="tcpFYGalactophore" Grid.Row="1" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -225,11 +225,11 @@
 						Content="N" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-					<Label Grid.Row="2" Grid.Column="0"
+                    <Label Grid.Row="2" Grid.Column="0"
 						Content="末端工具单向力FZ:" FontSize="16"
 						HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-					<TextBox x:Name="tcpFZGalactophore" Grid.Row="2" Grid.Column="1" 
+                    <TextBox x:Name="tcpFZGalactophore" Grid.Row="2" Grid.Column="1" 
                              FontSize="16" MinWidth="70" IsReadOnly="True"
                              HorizontalAlignment="Center" VerticalAlignment="Center" 
                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
@@ -237,428 +237,430 @@
                     <Label Grid.Row="2" Grid.Column="2" 
 						Content="N" FontSize="16"
 						HorizontalAlignment="Left" VerticalAlignment="Center"/>
-				</Grid>				
-			</Grid>
+                </Grid>
+            </Grid>
 
-			<Grid Grid.Row="1" Margin="0 4 0 4">
-				
-				<Grid.RowDefinitions>
-					<RowDefinition Height="*"/>
-					<RowDefinition Height="*"/>
-					<RowDefinition Height="*"/>
-				</Grid.RowDefinitions>
-				
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="4*"/>
-				</Grid.ColumnDefinitions>
-				
-				<Border Grid.Column="0" Grid.ColumnSpan="7" 
+            <Grid Grid.Row="1" Margin="0 4 0 4">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="4*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Grid.ColumnSpan="7" 
 					BorderBrush="#FFB4B4B4" BorderThickness="1" 
 					CornerRadius="20" Margin="0 4 0 4" Grid.RowSpan="3"/>
 
-			<local:IconButton x:Name="iconForceToZeroGalactophore" Grid.Row="0" Grid.Column="0"
+                <local:IconButton x:Name="iconForceToZeroGalactophore" Grid.Row="0" Grid.Column="0"
 				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
 				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
 				TextContent="力清零" Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconForceToZeroGalactophore_Click"/>
-			
-			<local:IconButton x:Name="iconFromZeroToConfGalactophore" Grid.Row="0" Grid.Column="1"
+
+                <local:IconButton x:Name="iconFromZeroToConfGalactophore" Grid.Row="0" Grid.Column="1"
 				Foreground="#FF50C8FC" Style="{DynamicResource DoubleRightIconBtn}"
 				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30" 
 				HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-			<local:IconButton x:Name="iconConfGalactophore" Grid.Row="0" Grid.Column="2"
+                <local:IconButton x:Name="iconConfGalactophore" Grid.Row="0" Grid.Column="2"
 				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
 				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
 				TextContent="参数配置" Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconConfGalactophore_Click"/>
 
-			<local:IconButton x:Name="iconFromZeroToRunGalactophore" Grid.Row="1" Grid.Column="0"
+                <local:IconButton x:Name="iconFromZeroToRunGalactophore" Grid.Row="1" Grid.Column="0"
 				Foreground="#FF50C8FC" Style="{DynamicResource DoubleDownIconBtn}"
 				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
 				HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-			<local:IconButton x:Name="iconBeginGalactophore" Grid.Row="2" Grid.Column="0"
+                <local:IconButton x:Name="iconBeginGalactophore" Grid.Row="2" Grid.Column="0"
 				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
 				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
 				TextContent="开始扫查" Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconBeginGalactophore_Click"/>
 
-			<local:IconButton x:Name="iconFromConfToParaGalactophore" Grid.Row="0" Grid.Column="3"
+                <local:IconButton x:Name="iconFromConfToParaGalactophore" Grid.Row="0" Grid.Column="3"
 				Foreground="#FF50C8FC" Style="{DynamicResource DoubleRightIconBtn}"
 				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
 				HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-			<Grid Grid.Row="0" Grid.Column="4" 
+                <Grid Grid.Row="0" Grid.Column="4" 
 				Grid.RowSpan="3" Margin="5 20 10 20">
-				<Grid.RowDefinitions>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-					<RowDefinition/>
-				</Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <!--<RowDefinition/>-->
+                    </Grid.RowDefinitions>
 
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="*"/>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="Auto"/>
-				</Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-				<local:IconButton x:Name="iconConfNipple" Grid.Row="0" Grid.Column="0"
-					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
-					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
-					HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				
-				<local:IconButton x:Name="iconConfLift" Grid.Row="1" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfNipple" Grid.Row="0" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-				<local:IconButton x:Name="iconConfForbidden" Grid.Row="2" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfLift" Grid.Row="1" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-				<local:IconButton x:Name="iconConfScan" Grid.Row="3" Grid.Column="0"
-					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
-					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
-					HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				
-				<local:IconButton x:Name="iconConfUp" Grid.Row="4" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfForbidden" Grid.Row="2" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-				<local:IconButton x:Name="iconConfDown" Grid.Row="5" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfScan" Grid.Row="3" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-				<local:IconButton x:Name="iconConfLeft" Grid.Row="6" Grid.Column="0"
-					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
-					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
-					HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				
-				<local:IconButton x:Name="iconConfRight" Grid.Row="7" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfUp" Grid.Row="4" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-				<local:IconButton x:Name="iconConfSink" Grid.Row="8" Grid.Column="0"
+                    <local:IconButton x:Name="iconConfDown" Grid.Row="5" Grid.Column="0"
 					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
 					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
 					HorizontalAlignment="Center" VerticalAlignment="Center"/>
-				
-				<Label Grid.Row="0" Grid.Column="1"
+
+                    <local:IconButton x:Name="iconConfLeft" Grid.Row="6" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfRight" Grid.Row="7" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!--
+                    <local:IconButton x:Name="iconConfSink" Grid.Row="8" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    -->
+
+                    <Label Grid.Row="0" Grid.Column="1"
 					Content="乳头位置:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center" 
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"/>
 
-				<StackPanel x:Name="nippleCordinates" Grid.Row="0" 
+                    <StackPanel x:Name="nippleCordinates" Grid.Row="0" 
 					Grid.Column="2" Orientation="Horizontal" 
 					VerticalAlignment="Center" HorizontalAlignment="Center">
-					
-					<TextBox x:Name="nippleX" FontSize="16" MinWidth="70" IsReadOnly="True"
+
+                        <TextBox x:Name="nippleX" FontSize="16" MinWidth="70" IsReadOnly="True"
 						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 4 0"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 						IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"/>
 
-					<TextBox x:Name="nippleY" FontSize="16" MinWidth="70" IsReadOnly="True"
+                        <TextBox x:Name="nippleY" FontSize="16" MinWidth="70" IsReadOnly="True"
 						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4 0 4 0"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 						IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"/>
 
-					<TextBox x:Name="nippleZ" FontSize="16" MinWidth="70" IsReadOnly="True"
+                        <TextBox x:Name="nippleZ" FontSize="16" MinWidth="70" IsReadOnly="True"
 						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4 0 0 0"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 						IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"/>
 
-				</StackPanel>
+                    </StackPanel>
 
-				<Label Grid.Row="0" Grid.Column="3" 
+                    <Label Grid.Row="0" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfNipple}"/>
 
-				<Button x:Name="nippleBtn" Grid.Row="0" Grid.Column="4"
+                    <Button x:Name="nippleBtn" Grid.Row="0" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
 					IsEnabled="{Binding IsEnabled, ElementName=nippleNextBtn}" Click="nippleBtn_Click"/>
 
-				<local:IconButton x:Name="nippleNextBtn" Grid.Row="0" Grid.Column="5"
+                    <local:IconButton x:Name="nippleNextBtn" Grid.Row="0" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="1" Grid.Column="1"
+                    <Label Grid.Row="1" Grid.Column="1"
 					Content="抬升距离:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLift}"/>
 
-				<TextBox x:Name="liftDistance" Grid.Row="1" Grid.Column="2"  
+                    <TextBox x:Name="liftDistance" Grid.Row="1" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLift}"/>
 
-				<Label Grid.Row="1" Grid.Column="3" 
+                    <Label Grid.Row="1" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLift}"/>
 
-				<Button x:Name="liftDistanceBtn" Grid.Row="1" Grid.Column="4"
+                    <Button x:Name="liftDistanceBtn" Grid.Row="1" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
 					IsEnabled="{Binding IsEnabled, ElementName=liftDistanceNextBtn}" Click="liftDistanceBtn_Click"/>
 
-				<local:IconButton x:Name="liftDistanceNextBtn" Grid.Row="1" Grid.Column="5"
+                    <local:IconButton x:Name="liftDistanceNextBtn" Grid.Row="1" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
-				
-				<Label Grid.Row="2" Grid.Column="1"
+
+                    <Label Grid.Row="2" Grid.Column="1"
 					Content="最小半径:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfForbidden}"/>
 
-				<TextBox x:Name="minRadius" Grid.Row="2" Grid.Column="2"  
+                    <TextBox x:Name="minRadius" Grid.Row="2" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfForbidden}"/>
 
-				<Label Grid.Row="2" Grid.Column="3" 
+                    <Label Grid.Row="2" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfForbidden}"/>
 
-				<Button x:Name="minRadiusBtn" Grid.Row="2" Grid.Column="4"
+                    <Button x:Name="minRadiusBtn" Grid.Row="2" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
 					IsEnabled="{Binding IsEnabled, ElementName=minRadiusNextBtn}" Click="minRadiusBtn_Click"/>
 
-				<local:IconButton x:Name="minRadiusNextBtn" Grid.Row="2" Grid.Column="5"
+                    <local:IconButton x:Name="minRadiusNextBtn" Grid.Row="2" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="3" Grid.Column="1"
+                    <Label Grid.Row="3" Grid.Column="1"
 					Content="探测深度:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfScan}"/>
 
-				<TextBox x:Name="scanDistance" Grid.Row="3" Grid.Column="2"  
+                    <TextBox x:Name="scanDistance" Grid.Row="3" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfScan}"/>
 
-				<Label Grid.Row="3" Grid.Column="3" 
+                    <Label Grid.Row="3" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfScan}"/>
 
-				<Button x:Name="scanDistanceBtn" Grid.Row="3" Grid.Column="4"
+                    <Button x:Name="scanDistanceBtn" Grid.Row="3" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}"
 					IsEnabled="{Binding IsEnabled, ElementName=scanDistanceNextBtn}" Click="scanDistanceBtn_Click"/>
 
-				<local:IconButton x:Name="scanDistanceNextBtn" Grid.Row="3" Grid.Column="5"
+                    <local:IconButton x:Name="scanDistanceNextBtn" Grid.Row="3" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="4" Grid.Column="1"
+                    <Label Grid.Row="4" Grid.Column="1"
 					Content="头侧边界:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfUp}"/>
 
-				<TextBox x:Name="headBound" Grid.Row="4" Grid.Column="2"  
+                    <TextBox x:Name="headBound" Grid.Row="4" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfUp}"/>
 
-				<Label Grid.Row="4" Grid.Column="3" 
+                    <Label Grid.Row="4" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfUp}"/>
 
-				<Button x:Name="headBoundBtn" Grid.Row="4" Grid.Column="4"
+                    <Button x:Name="headBoundBtn" Grid.Row="4" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}"
 					IsEnabled="{Binding IsEnabled, ElementName=headBoundNextBtn}" Click="headBoundBtn_Click"/>
 
-				<local:IconButton x:Name="headBoundNextBtn" Grid.Row="4" Grid.Column="5"
+                    <local:IconButton x:Name="headBoundNextBtn" Grid.Row="4" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="5" Grid.Column="1"
+                    <Label Grid.Row="5" Grid.Column="1"
 					Content="尾侧边界:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfDown}"/>
 
-				<TextBox x:Name="tailBound" Grid.Row="5" Grid.Column="2"  
+                    <TextBox x:Name="tailBound" Grid.Row="5" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfDown}"/>
 
-				<Label Grid.Row="5" Grid.Column="3" 
+                    <Label Grid.Row="5" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfDown}"/>
 
-				<Button x:Name="tailBoundBtn" Grid.Row="5" Grid.Column="4"
+                    <Button x:Name="tailBoundBtn" Grid.Row="5" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}"
 					IsEnabled="{Binding IsEnabled, ElementName=tailBoundNextBtn}" Click="tailBoundBtn_Click"/>
 
-				<local:IconButton x:Name="tailBoundNextBtn" Grid.Row="5" Grid.Column="5"
+                    <local:IconButton x:Name="tailBoundNextBtn" Grid.Row="5" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="6" Grid.Column="1"
+                    <Label Grid.Row="6" Grid.Column="1"
 					Content="外侧边界:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLeft}"/>
 
-				<TextBox x:Name="outBound" Grid.Row="6" Grid.Column="2"  
+                    <TextBox x:Name="outBound" Grid.Row="6" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLeft}"/>
 
-				<Label Grid.Row="6" Grid.Column="3" 
+                    <Label Grid.Row="6" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfLeft}"/>
 
-				<Button x:Name="outBoundBtn" Grid.Row="6" Grid.Column="4"
+                    <Button x:Name="outBoundBtn" Grid.Row="6" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
 					IsEnabled="{Binding IsEnabled, ElementName=outBoundNextBtn}" Click="outBoundBtn_Click"/>
 
-				<local:IconButton x:Name="outBoundNextBtn" Grid.Row="6" Grid.Column="5"
+                    <local:IconButton x:Name="outBoundNextBtn" Grid.Row="6" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
 
-				<Label Grid.Row="7" Grid.Column="1"
+                    <Label Grid.Row="7" Grid.Column="1"
 					Content="内侧边界:" FontSize="16"
 					HorizontalAlignment="Right" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfRight}"/>
 
-				<TextBox x:Name="inBound" Grid.Row="7" Grid.Column="2"  
+                    <TextBox x:Name="inBound" Grid.Row="7" Grid.Column="2"  
 					FontSize="16" MinWidth="70"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfRight}"/>
 
-				<Label Grid.Row="7" Grid.Column="3" 
+                    <Label Grid.Row="7" Grid.Column="3" 
 					Content="mm" FontSize="16"
 					HorizontalAlignment="Left" VerticalAlignment="Center"
 					IsEnabled="{Binding IsEnabled, ElementName=iconConfRight}"/>
 
-				<Button x:Name="inBoundBtn" Grid.Row="7" Grid.Column="4"
+                    <Button x:Name="inBoundBtn" Grid.Row="7" Grid.Column="4"
                     Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
                     Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}"
 					IsEnabled="{Binding IsEnabled, ElementName=inBoundNextBtn}" Click="inBoundBtn_Click"/>
 
-				<local:IconButton x:Name="inBoundNextBtn" Grid.Row="7" Grid.Column="5"
+                    <local:IconButton x:Name="inBoundNextBtn" Grid.Row="7" Grid.Column="5"
 					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
 					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 					Height="Auto" Width="Auto" Margin="5"
 					HorizontalAlignment="Center" VerticalAlignment="Center"
 					Click="nextBtn_Click"/>
+                    <!--
+				    <Label Grid.Row="8" Grid.Column="1"
+					    Content="下沉距离:" FontSize="16"
+					    HorizontalAlignment="Right" VerticalAlignment="Center"
+					    IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
 
-				<Label Grid.Row="8" Grid.Column="1"
-					Content="下沉距离:" FontSize="16"
-					HorizontalAlignment="Right" VerticalAlignment="Center"
-					IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
+				    <TextBox x:Name="sinkDistance" Grid.Row="8" Grid.Column="2"  
+					    FontSize="16" MinWidth="70"
+					    HorizontalAlignment="Center" VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+					    IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
 
-				<TextBox x:Name="sinkDistance" Grid.Row="8" Grid.Column="2"  
-					FontSize="16" MinWidth="70"
-					HorizontalAlignment="Center" VerticalAlignment="Center"
-                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-					IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
+				    <Label Grid.Row="8" Grid.Column="3" 
+					    Content="mm" FontSize="16"
+					    HorizontalAlignment="Left" VerticalAlignment="Center"
+					    IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
 
-				<Label Grid.Row="8" Grid.Column="3" 
-					Content="mm" FontSize="16"
-					HorizontalAlignment="Left" VerticalAlignment="Center"
-					IsEnabled="{Binding IsEnabled, ElementName=iconConfSink}"/>
+				    <Button x:Name="sinkDistanceBtn" Grid.Row="8" Grid.Column="4"
+                        Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
+					    IsEnabled="{Binding IsEnabled, ElementName=sinkDistanceNextBtn}"/>
 
-				<Button x:Name="sinkDistanceBtn" Grid.Row="8" Grid.Column="4"
-                    Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
-                    Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
-					IsEnabled="{Binding IsEnabled, ElementName=sinkDistanceNextBtn}" Click="sinkDistanceBtn_Click"/>
+				    <local:IconButton x:Name="sinkDistanceNextBtn" Grid.Row="8" Grid.Column="5"
+					    Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					    MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					    Height="Auto" Width="Auto" Margin="5"
+					    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    -->
+                </Grid>
 
-				<local:IconButton x:Name="sinkDistanceNextBtn" Grid.Row="8" Grid.Column="5"
-					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
-					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
-					Height="Auto" Width="Auto" Margin="5"
-					HorizontalAlignment="Center" VerticalAlignment="Center"
-					Click="nextBtn_Click"/>
-			</Grid>
-
-			<local:IconButton x:Name="iconFromParaToConfirmGalactophore" Grid.Row="2" Grid.Column="3"
+                <local:IconButton x:Name="iconFromParaToConfirmGalactophore" Grid.Row="2" Grid.Column="3"
 				Foreground="#FF50C8FC" Style="{DynamicResource DoubleLeftIconBtn}"
 				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
         		HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-			<local:IconButton x:Name="iconConfConfirmGalactophore" Grid.Row="2" Grid.Column="2"
+                <local:IconButton x:Name="iconConfConfirmGalactophore" Grid.Row="2" Grid.Column="2"
 				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
 				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
 				TextContent="参数确认" Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconConfConfirmGalactophore_Click"/>
-			
-			<local:IconButton x:Name="iconFromConfirmToRunGalactophore" Grid.Row="2" Grid.Column="1"
+
+                <local:IconButton x:Name="iconFromConfirmToRunGalactophore" Grid.Row="2" Grid.Column="1"
 				Foreground="#FF50C8FC" Style="{DynamicResource DoubleLeftIconBtn}"
 				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
 				HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-			<local:IconButton x:Name="iconStopGalactophore" Grid.Row="1" Grid.Column="2"
+                <local:IconButton x:Name="iconStopGalactophore" Grid.Row="1" Grid.Column="2"
 				Foreground="#FFE1417F" Style="{DynamicResource AbandonIconBtn}"
 				MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
 				Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconStopGalactophore_Click"/>
-			
 
 
-							
 
-			</Grid>
 
-		</Grid>
-	</Grid>
+
+            </Grid>
+
+        </Grid>
+    </Grid>
 
 
 

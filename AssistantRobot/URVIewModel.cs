@@ -24,7 +24,6 @@ using URModule;
 using SQLServerConnection;
 using SerialConnection;
 
-
 namespace AssistantRobot
 {
     public class URVIewModel : INotifyPropertyChanged
@@ -77,8 +76,8 @@ namespace AssistantRobot
         private const OPTODataProcessor.SensorType currentSensorType = OPTO49152Connector.SensorType.OldOptoForce;
 
         // 各TCP连接点IP地址，不可更改
-        private const string forceSensorIP = "192.168.1.1";
-        private const string forceConnectorIP = "192.168.1.3";
+        private const string forceSensorIP = "192.168.1.9";
+        private const string forceConnectorIP = "192.168.1.11";
         private const string robotControllerIP = "192.168.1.5";
         private const string robotConnectorIP = "192.168.1.7";
 
@@ -909,25 +908,6 @@ namespace AssistantRobot
         }
         #endregion
 
-        #region Detecting Force Change
-        private bool ifEnableDetectingForceChangeAtTransitionalPartGDR = false;
-        /// <summary>
-        /// 乳腺扫查中过渡段探测力变化开关
-        /// </summary>
-        public bool IfEnableDetectingForceChangeAtTransitionalPartGDR
-        {
-            get { return ifEnableDetectingForceChangeAtTransitionalPartGDR; }
-            set
-            {
-                ifEnableDetectingForceChangeAtTransitionalPartGDR = value;
-                if (this.PropertyChanged != null)
-                {
-                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableDetectingForceChangeAtTransitionalPartGDR"));
-                }
-            }
-        }
-        #endregion
-
         #region Detecting Motion Limits
         private double nippleForbiddenRadiusGDR = 0.0;
         /// <summary>
@@ -997,19 +977,36 @@ namespace AssistantRobot
             }
         }
 
-        private bool ifEnableDetectingForceCheckGDR = false;
+        private bool ifEnableDetectingInitialForceGDR = false;
         /// <summary>
-        /// 乳腺扫查中探测力大小检查开关
+        /// 乳腺扫查中初始力检查以确定初始姿态角开关
         /// </summary>
-        public bool IfEnableDetectingForceCheckGDR
+        public bool IfEnableDetectingInitialForceGDR
         {
-            get { return ifEnableDetectingForceCheckGDR; }
+            get { return ifEnableDetectingInitialForceGDR; }
             set
             {
-                ifEnableDetectingForceCheckGDR = value;
+                ifEnableDetectingInitialForceGDR = value;
                 if (this.PropertyChanged != null)
                 {
-                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableDetectingForceCheckGDR"));
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableDetectingInitialForceGDR"));
+                }
+            }
+        }
+
+        private bool ifEnableAngleCorrectedGDR = false;
+        /// <summary>
+        /// 乳腺扫查中姿态角矫正开关
+        /// </summary>
+        public bool IfEnableAngleCorrectedGDR
+        {
+            get { return ifEnableAngleCorrectedGDR; }
+            set
+            {
+                ifEnableAngleCorrectedGDR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableAngleCorrectedGDR"));
                 }
             }
         }
@@ -1423,6 +1420,7 @@ namespace AssistantRobot
             bool result = await ShowBranchDialog(message, title);
             dealFunction(result);
         }
+        
         /// <summary>
         /// 主窗口分支弹窗，切换到UI线程运行
         /// </summary>
@@ -1471,6 +1469,7 @@ namespace AssistantRobot
         {
             ShowDialog(message, title, occupyNum);
         }
+
         /// <summary>
         /// 主窗口弹窗，切换到UI线程运行
         /// </summary>
@@ -1929,25 +1928,25 @@ namespace AssistantRobot
         /// 乳腺扫查模块寻找下沉距离
         /// </summary>
         /// <returns>返回执行Task</returns>
-        public async void SinkDeepFindGalactophoreDetectModule()
-        {
-            if (!ifEnableDetectingForceCheckGDR) return;
+        //public async void SinkDeepFindGalactophoreDetectModule()
+        //{
+        //    if (!ifEnableDetectingForceCheckGDR) return;
 
-            if (ifCheckingSinkDistance) return;
-            ifCheckingSinkDistance = true;
+        //    if (ifCheckingSinkDistance) return;
+        //    ifCheckingSinkDistance = true;
 
-            SaveCachePos();
-            double radius = Double.Parse(gd.minRadius.Text.Trim()) / 1000.0;
+        //    SaveCachePos();
+        //    double radius = Double.Parse(gd.minRadius.Text.Trim()) / 1000.0;
 
-            await gdr.ScanForceCheck(radius, DetectingForceDegreeGDR);
+        //    //await gdr.ScanForceCheck(radius, DetectingForceDegreeGDR);
 
-            double[] posNow = urdp.PositionsTcpActual;
-            double distanceBias = Math.Abs(posNow[2] - nipplePositionGDR[2]);
-            DetectingSinkDistanceGDR = distanceBias;
-            //SaveCachePos(posNow);
+        //    double[] posNow = urdp.PositionsTcpActual;
+        //    double distanceBias = Math.Abs(posNow[2] - nipplePositionGDR[2]);
+        //    DetectingSinkDistanceGDR = distanceBias;
+        //    //SaveCachePos(posNow);
 
-            ifCheckingSinkDistance = false;
-        }
+        //    ifCheckingSinkDistance = false;
+        //}
 
         /// <summary>
         /// 乳腺扫查模块确认配置参数
@@ -2011,16 +2010,14 @@ namespace AssistantRobot
                 case 5:
                     if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary)
                     {
-                        if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
-                        else GalactophoreDetectorParameterConfirmState = 10;
+                        GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
                     }
                     else GalactophoreDetectorParameterConfirmState += 1;
                     break;
                 case 6:
                     if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.UpDownBoundary)
                     {
-                        if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
-                        else GalactophoreDetectorParameterConfirmState = 10;
+                        GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
                     }
                     else
                     {
@@ -2032,11 +2029,7 @@ namespace AssistantRobot
                 case 8:
                     GalactophoreDetectorParameterConfirmState = 0;
                     await gdr.LongitudinalToHorizontalCheck(true);
-                    if (ifEnableDetectingForceCheckGDR) GalactophoreDetectorParameterConfirmState = 9;
-                    else GalactophoreDetectorParameterConfirmState = 10;
-                    break;
-                case 9:
-                    if (!ifCheckingSinkDistance) GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
+                    GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
                     break;
                 case Byte.MaxValue:
                     GalactophoreDetectorParameterConfirmState = 0;
@@ -2088,7 +2081,7 @@ namespace AssistantRobot
                     returnConf.Add((string)mw.minForceText.Content);
                     returnConf.Add((string)mw.maxForceText.Content);
                     returnConf.Add((double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0).ToString("0.0000"));
-                    returnConf.Add(mw.DFAtTSwitch.IsChecked.ToString());
+                    returnConf.Add(mw.ARectifySwitch.IsChecked.ToString());
                     returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSmoothPart
                     returnConf.Add("-2.0"); // vibratingAttitudeMinAtSteepPart
                     returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSteepPart
@@ -2096,8 +2089,8 @@ namespace AssistantRobot
                     returnConf.Add("-2.0"); // movingStopDistance
                     returnConf.Add((double.Parse(gd.scanDistance.Text.Trim()) / 1000.0).ToString("0.000"));
                     returnConf.Add((double.Parse(gd.liftDistance.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add(mw.DFCheckSwitch.IsChecked.ToString());
-                    returnConf.Add((double.Parse(gd.sinkDistance.Text.Trim()) / 1000.0).ToString("0.000"));
+                    returnConf.Add(mw.IACheckSwitch.IsChecked.ToString());
+                    returnConf.Add("-2.0");
                     returnConf.Add(Math.Round(mw.vibrateDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.speedDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.forceDegreeSlider.Value).ToString("0"));
@@ -2256,8 +2249,6 @@ namespace AssistantRobot
         private readonly ConverterThatTransformEnumToBool convertE2B = new ConverterThatTransformEnumToBool();
         private readonly ConverterMultiStatusToEnableBool convertMS2EB = new ConverterMultiStatusToEnableBool();
 
-
-
         /// <summary>
         /// 绑定元素
         /// </summary>
@@ -2272,7 +2263,6 @@ namespace AssistantRobot
             BindingItemsParametersNeededToShowOnWindowRobotJointsAngles();
             BindingItemsNipplePositionAtGalactophoreDetecting();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingDirectionForceLimitsAndSpeedLimits();
-            BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingForceChange();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingMotionLimits();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDegreeControlParameters();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingEdge();
@@ -2280,8 +2270,6 @@ namespace AssistantRobot
 
 
             BindingItemsGalactophoreDetectorWorkingStatus();
-
-
 
         }
 
@@ -2779,20 +2767,6 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Force Change |-- 内元素
-        /// </summary>
-        private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingForceChange()
-        {
-            // 绑定：IfEnableDetectingForceChangeAtTransitionalPartGDR {属性} ==> DFAtTSwitch {Flyout控件}
-            Binding bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch = new Binding();
-            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Source = this;
-            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Path = new PropertyPath("IfEnableDetectingForceChangeAtTransitionalPartGDR");
-            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.Mode = BindingMode.OneWay;
-            bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            BindingOperations.SetBinding(mw.DFAtTSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableDetectingForceChangeAtTransitionalPartGDRToDFAtTSwitch);
-        }
-
-        /// <summary>
         /// 绑定域 --| Configuration Parameters Of GalactophoreDetector --> Detecting Motion Limits |-- 内元素
         /// </summary>
         private void BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingMotionLimits()
@@ -2828,22 +2802,30 @@ namespace AssistantRobot
             BindingOperations.SetBinding(gd.liftDistance, TextBox.TextProperty, bindingFromDetectingSafetyLiftDistanceGDRToLiftDistance);
 
             // 绑定：DetectingSinkDistanceGDR {属性} ==> sinkDistance {GalactophoreDetect控件}
-            Binding bindingFromDetectingSinkDistanceGDRToSinkDistance = new Binding();
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.Source = this;
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.Path = new PropertyPath("DetectingSinkDistanceGDR");
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.Mode = BindingMode.OneWay;
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.Converter = convertD2S;
-            bindingFromDetectingSinkDistanceGDRToSinkDistance.ConverterParameter = valueP1000D0;
-            BindingOperations.SetBinding(gd.sinkDistance, TextBox.TextProperty, bindingFromDetectingSinkDistanceGDRToSinkDistance);
+            //Binding bindingFromDetectingSinkDistanceGDRToSinkDistance = new Binding();
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.Source = this;
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.Path = new PropertyPath("DetectingSinkDistanceGDR");
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.Mode = BindingMode.OneWay;
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.Converter = convertD2S;
+            //bindingFromDetectingSinkDistanceGDRToSinkDistance.ConverterParameter = valueP1000D0;
+            //BindingOperations.SetBinding(gd.sinkDistance, TextBox.TextProperty, bindingFromDetectingSinkDistanceGDRToSinkDistance);
 
-            // 绑定：IfEnableDetectingForceCheckGDR {属性} ==> DFCheckSwitch {Flyout控件}
-            Binding bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch = new Binding();
-            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Source = this;
-            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Path = new PropertyPath("IfEnableDetectingForceCheckGDR");
-            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.Mode = BindingMode.OneWay;
-            bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            BindingOperations.SetBinding(mw.DFCheckSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableDetectingForceCheckGDRToDFCheckSwitch);
+            // 绑定：IfEnableDetectingInitialForceGDR {属性} ==> IACheckSwitch {Flyout控件}
+            Binding bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch = new Binding();
+            bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch.Source = this;
+            bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch.Path = new PropertyPath("IfEnableDetectingInitialForceGDR");
+            bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.IACheckSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableDetectingInitialForceGDRToIACheckSwitch);
+
+            // 绑定：IfEnableAngleCorrectedGDR {属性} ==> ARectifySwitch {Flyout控件}
+            Binding bindingFromIfEnableAngleCorrectedGDRToARectifySwitch = new Binding();
+            bindingFromIfEnableAngleCorrectedGDRToARectifySwitch.Source = this;
+            bindingFromIfEnableAngleCorrectedGDRToARectifySwitch.Path = new PropertyPath("IfEnableAngleCorrectedGDR");
+            bindingFromIfEnableAngleCorrectedGDRToARectifySwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableAngleCorrectedGDRToARectifySwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.ARectifySwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableAngleCorrectedGDRToARectifySwitch);
         }
 
         /// <summary>
@@ -3135,13 +3117,13 @@ namespace AssistantRobot
             BindingOperations.SetBinding(gd.iconConfRight, IconButton.IsEnabledProperty, mbindingToIconConfRight);
 
             // 14. iconConfSink
-            MultiBinding mbindingToIconConfSink = new MultiBinding();
-            mbindingToIconConfSink.Mode = BindingMode.OneWay;
-            mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
-            mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
-            mbindingToIconConfSink.Converter = convertMS2EB;
-            mbindingToIconConfSink.ConverterParameter = new object[] { new byte[] { 9, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
-            BindingOperations.SetBinding(gd.iconConfSink, IconButton.IsEnabledProperty, mbindingToIconConfSink);
+            //MultiBinding mbindingToIconConfSink = new MultiBinding();
+            //mbindingToIconConfSink.Mode = BindingMode.OneWay;
+            //mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            //mbindingToIconConfSink.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            //mbindingToIconConfSink.Converter = convertMS2EB;
+            //mbindingToIconConfSink.ConverterParameter = new object[] { new byte[] { 9, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            //BindingOperations.SetBinding(gd.iconConfSink, IconButton.IsEnabledProperty, mbindingToIconConfSink);
 
             // 15. iconFromParaToConfirmGalactophore
             MultiBinding mbindingToIconFromParaToConfirmGalactophore = new MultiBinding();
@@ -3264,19 +3246,16 @@ namespace AssistantRobot
             BindingOperations.SetBinding(gd.inBoundNextBtn, IconButton.IsEnabledProperty, mbindingToInBoundNextBtn);
 
             // 28. sinkDistanceNextBtn
-            MultiBinding mbindingToSinkDistanceNextBtn = new MultiBinding();
-            mbindingToSinkDistanceNextBtn.Mode = BindingMode.OneWay;
-            mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
-            mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
-            mbindingToSinkDistanceNextBtn.Converter = convertMS2EB;
-            mbindingToSinkDistanceNextBtn.ConverterParameter = new object[] { new byte[] { 9 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
-            BindingOperations.SetBinding(gd.sinkDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToSinkDistanceNextBtn);
+            //MultiBinding mbindingToSinkDistanceNextBtn = new MultiBinding();
+            //mbindingToSinkDistanceNextBtn.Mode = BindingMode.OneWay;
+            //mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorWorkStatus);
+            //mbindingToSinkDistanceNextBtn.Bindings.Add(bindingFromGalactophoreDetectorParameterConfirmState);
+            //mbindingToSinkDistanceNextBtn.Converter = convertMS2EB;
+            //mbindingToSinkDistanceNextBtn.ConverterParameter = new object[] { new byte[] { 9 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            //BindingOperations.SetBinding(gd.sinkDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToSinkDistanceNextBtn);
         }
 
         #endregion
-
-
-
 
         /// <summary>
         /// View赋值
@@ -3693,7 +3672,7 @@ namespace AssistantRobot
             DetectingErrorForceMinGDR = double.Parse(Parameters[0][0]);
             DetectingErrorForceMaxGDR = double.Parse(Parameters[1][0]);
             DetectingSpeedMinGDR = double.Parse(Parameters[2][0]);
-            IfEnableDetectingForceChangeAtTransitionalPartGDR = bool.Parse(Parameters[3][0]);
+            IfEnableAngleCorrectedGDR = bool.Parse(Parameters[3][0]);
             // {vibratingAttitudeMaxAtSmoothPart}
             // {vibratingAttitudeMinAtSteepPart}
             // {vibratingAttitudeMaxAtSteepPart}
@@ -3701,7 +3680,7 @@ namespace AssistantRobot
             // {movingStopDistance}
             DetectingStopDistanceGDR = double.Parse(Parameters[9][0]);
             DetectingSafetyLiftDistanceGDR = double.Parse(Parameters[10][0]);
-            IfEnableDetectingForceCheckGDR = bool.Parse(Parameters[11][0]);
+            IfEnableDetectingInitialForceGDR = bool.Parse(Parameters[11][0]);
             DetectingSinkDistanceGDR = double.Parse(Parameters[12][0]);
             VibratingAngleDegreeGDR = (GalactophoreDetector.VibratingMagnitude)Enum.Parse(typeof(GalactophoreDetector.VibratingMagnitude), Parameters[13][0]);
             MovingSpeedDegreeGDR = (GalactophoreDetector.MovingLevel)Enum.Parse(typeof(GalactophoreDetector.MovingLevel), Parameters[14][0]);
