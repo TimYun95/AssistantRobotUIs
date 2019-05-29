@@ -98,6 +98,9 @@
     <Reference Include="MotionAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\MotionAgent\bin\x64\Release\MotionAgent.dll</HintPath>
     </Reference>
+    <Reference Include="PipeAgent">
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\x64\Release\PipeAgent.dll</HintPath>
+    </Reference>
     <Reference Include="ResourceAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\ResourceAgent\bin\x64\Release\ResourceAgent.dll</HintPath>
     </Reference>
