@@ -17,11 +17,11 @@ namespace AssistantRobot
     /// </summary>
 	public partial class BaseControl
 	{
-        private readonly URVIewModel urvm;
+        private readonly URViewModel urvm;
         private readonly ConverterThatTransformDoubleToString convertD2S = new ConverterThatTransformDoubleToString();
         private readonly ValueProcesser valueP1D2 = new ValueProcesser(1.0, "0.00");
 
-        public BaseControl(URVIewModel URVM)
+        public BaseControl(URViewModel URVM)
 		{
 			this.InitializeComponent();
 

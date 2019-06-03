@@ -26,7 +26,7 @@ using SerialConnection;
 
 namespace AssistantRobot
 {
-    public class URVIewModel : INotifyPropertyChanged
+    public class URViewModel : INotifyPropertyChanged
     {
         #region 枚举
         /// <summary>
@@ -1302,6 +1302,21 @@ namespace AssistantRobot
 
         #endregion
 
+        #region Pipe
+        private URViewModelRemote_LocalPart urvmr_lp;
+
+        private bool ifRecievedPipeCrashed = false;
+        /// <summary>
+        /// 管道中断标志
+        /// </summary>
+        public bool IfRecievedPipeCrashed
+        {
+            set { ifRecievedPipeCrashed = value; }
+        }
+
+        private bool ifCloseController = false; // 是否准备关闭控制箱
+        #endregion
+
         #region Method
         /// <summary>
         /// 机械臂上电
@@ -1420,7 +1435,7 @@ namespace AssistantRobot
             bool result = await ShowBranchDialog(message, title);
             dealFunction(result);
         }
-        
+
         /// <summary>
         /// 主窗口分支弹窗，切换到UI线程运行
         /// </summary>
@@ -2146,28 +2161,11 @@ namespace AssistantRobot
             MessageDialogResult result = await mw.ShowMessageAsync("选择", "请选择想要的关闭方式！",
                 MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, mySettings);
 
+            if (result == MessageDialogResult.FirstAuxiliary) ifCloseController = true;
+
             if (result == MessageDialogResult.Affirmative)
             {
                 await Task.Delay(100);
-            }
-            else if (result == MessageDialogResult.Negative)
-            {
-                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂断电。。。", settings: new MetroDialogSettings()
-                {
-                    AnimateShow = false,
-                    AnimateHide = false,
-                    DialogTitleFontSize = titleSize,
-                    DialogMessageFontSize = messageSize,
-                    ColorScheme = MetroDialogColorScheme.Theme
-                });
-
-                controller.SetIndeterminate();
-                RobotPowerOff(); 
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
-                {
-                    await Task.Delay(200);
-                }
-                await controller.CloseAsync();
             }
             else
             {
@@ -2187,7 +2185,38 @@ namespace AssistantRobot
                     await Task.Delay(200);
                 }
                 await controller.CloseAsync();
-                urdp.SendURBaseControllerShutDown(); 
+            }
+
+            var controller2 = await mw.ShowProgressAsync("请稍后", "正在处理远程通讯。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = false,
+                AnimateHide = false,
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
+
+            controller2.SetIndeterminate();
+
+            // 发送终止Pipe连接指令
+
+            while (!ifRecievedPipeCrashed)
+            {
+                await Task.Delay(200);
+            }
+            await controller2.CloseAsync();
+        }
+
+        /// <summary>
+        /// 直接关闭Model逻辑
+        /// </summary>
+        public async void DirectCloseModelLogic()
+        {
+            await Task.Delay(100);
+
+            if (ifCloseController)
+            {
+                urdp.SendURBaseControllerShutDown();
                 await Task.Delay(25);
             }
 
@@ -3256,6 +3285,15 @@ namespace AssistantRobot
         }
 
         #endregion
+
+        /// <summary>
+        /// 子ViewModel赋值
+        /// </summary>
+        /// <param name="URVMR_LP">远程View Model的本地部分</param>
+        public void DefineViewModel(URViewModelRemote_LocalPart URVMR_LP)
+        {
+            urvmr_lp = URVMR_LP;
+        }
 
         /// <summary>
         /// View赋值

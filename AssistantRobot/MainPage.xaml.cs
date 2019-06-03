@@ -20,9 +20,9 @@ namespace AssistantRobot
     /// </summary>
     public partial class MainPage : Page
     {
-        private readonly URVIewModel urvm;
+        private readonly URViewModel urvm;
 
-        public MainPage(URVIewModel URVM)
+        public MainPage(URViewModel URVM)
         {
             InitializeComponent();
 
@@ -31,14 +31,14 @@ namespace AssistantRobot
 
         private void baseControl_Click(object sender, RoutedEventArgs e)
         {
-            urvm.NavigateToPage(URVIewModel.ShowPage.BaseControl);
+            urvm.NavigateToPage(URViewModel.ShowPage.BaseControl);
 
             e.Handled = true;
         }
 
         private void galactophoreCheck_Click(object sender, RoutedEventArgs e)
         {
-            urvm.NavigateToPage(URVIewModel.ShowPage.GalactophoreDetect);
+            urvm.NavigateToPage(URViewModel.ShowPage.GalactophoreDetect);
 
             // 进入乳腺扫查模块
             urvm.EnterGalactophoreDetectModule();
