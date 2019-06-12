@@ -3277,6 +3277,7 @@ namespace AssistantRobot
         /// </summary>
         public void ModelInitialization()
         {
+            // 开始修改处
             if (!ResourceChecker.ResourceChecking())
             {
                 EnableAll = false;
