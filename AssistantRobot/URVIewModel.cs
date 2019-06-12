@@ -13,9 +13,11 @@ using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 
 using System.Windows;
+using System.Net;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Reflection;
+
 using LogPrinter;
 using ResourceCheck;
 using URCommunication;
@@ -1302,6 +1304,63 @@ namespace AssistantRobot
 
         #endregion
 
+        #region ViewModelRemote_LocalPart
+        /// <summary>
+        /// 乳腺扫查模块确认配置参数 远程传参
+        /// </summary>
+        /// <param name="conf">远程参数</param>
+        public void ConfirmConfParamsGalactophoreDetectModule(List<string> conf)
+        {
+            Task.Run(new Action(() =>
+            {
+                gdr.ConfirmConfigurationParameters(conf);
+                gdr.LoadParametersFromXmlAndOutput();
+                ConfParamsNextParamsGalactophoreDetectModule();
+            }));
+        }
+
+        /// <summary>
+        /// 保存该页配置 远程传参
+        /// </summary>
+        /// <param name="modifyPage">修改的页</param>
+        /// <param name="conf">远程参数</param>
+        public void SaveConfParameters(ConfPage modifyPage, List<string> conf)
+        {
+            switch (modifyPage)
+            {
+                case ConfPage.GalactophoreDetect:
+                    gdr.SaveParametersFromStringToXml(conf);
+                    gdr.LoadParametersFromXmlAndOutput();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 立即停止所有乳腺扫查模块中的活动
+        /// </summary>
+        /// <param name="timeInterval">恢复时间间隔 ms</param>
+        public void StopMotionNowGalactophoreDetectModule(int timeInterval)
+        {
+            GalactophoreDetectorParameterConfirmState = 0;
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
+                new List<byte> { GalactophoreDetectorParameterConfirmState });
+
+            Task.Run(new Action(() =>
+            {
+                gdr.EndModuleNow();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
+
+                Thread.Sleep(timeInterval);
+
+                gdr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
+            }));
+        }
+        #endregion
+
         #region Pipe
         private URViewModelRemote_LocalPart urvmr_lp;
 
@@ -1315,6 +1374,139 @@ namespace AssistantRobot
         }
 
         private bool ifCloseController = false; // 是否准备关闭控制箱
+
+        /// <summary>
+        /// Pipe发送UR实时数据
+        /// </summary>
+        /// <param name="originalDatas">原始数据</param>
+        private void PipeSendURRealTimeData(double[] originalDatas)
+        {
+            List<byte> sendDatas = new List<byte>();
+
+            for (int i = 0; i < 12; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(originalDatas[i])), 0))));
+            }
+
+            for (int i = 18; i < 24; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(originalDatas[i])), 0))));
+            }
+
+            for (int i = 28; i < 34; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(originalDatas[i])), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(originalDatas[26]));
+            sendDatas.Add(Convert.ToByte(originalDatas[27]));
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URRealTimeData, sendDatas);
+        }
+
+        /// <summary>
+        /// Pipe发送Breast扫描配置文件
+        /// </summary>
+        /// <param name="originalDatas"></param>
+        private void PipeSendBreastScanConf(List<string[]> originalDatas)
+        {
+            List<byte> sendDatas = new List<byte>();
+
+            for (int i = 1; i < 3; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[3][0]) ? 1 : 0));
+
+            // {vibratingAttitudeMaxAtSmoothPart}
+            // {vibratingAttitudeMinAtSteepPart}
+            // {vibratingAttitudeMaxAtSteepPart}
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[7][0]))), 0))));
+
+            // {movingStopDistance}
+
+            for (int i = 9; i < 11; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[11][0]) ? 1 : 0));
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[12][0]))), 0))));
+
+            sendDatas.Add((byte)((GalactophoreDetector.VibratingMagnitude)Enum.Parse(typeof(GalactophoreDetector.VibratingMagnitude), originalDatas[13][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.MovingLevel)Enum.Parse(typeof(GalactophoreDetector.MovingLevel), originalDatas[14][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.DetectingIntensity)Enum.Parse(typeof(GalactophoreDetector.DetectingIntensity), originalDatas[15][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.AligningDegree)Enum.Parse(typeof(GalactophoreDetector.AligningDegree), originalDatas[16][0])));
+
+            for (int i = 17; i < 21; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[21][0]) ? 1 : 0));
+
+            sendDatas.Add((byte)((GalactophoreDetector.ScanningRegion)Enum.Parse(typeof(GalactophoreDetector.ScanningRegion), originalDatas[22][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.IdentifyBoundary)Enum.Parse(typeof(GalactophoreDetector.IdentifyBoundary), originalDatas[23][0])));
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[24][0]))), 0))));
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfiguration, sendDatas);
+        }
+
         #endregion
 
         #region Method
@@ -1996,10 +2188,14 @@ namespace AssistantRobot
         public async void StopMotionNowGalactophoreDetectModule()
         {
             GalactophoreDetectorParameterConfirmState = 0;
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
+                new List<byte> { GalactophoreDetectorParameterConfirmState });
 
             Task.Run(new Action(() =>
             {
                 gdr.EndModuleNow();
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanImmediateStop);
+
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
             }));
 
@@ -2008,6 +2204,8 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 gdr.RecoverToNormal();
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanImmediateStopRecovery);
+
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
             }));
         }
@@ -2017,7 +2215,7 @@ namespace AssistantRobot
         /// </summary>
         public async void ConfParamsNextParamsGalactophoreDetectModule()
         {
-            switch (galactophoreDetectorParameterConfirmState)
+            switch (GalactophoreDetectorParameterConfirmState)
             {
                 case 1:
                     if (nipplePositionGDR[0] * nipplePositionGDR[1] * nipplePositionGDR[2] > Double.Epsilon * 10.0) GalactophoreDetectorParameterConfirmState += 1;
@@ -2058,6 +2256,9 @@ namespace AssistantRobot
                     GalactophoreDetectorParameterConfirmState += 1;
                     break;
             }
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
+                new List<byte> { GalactophoreDetectorParameterConfirmState });
         }
 
         #endregion
@@ -2198,7 +2399,7 @@ namespace AssistantRobot
 
             controller2.SetIndeterminate();
 
-            // 发送终止Pipe连接指令
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.EndPipeConnection);
 
             while (!ifRecievedPipeCrashed)
             {
@@ -2223,7 +2424,16 @@ namespace AssistantRobot
             urdp.ActiveBreakCommunicationConncect();
             ClearAllEvents(urdp);
 
-            await Task.Delay(200);
+            await Task.Delay(400);
+            mw.Close();
+        }
+
+        /// <summary>
+        /// 直接关闭窗体
+        /// </summary>
+        public async void ImmediateCloseWin()
+        {
+            await Task.Delay(100);
             mw.Close();
         }
 
@@ -3313,22 +3523,23 @@ namespace AssistantRobot
         /// <summary>
         /// Model初始化
         /// </summary>
-        public void ModelInitialization()
+        /// <returns>返回初始化结果</returns>
+        public byte ModelInitialization()
         {
             if (!ResourceChecker.ResourceChecking())
             {
                 EnableAll = false;
-                ShowDialog("资源配置检查过程出错！", "错误", 1);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Resource directories or files are not correct.");
-                return;
+                return 1;
             }
 
-            if (!DataBaseInitialization()) return;
+            if (!DataBaseInitialization()) return 2;
             if (ifUsingSerialPort) SerialPortInitialization();
             URExecutorInitialization();
 
             GalactophoreDetectorInitialization();
 
+            return 0;
         }
 
         /// <summary>
@@ -3472,7 +3683,10 @@ namespace AssistantRobot
         private void DataBaseCanNotBeAttached()
         {
             EnableAll = false;
-            ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
+            //ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
+                new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.DataBaseAttachFailed });
+
             Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
             return;
         }
@@ -3483,7 +3697,10 @@ namespace AssistantRobot
         private void SerialPortCanNotBeAttached()
         {
             EnableAll = false;
-            ShowDialogAtUIThread("无法连接到串口" + numOfCOM + "！", "错误", 3);
+            //ShowDialogAtUIThread("无法连接到串口" + numOfCOM + "！", "错误", 3);
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
+                new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.SerialPortAttachFailed });
+
             Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Post " + numOfCOM + " can not be attached.");
             return;
         }
@@ -3494,26 +3711,28 @@ namespace AssistantRobot
         /// <param name="AbnormalStatus">异常状态</param>
         private void UREmergencyStatus(short AbnormalStatus)
         {
-            string showStr;
-            if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ProtectiveStop)
-            {
-                showStr = "机械臂触发保护停止！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.EmergencyStop)
-            {
-                showStr = "机械臂触发紧急停止！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.CurrentOverflow)
-            {
-                showStr = "机械臂关节电流偏离超限，已停止断电！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ForceOverflow)
-            {
-                showStr = "机械臂末端力和力矩过大，已停止断电！";
-            }
-            else showStr = "机械臂发生未知的紧急状况！";
+            //string showStr;
+            //if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ProtectiveStop)
+            //{
+            //    showStr = "机械臂触发保护停止！";
+            //}
+            //else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.EmergencyStop)
+            //{
+            //    showStr = "机械臂触发紧急停止！";
+            //}
+            //else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.CurrentOverflow)
+            //{
+            //    showStr = "机械臂关节电流偏离超限，已停止断电！";
+            //}
+            //else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ForceOverflow)
+            //{
+            //    showStr = "机械臂末端力和力矩过大，已停止断电！";
+            //}
+            //else showStr = "机械臂发生未知的紧急状况！";
 
-            ShowDialogAtUIThread(showStr, "紧急状态", 4);
+            //ShowDialogAtUIThread(showStr, "紧急状态", 4);
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URWorkEmergencyState,
+                new List<byte> { Convert.ToByte(AbnormalStatus) });
 
             string outputStatus = ((URDataProcessor.RobotEmergency)AbnormalStatus).ToString();
             Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Robot Emergency status: " + outputStatus + ".");
@@ -3532,7 +3751,9 @@ namespace AssistantRobot
                 StatusBarContent = "网络连接异常中断";
                 StatusBarBackgroundColor = defaultRedColor;
                 EnableAll = false;
-                ShowDialogAtUIThread("网络连接由于未知原因发生中断，机械臂急停！", "错误", 5);
+                //ShowDialogAtUIThread("网络连接由于未知原因发生中断，机械臂急停！", "错误", 5);
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URNetAbnormalAbort);
+
                 Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is unexpectly broken.");
             }
             else if (NetState == (short)URDataProcessor.NetConnection.Connected)
@@ -3541,6 +3762,9 @@ namespace AssistantRobot
                 StatusBarContent = "网络连接正常";
                 StatusBarBackgroundColor = defaultGreenColor;
                 if (!EnableAll) EnableAll = true;
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
+                    new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.URNetConnectionRecovery });
+
                 Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is established automatically.");
             }
             else if (NetState == (short)URDataProcessor.NetConnection.ActiveBroken)
@@ -3587,7 +3811,8 @@ namespace AssistantRobot
 
                     await controller.CloseAsync();
 
-                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                    //await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                    urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URInitialPowerOnAskReply);
                 }
                 else if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
                 {
@@ -3608,7 +3833,37 @@ namespace AssistantRobot
 
                     await controller.CloseAsync();
 
-                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                    //await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+                    urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URInitialPowerOnAskReply);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 处理首次连接网络的问题
+        /// </summary>
+        public async void DealWithFirstNetConnection()
+        {
+            if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
+            {
+                urdp.SendURBaseControllerPowerOn();
+                while (robotCurrentStatus != UR30003Connector.RobotStatus.Idle)
+                {
+                    await Task.Delay(200);
+                }
+
+                urdp.SendURBaseControllerBrakeRelease();
+                while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+                {
+                    await Task.Delay(200);
+                }
+            }
+            else if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
+            {
+                urdp.SendURBaseControllerBrakeRelease();
+                while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+                {
+                    await Task.Delay(200);
                 }
             }
         }
@@ -3660,13 +3915,16 @@ namespace AssistantRobot
             ToolTorqueY = Parameters[32];
             ToolTorqueZ = Parameters[33];
 
+            PipeSendURRealTimeData(Parameters); // Pipe推送实时数据
+
             if (ifFirstOpenTheProg)
             {
                 ifFirstOpenTheProg = false;
 
                 if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
                 {
-                    ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
+                    //ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
+                    urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URInitialPowerOnAsk);
                 }
             }
         }
@@ -3677,27 +3935,30 @@ namespace AssistantRobot
         /// <param name="SingularState">奇异点临近状态</param>
         private void URSingularState(short SingularState)
         {
-            string showStr;
+            //string showStr;
             switch (SingularState)
             {
                 case 1:
-                    showStr = "临近肩部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    //showStr = "临近肩部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at shoulder.");
                     break;
                 case 2:
-                    showStr = "临近肘部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    //showStr = "临近肘部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at elbow.");
                     break;
                 case 3:
-                    showStr = "临近腕部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    //showStr = "临近腕部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at wrist.");
                     break;
                 default:
-                    showStr = "临近未知奇异位置，已停止相关运动，请断电检查程序奇异点定义！";
+                    //showStr = "临近未知奇异位置，已停止相关运动，请断电检查程序奇异点定义！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near unknown singular point.");
                     break;
             }
-            ShowDialogAtUIThread(showStr, "紧急状态", 6);
+            //ShowDialogAtUIThread(showStr, "紧急状态", 6);
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URNearSingularState,
+                new List<byte> { Convert.ToByte(SingularState - 1) });
+
             return;
         }
 
@@ -3732,6 +3993,8 @@ namespace AssistantRobot
             IfCheckRightGalactophoreGDR = (GalactophoreDetector.ScanningRegion)Enum.Parse(typeof(GalactophoreDetector.ScanningRegion), Parameters[22][0]);
             IdentifyEdgeModeGDR = (GalactophoreDetector.IdentifyBoundary)Enum.Parse(typeof(GalactophoreDetector.IdentifyBoundary), Parameters[23][0]);
             CheckingStepGDR = double.Parse(Parameters[24][0]);
+
+            PipeSendBreastScanConf(Parameters);
         }
 
         /// <summary>
@@ -3741,6 +4004,10 @@ namespace AssistantRobot
         private void GDRWorkStatus(short Status)
         {
             GalactophoreDetectorWorkStatus = Status;
+
+           // 偏置+10
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanWorkStatus,
+                new List<byte> { Convert.ToByte(Status + 10) });
         }
 
         /// <summary>
@@ -3750,6 +4017,9 @@ namespace AssistantRobot
         private void GDRParameterConfirmStatus(bool Status)
         {
             GalactophoreDetectorParameterConfirm = Status;
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationConfirmStatus,
+                new List<byte> { Convert.ToByte(Status ? 1 : 0) });
         }
 
         /// <summary>
@@ -3759,6 +4029,9 @@ namespace AssistantRobot
         private void GDRForceClearedStatus(bool Status)
         {
             GalactophoreDetectorForceSensorCleared = Status;
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanForceZerodStatus,
+                new List<byte> { Convert.ToByte(Status ? 1 : 0) });
         }
 
 

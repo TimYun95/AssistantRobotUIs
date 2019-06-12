@@ -1,6 +1,6 @@
 ﻿using System;
-//using System.Collections.Generic;
-//using System.Linq;
+using System.Collections.Generic;
+using System.Linq;
 //using System.Text;
 //using System.Threading.Tasks;
 using System.Net;
@@ -40,50 +40,24 @@ namespace AssistantRobot
         /// </summary>
         public enum AppProtocolStatus : byte
         {
-            URStatus = 1,
-            BreastScanStatus = 2,
-
-            AdditionalMsg = 101
-        }
-
-        /// <summary>
-        /// 应用协议状态 UR状态
-        /// </summary>
-        public enum AppProtocolURStatus : byte
-        {
             URRealTimeData = 1,
             URNetAbnormalAbort = 2,
             URWorkEmergencyState = 3,
             URNearSingularState = 4,
-            URPowerOnAsk = 5,
-            URPowerOnAskReply = 6
+            URInitialPowerOnAsk = 5,
+            URInitialPowerOnAskReply = 6,
+            URAdditionalDeviceAbnormal = 7,
+
+            BreastScanConfiguration = 101,
+            BreastScanWorkStatus = 102,
+            BreastScanConfigurationConfirmStatus = 103,
+            BreastScanForceZerodStatus = 104,
+            BreastScanConfigurationProcess = 151,
+            BreastScanImmediateStop = 201,
+            BreastScanImmediateStopRecovery = 202,
+
+            EndPipeConnection = 251
         }
-
-        /// <summary>
-        /// 应用协议状态 乳腺扫描状态
-        /// </summary>
-        public enum AppProtocolBreastScanStatus : byte
-        {
-            BreastScanConfiguration = 1,
-            BreastScanWorkStatus = 2,
-            BreastScanConfirmStatus = 3,
-            BreastScanForceZerodStatus = 4,
-
-            BreastScanImmediateStop = 101,
-            BreastScanImmediateStopRecovery = 102
-        }
-
-        /// <summary>
-        /// 应用协议状态 额外消息状态
-        /// </summary>
-        public enum AppProtocolAdditionalMsgStatus : byte
-        {
-
-        }
-
-
-
-
 
         /// <summary>
         /// 应用协议状态 实时数据报格式
@@ -96,14 +70,6 @@ namespace AssistantRobot
             TcpForce = 72, // float
             RobotState = 96, // byte
             RobotProgramState = 97 // byte
-        }
-
-        /// <summary>
-        /// 应用协议状态 UR紧急状态数据报格式
-        /// </summary>
-        public enum AppProtocolEmergencyStateDatagram : byte
-        {
-            EmergencyState = 0 // byte: URDataProcessor.RobotEmergency
         }
 
         /// <summary>
@@ -132,9 +98,93 @@ namespace AssistantRobot
             WristSingular = 2
         }
 
+        /// <summary>
+        /// 应用协议状态 UR外围设备异常状态数据报格式
+        /// </summary>
+        public enum AppProtocolAdditionalDeviceAbnormalDatagram : byte
+        {
+            AbnormalClass = 0
+        }
 
+        /// <summary>
+        /// 应用协议状态 UR外围设备异常状态数据报格式 异常种类
+        /// </summary>
+        public enum AppProtocolAdditionalDeviceAbnormalDatagramClass : byte
+        {
+            DataBaseAttachFailed = 0,
+            SerialPortAttachFailed = 1,
+            URNetConnectionRecovery = 2
+        }
 
+        /// <summary>
+        /// 应用协议状态 乳腺扫描配置数据报格式
+        /// </summary>
+        public enum AppProtocolBreastScanConfigurationDatagram : byte
+        {
+            DetectingErrorForceMinGDR = 0,
+            DetectingErrorForceMaxGDR = 4,
+            DetectingSpeedMinGDR = 8,
+            IfEnableAngleCorrectedGDR = 12,
+            NippleForbiddenRadiusGDR = 13,
+            DetectingStopDistanceGDR = 17,
+            DetectingSafetyLiftDistanceGDR = 21,
+            IfEnableDetectingInitialForceGDR = 25,
+            DetectingSinkDistanceGDR = 26,
+            VibratingAngleDegreeGDR = 30,
+            MovingSpeedDegreeGDR = 31,
+            DetectingForceDegreeGDR = 32,
+            DetectingAlignDegreeGDR = 33,
+            MovingUpEdgeDistanceGDR = 34,
+            MovingLeftEdgeDistanceGDR = 38,
+            MovingDownEdgeDistanceGDR = 42,
+            MovingRightEdgeDistanceGDR = 46,
+            IfAutoReplaceConfigurationGDR = 50,
+            IfCheckRightGalactophoreGDR = 51,
+            IdentifyEdgeModeGDR = 52,
+            CheckingStepGDR = 53
+        }
 
+        /// <summary>
+        /// 应用协议状态 乳腺扫描工作状态数据报格式
+        /// </summary>
+        public enum AppProtocolBreastScanWorkStatusDatagram : byte
+        {
+            ModuleWorkingStatus = 0 // byte: OperateModuleBase.WorkStatus
+        }
+
+        /// <summary>
+        /// 应用协议状态 乳腺扫描配置确认数据报格式
+        /// </summary>
+        public enum AppProtocolBreastScanConfigurationConfirmDatagram : byte
+        {
+            HasConfirmConfiguration = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 乳腺扫描力清零数据报格式
+        /// </summary>
+        public enum AppProtocolBreastScanForceZerodDatagram : byte
+        {
+            HasForceZeroed = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 乳腺扫描配置过程进度数据报格式
+        /// </summary>
+        public enum AppProtocolBreastScanConfigurationProcessDatagram : byte
+        {
+            ConfProcess = 0 // byte: 0--BeforeConfiguration
+                                                  // 1--NipplePos
+                                                  // 2--LiftDistance
+                                                  // 3--ForbiddenDistance
+                                                  // 4--ScanDepth
+                                                  // 5--UpEdge
+                                                  // 6--DownEdge
+                                                  // 7--LeftEdge
+                                                  // 8--RightEdge
+                                                  // 9--UpEdge
+                                                  // max--All
+        }
 
         /// <summary>
         /// 应用协议指令
@@ -146,7 +196,23 @@ namespace AssistantRobot
             MoveStop = 3,
             MoveReference = 4,
             MoveSpeed = 5,
-            BreastScan = 6
+
+            PowerOn = 51,
+            BrakeRelease = 52,
+            PowerOff = 53,
+            AutoPowerOn = 61,
+
+            EnterBreastScanMode = 101,
+            BeginForceZeroed = 102,
+            BeginConfigurationSet = 103,
+            NextConfigurationItem = 104,
+            ConfirmConfigurationSet = 105,
+            ReadyAndStartBreastScan = 106,
+            SaveConfigurationSet = 107,
+
+            StopBreastScanImmediately = 201,
+
+            ExitBreastScanMode = 251
         }
 
         /// <summary>
@@ -184,30 +250,7 @@ namespace AssistantRobot
             SpeedRatio = 0, // float: 0.0~50.0
         }
 
-        /// <summary>
-        /// 应用协议指令 乳腺扫描数据报格式
-        /// </summary>
-        public enum AppProtocolBreastScanDatagram : byte 
-        {
-            EnterBreastScanMode = 1,
-            BeginForceZeroed = 2,
-            BeginConfigurationSet = 3,
-            NextConfigurationItem = 4,
-            ConfirmConfigurationSet = 5,
-            ReadyAndStartBreastScan = 6,
-            SaveConfigurationSet = 7,
-
-            StopBreastScanImmediately = 101,
-
-            ExitBreastScanMode = 201
-        }
-
-
-
-
-
         #endregion
-
 
         #region 字段
         private readonly URViewModel urvm;
@@ -216,7 +259,6 @@ namespace AssistantRobot
         private const double maxSpeedRatio = 50.0; // 最大速度比例
 
         #endregion
-
 
         #region 方法
         /// <summary>
@@ -232,11 +274,22 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// Pipe连接
+        /// </summary>
+        /// <returns>返回连接结果</returns>
+        public bool PipeBeginToConnect()
+        {
+            return ppc.PipeConnect();
+        }
+
+        /// <summary>
         /// 接收字节流处理
         /// </summary>
         /// <param name="getBytes">收到的字节流</param>
-        void DealWithRecievedBytes(byte[] getBytes)
+        protected void DealWithRecievedBytes(byte[] getBytes)
         {
+            if (getBytes.Length < 6) return; // 字节流长度太短
+
             int theoryDataLength = Convert.ToInt32(
                 IPAddress.NetworkToHostOrder(
                 BitConverter.ToInt32(getBytes, (int)AppProtocol.DataLength)));
@@ -261,6 +314,7 @@ namespace AssistantRobot
                             default: axisMotion = 'x'; break;
                         }
 
+                        // 远端速度降低为50%
                         if (urvm.BaseMoveSpeedRatio > maxSpeedRatio) urvm.BaseMoveSpeedRatio = maxSpeedRatio;
 
                         if (ifSpin) urvm.BaseMovingSpinBegin(axisMotion, ifPos);
@@ -282,6 +336,7 @@ namespace AssistantRobot
                             default: axisSpin = '1'; break;
                         }
 
+                        // 远端速度降低为50%
                         if (urvm.BaseMoveSpeedRatio > maxSpeedRatio) urvm.BaseMoveSpeedRatio = maxSpeedRatio;
 
                         urvm.BaseMovingSingleSpinBegin(axisSpin, ifPos);
@@ -296,17 +351,46 @@ namespace AssistantRobot
                 case AppProtocolCommand.MoveSpeed:
                     urvm.BaseMoveSpeedRatio = (double)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolMoveSpeedDatagram.SpeedRatio];
                     break;
-                case AppProtocolCommand.BreastScan:
-                    {
 
-
-
-
-
-
-
-
-                    }
+                case AppProtocolCommand.PowerOn:
+                    urvm.RobotPowerOn();
+                    break;
+                case AppProtocolCommand.BrakeRelease:
+                    urvm.BrakeLess();
+                    break;
+                case AppProtocolCommand.PowerOff:
+                    urvm.RobotPowerOff();
+                    break;
+                case AppProtocolCommand.AutoPowerOn:
+                    urvm.DealWithFirstNetConnection();
+                    break;
+                    
+                case AppProtocolCommand.EnterBreastScanMode:
+                    urvm.EnterGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.BeginForceZeroed:
+                    urvm.ForceClearGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.BeginConfigurationSet:
+                    urvm.ConfParamsGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.NextConfigurationItem:
+                    urvm.ConfParamsNextParamsGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.ConfirmConfigurationSet:
+                    urvm.ConfirmConfParamsGalactophoreDetectModule(UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
+                    break;
+                case AppProtocolCommand.ReadyAndStartBreastScan:
+                    urvm.ReadyAndStartGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.SaveConfigurationSet:
+                    urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray())); 
+                    break;
+                case AppProtocolCommand.StopBreastScanImmediately:
+                    urvm.StopMotionNowGalactophoreDetectModule(500);
+                    break;
+                case AppProtocolCommand.ExitBreastScanMode:
+                    urvm.ExitGalactophoreDetectModule();
                     break;
                 default:
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "No such command, command number: +" + ((byte)getKey).ToString() + ".");
@@ -317,23 +401,124 @@ namespace AssistantRobot
         /// <summary>
         /// 管道已经断开
         /// </summary>
-        void GetPipeCrashed()
+        protected void GetPipeCrashed()
         {
             urvm.IfRecievedPipeCrashed = true;
             urvm.DirectCloseModelLogic();
         }
 
+        /// <summary>
+        /// 管道发送数据流
+        /// </summary>
+        /// <param name="statusFlag">状态标志位</param>
+        /// <param name="sendBytes">发送数据</param>
+        public void SendPipeDataStream(AppProtocolStatus statusFlag, List<byte> sendBytes = null)
+        {
+            if (sendBytes.Equals(null)) sendBytes = new List<byte>();
 
+            int sendLength = sendBytes.Count + 2;
+            sendBytes.Insert(0, (byte)statusFlag);
+            sendBytes.Insert(0, (byte)AppProtocolDireciton.Local2Remote);
+            sendBytes.InsertRange(0, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(sendLength)));
 
+            ppc.SendBytes(sendBytes.ToArray());
+        }
 
+        /// <summary>
+        /// 解包配置参数
+        /// </summary>
+        /// <param name="bufferBytes">待解包配置参数</param>
+        /// <returns>返回解包后的结果</returns>
+        protected List<string> UnpackConfigurationParameters(byte[] bufferBytes)
+        {
+            List<string> returnedString = new List<string>(25);
 
+            returnedString.Add(BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(bufferBytes,
+                                                    (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMinGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(bufferBytes,
+                                                    (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMaxGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                            BitConverter.GetBytes(
+                            IPAddress.NetworkToHostOrder(
+                            BitConverter.ToInt32(bufferBytes,
+                                                                (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSpeedMinGDR))), 0).ToString());
+           
+            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableAngleCorrectedGDR] == 1).ToString());
+            
+            returnedString.Add("-2.0");
+            returnedString.Add("-2.0");
+            returnedString.Add("-2.0");
 
+            returnedString.Add(BitConverter.ToSingle(
+                            BitConverter.GetBytes(
+                            IPAddress.NetworkToHostOrder(
+                            BitConverter.ToInt32(bufferBytes,
+                                                                (byte)AppProtocolBreastScanConfigurationDatagram.NippleForbiddenRadiusGDR))), 0).ToString());
 
+            returnedString.Add("-2.0");
+
+            returnedString.Add(BitConverter.ToSingle(
+                           BitConverter.GetBytes(
+                           IPAddress.NetworkToHostOrder(
+                           BitConverter.ToInt32(bufferBytes,
+                                                               (byte)AppProtocolBreastScanConfigurationDatagram.DetectingStopDistanceGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                           BitConverter.GetBytes(
+                           IPAddress.NetworkToHostOrder(
+                           BitConverter.ToInt32(bufferBytes,
+                                                               (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSafetyLiftDistanceGDR))), 0).ToString());
+
+            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableDetectingInitialForceGDR] == 1).ToString());
+
+            returnedString.Add("-2.0"); // 实际占位的
+
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.VibratingAngleDegreeGDR].ToString());
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.MovingSpeedDegreeGDR].ToString());
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingForceDegreeGDR].ToString());
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingAlignDegreeGDR].ToString());
+
+            returnedString.Add(BitConverter.ToSingle(
+                           BitConverter.GetBytes(
+                           IPAddress.NetworkToHostOrder(
+                           BitConverter.ToInt32(bufferBytes,
+                                                               (byte)AppProtocolBreastScanConfigurationDatagram.MovingUpEdgeDistanceGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                                       BitConverter.GetBytes(
+                                       IPAddress.NetworkToHostOrder(
+                                       BitConverter.ToInt32(bufferBytes,
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingLeftEdgeDistanceGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                                       BitConverter.GetBytes(
+                                       IPAddress.NetworkToHostOrder(
+                                       BitConverter.ToInt32(bufferBytes,
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingDownEdgeDistanceGDR))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                                       BitConverter.GetBytes(
+                                       IPAddress.NetworkToHostOrder(
+                                       BitConverter.ToInt32(bufferBytes,
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingRightEdgeDistanceGDR))), 0).ToString());
+
+            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfAutoReplaceConfigurationGDR] == 1).ToString());
+
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfCheckRightGalactophoreGDR].ToString());
+            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IdentifyEdgeModeGDR].ToString());
+
+            returnedString.Add(BitConverter.ToSingle(
+                                       BitConverter.GetBytes(
+                                       IPAddress.NetworkToHostOrder(
+                                       BitConverter.ToInt32(bufferBytes,
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.CheckingStepGDR))), 0).ToString());
+
+            return returnedString;
+        }
+        
         #endregion
-
-
-
-
 
     }
 }
