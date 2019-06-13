@@ -16,6 +16,8 @@ using System.Windows;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Reflection;
+using System.Configuration;
+
 using LogPrinter;
 using ResourceCheck;
 using URCommunication;
@@ -67,7 +69,7 @@ namespace AssistantRobot
         private GalactophoreDetector gdr;
 
         // COM连接
-        private const bool ifUsingSerialPort = false;
+        private readonly bool ifUsingSerialPort = false;
         private const string numOfCOM = "COM3";
 
         // 所使用硬件版本，不可更改
@@ -1300,6 +1302,38 @@ namespace AssistantRobot
         }
         #endregion
 
+        #endregion
+
+        #region Construct Function
+        /// <summary>
+        /// 构造函数，载入配置
+        /// </summary>
+        /// <param name="ifSuccess">是否配置成功</param>
+        public URVIewModel(out bool ifSuccess)
+        {
+            //bool parseResult = true;
+
+            //bool ifUsingSerialPortTemp = bool.TryParse(ConfigurationManager.AppSettings["ifUsingSerialPort"], out parseResult);
+            //if (parseResult) ifUsingSerialPort = ifUsingSerialPortTemp;
+            //else 
+
+            ifSuccess = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
         #endregion
 
         #region Method

@@ -42,7 +42,8 @@ namespace AssistantRobot
             InitializeComponent();
 
             // 定义VM
-            urvm = new URVIewModel();
+            bool a;
+            urvm = new URVIewModel(out a);
 
             // 初始化页
             mainPage = new MainPage(urvm);
