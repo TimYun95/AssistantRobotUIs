@@ -34,7 +34,7 @@ namespace AssistantRobot
         private readonly ValueProcesser valueP1D0A15 = new ValueProcesser(1.0, "0", 15);
         private readonly ConverterThatTransformDoubleToWord convertD2W = new ConverterThatTransformDoubleToWord();
 
-
+        private byte modelInitialResult = 0;
 
 
         public MainWindow()
@@ -55,7 +55,7 @@ namespace AssistantRobot
             urvm.BindingItems();
 
             // Model初始化
-            urvm.ModelInitialization();
+            modelInitialResult = urvm.ModelInitialization();
 
             // 建立部分绑定
             PartialBindingsEstablish();
@@ -150,7 +150,31 @@ namespace AssistantRobot
         // 加载界面
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // model初始化失败
+            if (modelInitialResult != 0)
+            {
+                ReadyToClose();
+                return;
+            }
+
+            // UR连接
             urvm.StartConnection();
+        }
+
+        /// <summary>
+        /// 初始化问题 准备关闭窗体
+        /// </summary>
+        private async void ReadyToClose()
+        {
+            if (modelInitialResult == 1)
+            {
+                await urvm.ShowDialog("资源配置检查过程出错！", "错误", 1);
+            }
+            else if (modelInitialResult == 2)
+            {
+                await urvm.ShowDialog("数据库数据更新过程出错！", "错误", 12);
+            }
+            urvm.ImmediateCloseWin();
         }
 
         private void btnPowerOff_Click(object sender, RoutedEventArgs e)

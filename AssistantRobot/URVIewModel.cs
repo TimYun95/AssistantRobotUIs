@@ -2160,6 +2160,14 @@ namespace AssistantRobot
             }
         }
 
+        /// <summary>
+        /// 直接关闭窗体
+        /// </summary>
+        public async void ImmediateCloseWin()
+        {
+            await Task.Delay(100);
+            mw.Close();
+        }
 
         /// <summary>
         /// 关闭Model逻辑
@@ -3309,22 +3317,23 @@ namespace AssistantRobot
         /// <summary>
         /// Model初始化
         /// </summary>
-        public void ModelInitialization()
+        /// <returns>返回初始化结果</returns>
+        public byte ModelInitialization()
         {
             if (!ResourceChecker.ResourceChecking())
             {
                 EnableAll = false;
-                ShowDialog("资源配置检查过程出错！", "错误", 1);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Resource directories or files are not correct.");
-                return;
+                return 1;
             }
 
-            if (!DataBaseInitialization()) return;
+            if (!DataBaseInitialization()) return 2;
             if (ifUsingSerialPort) SerialPortInitialization();
             URExecutorInitialization();
 
             GalactophoreDetectorInitialization();
 
+            return 0;
         }
 
         /// <summary>
