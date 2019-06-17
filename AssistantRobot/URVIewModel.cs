@@ -28,7 +28,7 @@ using SerialConnection;
 
 namespace AssistantRobot
 {
-    public class URVIewModel : INotifyPropertyChanged
+    public class URViewModel : INotifyPropertyChanged
     {
         #region 枚举
         /// <summary>
@@ -1309,7 +1309,7 @@ namespace AssistantRobot
         /// 构造函数，载入配置
         /// </summary>
         /// <param name="ifSuccess">是否配置成功</param>
-        public URVIewModel(out bool ifSuccess)
+        public URViewModel(out bool ifSuccess)
         {
             ifSuccess = true;
             bool parseResult = true;

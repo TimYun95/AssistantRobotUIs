@@ -19,9 +19,9 @@ namespace AssistantRobot
     /// </summary>
     public partial class GalactophoreDetect
     {
-        private readonly URVIewModel urvm;
+        private readonly URViewModel urvm;
 
-        public GalactophoreDetect(URVIewModel URVM)
+        public GalactophoreDetect(URViewModel URVM)
         {
             this.InitializeComponent();
 

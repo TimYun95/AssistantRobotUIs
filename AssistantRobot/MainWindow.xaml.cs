@@ -22,7 +22,7 @@ namespace AssistantRobot
     /// </summary>
     public partial class MainWindow
     {
-        private readonly URVIewModel urvm;
+        private readonly URViewModel urvm;
         private MainPage mainPage;
         private BaseControl baseContorlPage;
         private GalactophoreDetect galactophoreDetectPage;
@@ -42,7 +42,7 @@ namespace AssistantRobot
             InitializeComponent();
 
             // 定义VM
-            urvm = new URVIewModel(out appInitialResult);
+            urvm = new URViewModel(out appInitialResult);
 
             // 初始化页
             mainPage = new MainPage(urvm);
@@ -60,7 +60,7 @@ namespace AssistantRobot
             PartialBindingsEstablish();
 
             // 加载默认页
-            urvm.NavigateToPage((URVIewModel.ShowPage)(-1));
+            urvm.NavigateToPage((URViewModel.ShowPage)(-1));
         }
 
         private void PartialBindingsEstablish()
@@ -206,7 +206,7 @@ namespace AssistantRobot
         private void settingsFlyoutGalactophore_IsOpenChanged(object sender, RoutedEventArgs e)
         {
             bool nowState = (e.OriginalSource as Flyout).IsOpen;
-            if (!nowState) urvm.SaveConfParameters(URVIewModel.ConfPage.GalactophoreDetect);
+            if (!nowState) urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect);
 
             e.Handled = true;
         }
