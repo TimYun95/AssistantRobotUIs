@@ -2695,8 +2695,6 @@ namespace AssistantRobot
 
         #endregion
 
-
-
         /// <summary>
         /// 缓存当前位置
         /// </summary>
@@ -2707,15 +2705,6 @@ namespace AssistantRobot
             {
                 posCacheNow[i] = InputPos[i];
             }
-        }
-
-        /// <summary>
-        /// 直接关闭窗体
-        /// </summary>
-        public async void ImmediateCloseWin()
-        {
-            await Task.Delay(100);
-            mw.Close();
         }
 
         /// <summary>

@@ -257,7 +257,7 @@ namespace AssistantRobot
         private PipeConnector ppc = new PipeConnector("innerCommunication");
 
         private const double maxSpeedRatio = 50.0; // 最大速度比例
-
+        private bool ifPipeConnected = false;
         #endregion
 
         #region 方法
@@ -279,7 +279,7 @@ namespace AssistantRobot
         /// <returns>返回连接结果</returns>
         public bool PipeBeginToConnect()
         {
-            return ppc.PipeConnect();
+            return ifPipeConnected = ppc.PipeConnect();
         }
 
         /// <summary>
@@ -414,6 +414,8 @@ namespace AssistantRobot
         /// <param name="sendBytes">发送数据</param>
         public void SendPipeDataStream(AppProtocolStatus statusFlag, List<byte> sendBytes = null)
         {
+            if (!ifPipeConnected) return;
+
             if (sendBytes.Equals(null)) sendBytes = new List<byte>();
 
             int sendLength = sendBytes.Count + 2;

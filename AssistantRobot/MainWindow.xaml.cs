@@ -49,6 +49,7 @@ namespace AssistantRobot
 
             // 定义RemoteVM_LocalPart
             urvmr_lp = new URViewModelRemote_LocalPart(urvm);
+            urvm.DefineViewModel(urvmr_lp);
 
             // 初始化页
             mainPage = new MainPage(urvm);
