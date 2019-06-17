@@ -25,6 +25,7 @@ namespace AssistantRobot
     {
         private readonly URViewModel urvm;
         private readonly URViewModelRemote_LocalPart urvmr_lp;
+
         private MainPage mainPage;
         private BaseControl baseContorlPage;
         private GalactophoreDetect galactophoreDetectPage;
@@ -44,7 +45,7 @@ namespace AssistantRobot
             InitializeComponent();
 
             // 定义VM
-            urvm = new URVIewModel(out appInitialResult);
+            urvm = new URViewModel(out appInitialResult);
 
             // 定义RemoteVM_LocalPart
             urvmr_lp = new URViewModelRemote_LocalPart(urvm);

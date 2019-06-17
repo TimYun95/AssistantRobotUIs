@@ -138,6 +138,7 @@
     <Compile Include="SelfDefinedConverter.cs" />
     <Compile Include="URViewModel.cs" />
     <Compile Include="URViewModelRemote_LocalPart.cs" />
+
     <Page Include="BaseControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

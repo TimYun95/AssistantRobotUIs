@@ -1514,7 +1514,7 @@ namespace AssistantRobot
         /// 构造函数，载入配置
         /// </summary>
         /// <param name="ifSuccess">是否配置成功</param>
-        public URVIewModel(out bool ifSuccess)
+        public URViewModel(out bool ifSuccess)
         {
             ifSuccess = true;
             bool parseResult = true;
