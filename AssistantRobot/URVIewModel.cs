@@ -16,6 +16,8 @@ using System.Windows;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Reflection;
+using System.Configuration;
+
 using LogPrinter;
 using ResourceCheck;
 using URCommunication;
@@ -26,7 +28,7 @@ using SerialConnection;
 
 namespace AssistantRobot
 {
-    public class URVIewModel : INotifyPropertyChanged
+    public class URViewModel : INotifyPropertyChanged
     {
         #region 枚举
         /// <summary>
@@ -67,48 +69,48 @@ namespace AssistantRobot
         private GalactophoreDetector gdr;
 
         // COM连接
-        private const bool ifUsingSerialPort = false;
-        private const string numOfCOM = "COM3";
+        private readonly bool ifUsingSerialPort = false;
+        private readonly string numOfCOM = "COM3";
 
         // 所使用硬件版本，不可更改
-        private const URDataProcessor.RobotType currentRobotType = URDataProcessor.RobotType.CBUR3;
-        private const URDataProcessor.RobotProgramType currentRobotProgramType = UR30003Connector.RobotProgramType.SW34;
-        private const OPTODataProcessor.SensorType currentSensorType = OPTO49152Connector.SensorType.OldOptoForce;
+        private readonly URDataProcessor.RobotType currentRobotType = URDataProcessor.RobotType.CBUR3;
+        private readonly URDataProcessor.RobotProgramType currentRobotProgramType = UR30003Connector.RobotProgramType.SW34;
+        private readonly OPTODataProcessor.SensorType currentSensorType = OPTO49152Connector.SensorType.OldOptoForce;
 
         // 各TCP连接点IP地址，不可更改
-        private const string forceSensorIP = "192.168.1.9";
-        private const string forceConnectorIP = "192.168.1.11";
-        private const string robotControllerIP = "192.168.1.5";
-        private const string robotConnectorIP = "192.168.1.7";
+        private readonly string forceSensorIP = "192.168.1.9";
+        private readonly string forceConnectorIP = "192.168.1.11";
+        private readonly string robotControllerIP = "192.168.1.5";
+        private readonly string robotConnectorIP = "192.168.1.7";
 
         // 部分配置参数，不必更改
-        private const int timeOutDurationMS = 200;
-        private const bool ifProlongTimeOutDurationWhenConnectionBegin = true;
-        private const int autoCheckingConnectableDurationMS = 1000;
-        private const bool ifUsingForceSensor = true;
-        private const bool ifEnableCurrentOverFlowProtect = true;
-        private const bool ifEnableForceOverFlowProtect = true;
-        private const bool ifEnableToolIO = false;
-        private const double currentOverFlowBoundValue = 2.0;
-        private const double forceOverFlowBoundValue = 100.0;
-        private const double torqueOverFlowBoundValue = 15.0;
-        private const int digitalIOVoltage = 0;
-        private const double probeCalibrationMaxAmplitudeDeg = 60.0;
-        private const int punctureUsingAttitudeFlag = 0;
+        private readonly int timeOutDurationMS = 200;
+        private readonly bool ifProlongTimeOutDurationWhenConnectionBegin = true;
+        private readonly int autoCheckingConnectableDurationMS = 1000;
+        private readonly bool ifUsingForceSensor = true;
+        private readonly bool ifEnableCurrentOverFlowProtect = true;
+        private readonly bool ifEnableForceOverFlowProtect = true;
+        private readonly bool ifEnableToolIO = false;
+        private readonly double currentOverFlowBoundValue = 2.0;
+        private readonly double forceOverFlowBoundValue = 100.0;
+        private readonly double torqueOverFlowBoundValue = 15.0;
+        private readonly int digitalIOVoltage = 0;
+        private readonly double probeCalibrationMaxAmplitudeDeg = 60.0;
+        private readonly byte punctureUsingAttitudeFlag = 0;
 
         // 移动最高最低速度和加速度
-        private const double fastSpeedL = 0.2;
-        private const double slowSpeedL = 0.1;
-        private const double minSpeedL = 0.00002;
-        private const double fastAccelerationL = 0.2;
-        private const double slowAccelerationL = 0.1;
-        private const double minAccelerationL = 0.001;
-        private const double fastSpeedj = 0.4;
-        private const double slowSpeedj = 0.2;
-        private const double minSpeedj = 0.0004;
-        private const double fastAccelerationj = 0.4;
-        private const double slowAccelerationj = 0.2;
-        private const double minAccelerationj = 0.002;
+        private readonly double fastSpeedL = 0.2;
+        private readonly double slowSpeedL = 0.1;
+        private readonly double minSpeedL = 0.00002;
+        private readonly double fastAccelerationL = 0.2;
+        private readonly double slowAccelerationL = 0.1;
+        private readonly double minAccelerationL = 0.001;
+        private readonly double fastSpeedj = 0.4;
+        private readonly double slowSpeedj = 0.2;
+        private readonly double minSpeedj = 0.0004;
+        private readonly double fastAccelerationj = 0.4;
+        private readonly double slowAccelerationj = 0.2;
+        private readonly double minAccelerationj = 0.002;
 
         // 当前工具信息
         private ToolType currentToolType = ToolType.Probe;
@@ -136,8 +138,8 @@ namespace AssistantRobot
         private GalactophoreDetect gd;
 
         private bool[] occupyArray = new bool[20] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
-        private const double titleSize = 18;
-        private const double messageSize = 22;
+        private readonly double titleSize = 18;
+        private readonly double messageSize = 22;
 
         #endregion
 
@@ -1302,6 +1304,373 @@ namespace AssistantRobot
 
         #endregion
 
+        #region Construct Function
+        /// <summary>
+        /// 构造函数，载入配置
+        /// </summary>
+        /// <param name="ifSuccess">是否配置成功</param>
+        public URViewModel(out bool ifSuccess)
+        {
+            ifSuccess = true;
+            bool parseResult = true;
+
+            bool ifUsingSerialPortTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifUsingSerialPort"], out ifUsingSerialPortTemp);
+            if (parseResult) ifUsingSerialPort = ifUsingSerialPortTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifUsingSerialPort" + ") is wrong");
+                return;
+            }
+
+            string numOfCOMTemp = ConfigurationManager.AppSettings["numOfCOM"];
+            if (new string(numOfCOMTemp.Take(3).ToArray()) == "COM") numOfCOM = numOfCOMTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "numOfCOM" + ") is wrong");
+                return;
+            }
+
+            URDataProcessor.RobotType currentRobotTypeTemp;
+            parseResult = Enum.TryParse<URDataProcessor.RobotType>(ConfigurationManager.AppSettings["currentRobotType"], out currentRobotTypeTemp);
+            if (parseResult) currentRobotType = currentRobotTypeTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong");
+                return;
+            }
+
+            URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
+            parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
+            if (parseResult) currentRobotProgramType = currentRobotProgramTypeTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotProgramType" + ") is wrong");
+                return;
+            }
+
+            string robotControllerIPTemp = ConfigurationManager.AppSettings["robotControllerIP"];
+            if (new string(robotControllerIPTemp.Take(10).ToArray()) == "192.168.1.") robotControllerIP = robotControllerIPTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "robotControllerIP" + ") is wrong");
+                return;
+            }
+
+            string robotConnectorIPTemp = ConfigurationManager.AppSettings["robotConnectorIP"];
+            if (new string(robotConnectorIPTemp.Take(10).ToArray()) == "192.168.1.") robotConnectorIP = robotConnectorIPTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "robotConnectorIP" + ") is wrong");
+                return;
+            }
+
+            OPTODataProcessor.SensorType currentSensorTypeTemp;
+            parseResult = Enum.TryParse<OPTODataProcessor.SensorType>(ConfigurationManager.AppSettings["currentSensorType"], out currentSensorTypeTemp);
+            if (parseResult) currentSensorType = currentSensorTypeTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentSensorType" + ") is wrong");
+                return;
+            }
+
+            string forceSensorIPTemp = ConfigurationManager.AppSettings["forceSensorIP"];
+            if (new string(forceSensorIPTemp.Take(10).ToArray()) == "192.168.1.") forceSensorIP = forceSensorIPTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceSensorIP" + ") is wrong");
+                return;
+            }
+
+            string forceConnectorIPTemp = ConfigurationManager.AppSettings["forceConnectorIP"];
+            if (new string(forceConnectorIPTemp.Take(10).ToArray()) == "192.168.1.") forceConnectorIP = forceConnectorIPTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceConnectorIP" + ") is wrong");
+                return;
+            }
+
+            bool ifUsingForceSensorTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifUsingForceSensor"], out ifUsingForceSensorTemp);
+            if (parseResult) ifUsingForceSensor = ifUsingForceSensorTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifUsingForceSensor" + ") is wrong");
+                return;
+            }
+
+            int timeOutDurationMSTemp;
+            parseResult = int.TryParse(ConfigurationManager.AppSettings["timeOutDurationMS"], out timeOutDurationMSTemp);
+            if (parseResult) timeOutDurationMS = timeOutDurationMSTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "timeOutDurationMS" + ") is wrong");
+                return;
+            }
+
+            bool ifProlongTimeOutDurationWhenConnectionBeginTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifProlongTimeOutDurationWhenConnectionBegin"], out ifProlongTimeOutDurationWhenConnectionBeginTemp);
+            if (parseResult) ifProlongTimeOutDurationWhenConnectionBegin = ifProlongTimeOutDurationWhenConnectionBeginTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifProlongTimeOutDurationWhenConnectionBegin" + ") is wrong");
+                return;
+            }
+
+            int autoCheckingConnectableDurationMSTemp;
+            parseResult = int.TryParse(ConfigurationManager.AppSettings["autoCheckingConnectableDurationMS"], out autoCheckingConnectableDurationMSTemp);
+            if (parseResult) autoCheckingConnectableDurationMS = autoCheckingConnectableDurationMSTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "autoCheckingConnectableDurationMS" + ") is wrong");
+                return;
+            }
+
+            bool ifEnableCurrentOverFlowProtectTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableCurrentOverFlowProtect"], out ifEnableCurrentOverFlowProtectTemp);
+            if (parseResult) ifEnableCurrentOverFlowProtect = ifEnableCurrentOverFlowProtectTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableCurrentOverFlowProtect" + ") is wrong");
+                return;
+            }
+
+            double currentOverFlowBoundValueTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["currentOverFlowBoundValue"], out currentOverFlowBoundValueTemp);
+            if (parseResult) currentOverFlowBoundValue = currentOverFlowBoundValueTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentOverFlowBoundValue" + ") is wrong");
+                return;
+            }
+
+            bool ifEnableForceOverFlowProtectTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableForceOverFlowProtect"], out ifEnableForceOverFlowProtectTemp);
+            if (parseResult) ifEnableForceOverFlowProtect = ifEnableForceOverFlowProtectTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableForceOverFlowProtect" + ") is wrong");
+                return;
+            }
+
+            double forceOverFlowBoundValueTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["forceOverFlowBoundValue"], out forceOverFlowBoundValueTemp);
+            if (parseResult) forceOverFlowBoundValue = forceOverFlowBoundValueTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceOverFlowBoundValue" + ") is wrong");
+                return;
+            }
+
+            double torqueOverFlowBoundValueTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["torqueOverFlowBoundValue"], out torqueOverFlowBoundValueTemp);
+            if (parseResult) torqueOverFlowBoundValue = torqueOverFlowBoundValueTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "torqueOverFlowBoundValue" + ") is wrong");
+                return;
+            }
+
+            bool ifEnableToolIOTemp;
+            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableToolIO"], out ifEnableToolIOTemp);
+            if (parseResult) ifEnableToolIO = ifEnableToolIOTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableToolIO" + ") is wrong");
+                return;
+            }
+
+            int digitalIOVoltageTemp;
+            parseResult = int.TryParse(ConfigurationManager.AppSettings["digitalIOVoltage"], out digitalIOVoltageTemp);
+            if (parseResult) digitalIOVoltage = digitalIOVoltageTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "digitalIOVoltage" + ") is wrong");
+                return;
+            }
+
+            double probeCalibrationMaxAmplitudeDegTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["probeCalibrationMaxAmplitudeDeg"], out probeCalibrationMaxAmplitudeDegTemp);
+            if (parseResult) probeCalibrationMaxAmplitudeDeg = probeCalibrationMaxAmplitudeDegTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "probeCalibrationMaxAmplitudeDeg" + ") is wrong");
+                return;
+            }
+
+            byte punctureUsingAttitudeFlagTemp;
+            parseResult = byte.TryParse(ConfigurationManager.AppSettings["punctureUsingAttitudeFlag"], out punctureUsingAttitudeFlagTemp);
+            if (parseResult) punctureUsingAttitudeFlag = punctureUsingAttitudeFlagTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "punctureUsingAttitudeFlag" + ") is wrong");
+                return;
+            }
+
+            double fastSpeedLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["fastSpeedL"], out fastSpeedLTemp);
+            if (parseResult) fastSpeedL = fastSpeedLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedL" + ") is wrong");
+                return;
+            }
+
+            double slowSpeedLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["slowSpeedL"], out slowSpeedLTemp);
+            if (parseResult) slowSpeedL = slowSpeedLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedL" + ") is wrong");
+                return;
+            }
+
+            double minSpeedLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["minSpeedL"], out minSpeedLTemp);
+            if (parseResult) minSpeedL = minSpeedLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedL" + ") is wrong");
+                return;
+            }
+
+            double fastAccelerationLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["fastAccelerationL"], out fastAccelerationLTemp);
+            if (parseResult) fastAccelerationL = fastAccelerationLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationL" + ") is wrong");
+                return;
+            }
+
+            double slowAccelerationLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["slowAccelerationL"], out slowAccelerationLTemp);
+            if (parseResult) slowAccelerationL = slowAccelerationLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationL" + ") is wrong");
+                return;
+            }
+
+            double minAccelerationLTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["minAccelerationL"], out minAccelerationLTemp);
+            if (parseResult) minAccelerationL = minAccelerationLTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationL" + ") is wrong");
+                return;
+            }
+
+            double fastSpeedjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["fastSpeedj"], out fastSpeedjTemp);
+            if (parseResult) fastSpeedj = fastSpeedjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedj" + ") is wrong");
+                return;
+            }
+
+            double slowSpeedjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["slowSpeedj"], out slowSpeedjTemp);
+            if (parseResult) slowSpeedj = slowSpeedjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedj" + ") is wrong");
+                return;
+            }
+
+            double minSpeedjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["minSpeedj"], out minSpeedjTemp);
+            if (parseResult) minSpeedj = minSpeedjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedj" + ") is wrong");
+                return;
+            }
+
+            double fastAccelerationjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["fastAccelerationj"], out fastAccelerationjTemp);
+            if (parseResult) fastAccelerationj = fastAccelerationjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationj" + ") is wrong");
+                return;
+            }
+
+            double slowAccelerationjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["slowAccelerationj"], out slowAccelerationjTemp);
+            if (parseResult) slowAccelerationj = slowAccelerationjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationj" + ") is wrong");
+                return;
+            }
+
+            double minAccelerationjTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["minAccelerationj"], out minAccelerationjTemp);
+            if (parseResult) minAccelerationj = minAccelerationjTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationj" + ") is wrong");
+                return;
+            }
+
+            double titleSizeTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["titleSize"], out titleSizeTemp);
+            if (parseResult) titleSize = titleSizeTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "titleSize" + ") is wrong");
+                return;
+            }
+
+            double messageSizeTemp;
+            parseResult = double.TryParse(ConfigurationManager.AppSettings["messageSize"], out messageSizeTemp);
+            if (parseResult) messageSize = messageSizeTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "messageSize" + ") is wrong");
+                return;
+            }
+        }
+        #endregion
+
         #region Method
         /// <summary>
         /// 机械臂上电
@@ -1420,7 +1789,7 @@ namespace AssistantRobot
             bool result = await ShowBranchDialog(message, title);
             dealFunction(result);
         }
-        
+
         /// <summary>
         /// 主窗口分支弹窗，切换到UI线程运行
         /// </summary>
@@ -2126,6 +2495,14 @@ namespace AssistantRobot
             }
         }
 
+        /// <summary>
+        /// 直接关闭窗体
+        /// </summary>
+        public async void ImmediateCloseWin()
+        {
+            await Task.Delay(100);
+            mw.Close();
+        }
 
         /// <summary>
         /// 关闭Model逻辑
@@ -2162,7 +2539,7 @@ namespace AssistantRobot
                 });
 
                 controller.SetIndeterminate();
-                RobotPowerOff(); 
+                RobotPowerOff();
                 while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
                 {
                     await Task.Delay(200);
@@ -2187,7 +2564,7 @@ namespace AssistantRobot
                     await Task.Delay(200);
                 }
                 await controller.CloseAsync();
-                urdp.SendURBaseControllerShutDown(); 
+                urdp.SendURBaseControllerShutDown();
                 await Task.Delay(25);
             }
 
@@ -3275,23 +3652,24 @@ namespace AssistantRobot
         /// <summary>
         /// Model初始化
         /// </summary>
-        public void ModelInitialization()
+        /// <returns>返回初始化结果</returns>
+        public byte ModelInitialization()
         {
             // 开始修改处
             if (!ResourceChecker.ResourceChecking())
             {
                 EnableAll = false;
-                ShowDialog("资源配置检查过程出错！", "错误", 1);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Resource directories or files are not correct.");
-                return;
+                return 1;
             }
 
-            if (!DataBaseInitialization()) return;
+            if (!DataBaseInitialization()) return 2;
             if (ifUsingSerialPort) SerialPortInitialization();
             URExecutorInitialization();
 
             GalactophoreDetectorInitialization();
 
+            return 0;
         }
 
         /// <summary>
