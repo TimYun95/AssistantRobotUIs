@@ -163,18 +163,18 @@ namespace AssistantRobot
                 return;
             }
 
-			// model初始化失败
+            // model初始化失败
             if (modelInitialResult != 0)
             {
                 ReadyToClose();
-				return;
+                return;
             }
-			
+
             // pipe连接
             bool pipeConnectResult = urvmr_lp.PipeBeginToConnect();
             if (!pipeConnectResult)
             {
-                urvm.DirectCloseModelLogic();
+                ReadyToCloseForPipe();
                 return;
             }
 
@@ -203,6 +203,16 @@ namespace AssistantRobot
             {
                 await urvm.ShowDialog("数据库数据更新过程出错！", "错误", 12);
             }
+            urvm.ImmediateCloseWin();
+        }
+
+        /// <summary>
+        /// Pipe连接问题 准备关闭窗体
+        /// </summary>
+        private async void ReadyToCloseForPipe()
+        {
+            await urvm.ShowDialog("Pipe连接失败！", "错误", 15);
+
             urvm.ImmediateCloseWin();
         }
 
