@@ -26,7 +26,7 @@ namespace AssistantRobot
         private MainPage mainPage;
         private BaseControl baseContorlPage;
         private GalactophoreDetect galactophoreDetectPage;
-       
+
         private readonly ConverterThatTransformDoubleToString convertD2S = new ConverterThatTransformDoubleToString();
         private readonly ValueProcesser valuePdot25D2 = new ValueProcesser(0.25, "0.00");
         private readonly ValueProcesser valuePdot5D1A1dot5 = new ValueProcesser(0.5, "0.0", 1.5);
@@ -35,15 +35,14 @@ namespace AssistantRobot
         private readonly ConverterThatTransformDoubleToWord convertD2W = new ConverterThatTransformDoubleToWord();
 
         private byte modelInitialResult = 0;
-
+        private bool appInitialResult = true;
 
         public MainWindow()
         {
             InitializeComponent();
 
             // 定义VM
-            bool a;
-            urvm = new URVIewModel(out a);
+            urvm = new URVIewModel(out appInitialResult);
 
             // 初始化页
             mainPage = new MainPage(urvm);
@@ -103,7 +102,7 @@ namespace AssistantRobot
             bindingFromVibrateDegreeSliderToVibrateDegreeText.Mode = BindingMode.OneWay;
             bindingFromVibrateDegreeSliderToVibrateDegreeText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             bindingFromVibrateDegreeSliderToVibrateDegreeText.Converter = convertD2W;
-            bindingFromVibrateDegreeSliderToVibrateDegreeText.ConverterParameter = new string[] {"小", "中", "大"};
+            bindingFromVibrateDegreeSliderToVibrateDegreeText.ConverterParameter = new string[] { "小", "中", "大" };
             BindingOperations.SetBinding(vibrateDegreeText, Label.ContentProperty, bindingFromVibrateDegreeSliderToVibrateDegreeText);
 
             // 绑定：speedDegreeSlider.Value {属性} ==> speedDegreeText.Content {Flyout控件}
@@ -133,7 +132,7 @@ namespace AssistantRobot
             bindingFromborderModeSliderToborderModeText.Mode = BindingMode.OneWay;
             bindingFromborderModeSliderToborderModeText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             bindingFromborderModeSliderToborderModeText.Converter = convertD2W;
-            bindingFromborderModeSliderToborderModeText.ConverterParameter = new string[] { "单个", "上下", "四周"};
+            bindingFromborderModeSliderToborderModeText.ConverterParameter = new string[] { "单个", "上下", "四周" };
             BindingOperations.SetBinding(borderModeText, Label.ContentProperty, bindingFromborderModeSliderToborderModeText);
 
             // 绑定：rotateStepSlider.Value {属性} ==> rotateStepText.Content {Flyout控件}
@@ -150,6 +149,13 @@ namespace AssistantRobot
         // 加载界面
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // app初始化失败
+            if (!appInitialResult)
+            {
+                ReadyToClose();
+                return;
+            }
+
             // model初始化失败
             if (modelInitialResult != 0)
             {
@@ -166,6 +172,14 @@ namespace AssistantRobot
         /// </summary>
         private async void ReadyToClose()
         {
+            if (!appInitialResult)
+            {
+                await urvm.ShowDialog("程序配置参数有误！", "错误", 13);
+
+                urvm.ImmediateCloseWin();
+                return;
+            }
+
             if (modelInitialResult == 1)
             {
                 await urvm.ShowDialog("资源配置检查过程出错！", "错误", 1);
@@ -192,7 +206,7 @@ namespace AssistantRobot
         private void settingsFlyoutGalactophore_IsOpenChanged(object sender, RoutedEventArgs e)
         {
             bool nowState = (e.OriginalSource as Flyout).IsOpen;
-            if (!nowState) urvm.SaveConfParameters(URVIewModel.ConfPage.GalactophoreDetect); 
+            if (!nowState) urvm.SaveConfParameters(URVIewModel.ConfPage.GalactophoreDetect);
 
             e.Handled = true;
         }
