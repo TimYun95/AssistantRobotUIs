@@ -37,13 +37,14 @@ namespace AssistantRobot
         private readonly ConverterThatTransformDoubleToWord convertD2W = new ConverterThatTransformDoubleToWord();
 
         private byte modelInitialResult = 0;
+        private bool appInitialResult = true;
 
         public MainWindow()
         {
             InitializeComponent();
 
             // 定义VM
-            urvm = new URViewModel();
+            urvm = new URVIewModel(out appInitialResult);
 
             // 定义RemoteVM_LocalPart
             urvmr_lp = new URViewModelRemote_LocalPart(urvm);
@@ -153,13 +154,20 @@ namespace AssistantRobot
         // 加载界面
         private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // model初始化失败
-            if (modelInitialResult != 0)
+            // app初始化失败
+            if (!appInitialResult)
             {
                 ReadyToClose();
                 return;
             }
 
+			// model初始化失败
+            if (modelInitialResult != 0)
+            {
+                ReadyToClose();
+				return;
+            }
+			
             // pipe连接
             bool pipeConnectResult = urvmr_lp.PipeBeginToConnect();
             if (!pipeConnectResult)
@@ -177,6 +185,14 @@ namespace AssistantRobot
         /// </summary>
         private async void ReadyToClose()
         {
+            if (!appInitialResult)
+            {
+                await urvm.ShowDialog("程序配置参数有误！", "错误", 13);
+
+                urvm.ImmediateCloseWin();
+                return;
+            }
+
             if (modelInitialResult == 1)
             {
                 await urvm.ShowDialog("资源配置检查过程出错！", "错误", 1);
