@@ -416,7 +416,7 @@ namespace AssistantRobot
         {
             if (!ifPipeConnected) return;
 
-            if (sendBytes.Equals(null)) sendBytes = new List<byte>();
+            if (Object.Equals(sendBytes, null)) sendBytes = new List<byte>();
 
             int sendLength = sendBytes.Count + 2;
             sendBytes.Insert(0, (byte)statusFlag);
