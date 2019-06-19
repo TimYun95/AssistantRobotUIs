@@ -785,7 +785,7 @@
 						HorizontalAlignment="Right"/>
 
                     <Slider x:Name="speedSlider" Grid.Column="1"
-                                    Maximum="100"
+                                    Maximum="50"
                                     Minimum="0"
                                     Orientation="Horizontal"
                                     SmallChange="1" 
