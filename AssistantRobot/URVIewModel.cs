@@ -52,7 +52,7 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 
+        /// 浮动窗体索引
         /// </summary>
         public enum ConfPage : short
         {
