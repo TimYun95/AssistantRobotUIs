@@ -32,6 +32,18 @@
 
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands ShowLastSeparator="False">
+            <Button x:Name="btnRemoteConnection" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Width="24" Height="24" Kind="LanConnect" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="建立连接" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="btnRemoteSupervise" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconFontAwesome Width="24" Height="24" Kind="EyeSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="打开监控" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Button>
             <Button x:Name="btnElectricContorl" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnElectricContorl_Click">
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconOcticons Width="24" Height="24" Kind="CircuitBoard" VerticalAlignment="Center" HorizontalAlignment="Center" />
