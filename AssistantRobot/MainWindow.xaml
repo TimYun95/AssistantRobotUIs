@@ -119,7 +119,8 @@
 
                     <Button x:Name="powerDownBtn" Grid.Column="3"
                         Margin="5" FontSize="22" BorderThickness="1"
-                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_DarkBlue}" Click="powerDownBtn_Click">
+                        Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle_DarkBlue}" Click="powerDownBtn_Click"
+                            IsEnabled="False">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial x:Name="powerDownIcon" Kind="PowerCycle" 
                                                       Width="{Binding ActualHeight, ElementName=powerDownIcon}" 

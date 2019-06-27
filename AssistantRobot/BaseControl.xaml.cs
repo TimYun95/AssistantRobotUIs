@@ -97,7 +97,7 @@ namespace AssistantRobot
 
         private void iconBackMotion_Click(object sender, RoutedEventArgs e)
         {
-            if (NavigationService.CanGoBack) NavigationService.GoBack();
+            urvm.NavigateToPage(URViewModel.ShowPage.MainNav);
 
             e.Handled = true;
         }

@@ -271,6 +271,7 @@ namespace AssistantRobot
                 {
                     urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
                     urvm.ConnectBtnText = "建立连接";
+                    urvm.ShowDialog("连接建立失败！", "问题", 16);
                 }
                 else
                 {
@@ -286,6 +287,7 @@ namespace AssistantRobot
                 {
                     urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
                     urvm.ConnectBtnText = "断开连接";
+                    urvm.ShowDialog("连接断开失败！", "问题", 16);
                 }
                 else
                 {
@@ -306,10 +308,6 @@ namespace AssistantRobot
 
 
         }
-
-
-
-
 
     }
 }

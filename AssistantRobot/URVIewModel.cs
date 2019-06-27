@@ -21,12 +21,9 @@ using System.Configuration;
 using System.Net;
 
 using LogPrinter;
-using ResourceCheck;
 using URCommunication;
-using MathFunction;
 using URModule;
-using SQLServerConnection;
-using SerialConnection;
+
 
 namespace AssistantRobot
 {
@@ -268,7 +265,7 @@ namespace AssistantRobot
             }
         }
 
-        private bool superviseBtnEnable = false;
+        private bool superviseBtnEnable = true;
         /// <summary>
         /// 监控按钮使能
         /// </summary>
@@ -285,7 +282,7 @@ namespace AssistantRobot
             }
         }
 
-        private bool connectBtnEnable = false;
+        private bool connectBtnEnable = true;
         /// <summary>
         /// 连接按钮使能
         /// </summary>
@@ -1476,6 +1473,24 @@ namespace AssistantRobot
         }
         #endregion
 
+        #region GalactophoreDetector Parameter Change Move
+        private bool breastScanConfMovingEnable = false;
+        /// <summary>
+        /// 远程允许所有动作
+        /// </summary>
+        public bool BreastScanConfMovingEnable
+        {
+            get { return breastScanConfMovingEnable; }
+            set
+            {
+                breastScanConfMovingEnable = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BreastScanConfMovingEnable"));
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Construct Function
@@ -1487,223 +1502,6 @@ namespace AssistantRobot
         {
             ifSuccess = true;
             bool parseResult = true;
-
-            bool ifUsingSerialPortTemp;
-            /*
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifUsingSerialPort"], out ifUsingSerialPortTemp);
-            if (parseResult) ifUsingSerialPort = ifUsingSerialPortTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifUsingSerialPort" + ") is wrong");
-                return;
-            }
-            
-            string numOfCOMTemp = ConfigurationManager.AppSettings["numOfCOM"];
-            if (new string(numOfCOMTemp.Take(3).ToArray()) == "COM") numOfCOM = numOfCOMTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "numOfCOM" + ") is wrong");
-                return;
-            }
-
-            URDataProcessor.RobotType currentRobotTypeTemp;
-            parseResult = Enum.TryParse<URDataProcessor.RobotType>(ConfigurationManager.AppSettings["currentRobotType"], out currentRobotTypeTemp);
-            if (parseResult) currentRobotType = currentRobotTypeTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong");
-                return;
-            }
-
-            URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
-            parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
-            if (parseResult) currentRobotProgramType = currentRobotProgramTypeTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotProgramType" + ") is wrong");
-                return;
-            }
-
-            string robotControllerIPTemp = ConfigurationManager.AppSettings["robotControllerIP"];
-            if (new string(robotControllerIPTemp.Take(10).ToArray()) == "192.168.1.") robotControllerIP = robotControllerIPTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "robotControllerIP" + ") is wrong");
-                return;
-            }
-
-            string robotConnectorIPTemp = ConfigurationManager.AppSettings["robotConnectorIP"];
-            if (new string(robotConnectorIPTemp.Take(10).ToArray()) == "192.168.1.") robotConnectorIP = robotConnectorIPTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "robotConnectorIP" + ") is wrong");
-                return;
-            }
-
-            OPTODataProcessor.SensorType currentSensorTypeTemp;
-            parseResult = Enum.TryParse<OPTODataProcessor.SensorType>(ConfigurationManager.AppSettings["currentSensorType"], out currentSensorTypeTemp);
-            if (parseResult) currentSensorType = currentSensorTypeTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentSensorType" + ") is wrong");
-                return;
-            }
-
-            string forceSensorIPTemp = ConfigurationManager.AppSettings["forceSensorIP"];
-            if (new string(forceSensorIPTemp.Take(10).ToArray()) == "192.168.1.") forceSensorIP = forceSensorIPTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceSensorIP" + ") is wrong");
-                return;
-            }
-
-            string forceConnectorIPTemp = ConfigurationManager.AppSettings["forceConnectorIP"];
-            if (new string(forceConnectorIPTemp.Take(10).ToArray()) == "192.168.1.") forceConnectorIP = forceConnectorIPTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceConnectorIP" + ") is wrong");
-                return;
-            }
-
-            bool ifUsingForceSensorTemp;
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifUsingForceSensor"], out ifUsingForceSensorTemp);
-            if (parseResult) ifUsingForceSensor = ifUsingForceSensorTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifUsingForceSensor" + ") is wrong");
-                return;
-            }
-
-            int timeOutDurationMSTemp;
-            parseResult = int.TryParse(ConfigurationManager.AppSettings["timeOutDurationMS"], out timeOutDurationMSTemp);
-            if (parseResult) timeOutDurationMS = timeOutDurationMSTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "timeOutDurationMS" + ") is wrong");
-                return;
-            }
-
-            bool ifProlongTimeOutDurationWhenConnectionBeginTemp;
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifProlongTimeOutDurationWhenConnectionBegin"], out ifProlongTimeOutDurationWhenConnectionBeginTemp);
-            if (parseResult) ifProlongTimeOutDurationWhenConnectionBegin = ifProlongTimeOutDurationWhenConnectionBeginTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifProlongTimeOutDurationWhenConnectionBegin" + ") is wrong");
-                return;
-            }
-
-            int autoCheckingConnectableDurationMSTemp;
-            parseResult = int.TryParse(ConfigurationManager.AppSettings["autoCheckingConnectableDurationMS"], out autoCheckingConnectableDurationMSTemp);
-            if (parseResult) autoCheckingConnectableDurationMS = autoCheckingConnectableDurationMSTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "autoCheckingConnectableDurationMS" + ") is wrong");
-                return;
-            }
-
-            bool ifEnableCurrentOverFlowProtectTemp;
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableCurrentOverFlowProtect"], out ifEnableCurrentOverFlowProtectTemp);
-            if (parseResult) ifEnableCurrentOverFlowProtect = ifEnableCurrentOverFlowProtectTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableCurrentOverFlowProtect" + ") is wrong");
-                return;
-            }
-
-            double currentOverFlowBoundValueTemp;
-            parseResult = double.TryParse(ConfigurationManager.AppSettings["currentOverFlowBoundValue"], out currentOverFlowBoundValueTemp);
-            if (parseResult) currentOverFlowBoundValue = currentOverFlowBoundValueTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentOverFlowBoundValue" + ") is wrong");
-                return;
-            }
-
-            bool ifEnableForceOverFlowProtectTemp;
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableForceOverFlowProtect"], out ifEnableForceOverFlowProtectTemp);
-            if (parseResult) ifEnableForceOverFlowProtect = ifEnableForceOverFlowProtectTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableForceOverFlowProtect" + ") is wrong");
-                return;
-            }
-
-            double forceOverFlowBoundValueTemp;
-            parseResult = double.TryParse(ConfigurationManager.AppSettings["forceOverFlowBoundValue"], out forceOverFlowBoundValueTemp);
-            if (parseResult) forceOverFlowBoundValue = forceOverFlowBoundValueTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "forceOverFlowBoundValue" + ") is wrong");
-                return;
-            }
-
-            double torqueOverFlowBoundValueTemp;
-            parseResult = double.TryParse(ConfigurationManager.AppSettings["torqueOverFlowBoundValue"], out torqueOverFlowBoundValueTemp);
-            if (parseResult) torqueOverFlowBoundValue = torqueOverFlowBoundValueTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "torqueOverFlowBoundValue" + ") is wrong");
-                return;
-            }
-
-            bool ifEnableToolIOTemp;
-            parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifEnableToolIO"], out ifEnableToolIOTemp);
-            if (parseResult) ifEnableToolIO = ifEnableToolIOTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifEnableToolIO" + ") is wrong");
-                return;
-            }
-
-            int digitalIOVoltageTemp;
-            parseResult = int.TryParse(ConfigurationManager.AppSettings["digitalIOVoltage"], out digitalIOVoltageTemp);
-            if (parseResult) digitalIOVoltage = digitalIOVoltageTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "digitalIOVoltage" + ") is wrong");
-                return;
-            }
-
-            double probeCalibrationMaxAmplitudeDegTemp;
-            parseResult = double.TryParse(ConfigurationManager.AppSettings["probeCalibrationMaxAmplitudeDeg"], out probeCalibrationMaxAmplitudeDegTemp);
-            if (parseResult) probeCalibrationMaxAmplitudeDeg = probeCalibrationMaxAmplitudeDegTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "probeCalibrationMaxAmplitudeDeg" + ") is wrong");
-                return;
-            }
-
-            byte punctureUsingAttitudeFlagTemp;
-            parseResult = byte.TryParse(ConfigurationManager.AppSettings["punctureUsingAttitudeFlag"], out punctureUsingAttitudeFlagTemp);
-            if (parseResult) punctureUsingAttitudeFlag = punctureUsingAttitudeFlagTemp;
-            else
-            {
-                ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "punctureUsingAttitudeFlag" + ") is wrong");
-                return;
-            }
-            */
 
             double fastSpeedLTemp;
             parseResult = double.TryParse(ConfigurationManager.AppSettings["fastSpeedL"], out fastSpeedLTemp);
@@ -1853,11 +1651,16 @@ namespace AssistantRobot
         /// </summary>
         public void RobotPowerOn()
         {
+            if (!(LocalEnable && RemoteEnable))
+            {
+                ShowDialog("连接有问题，无法下达指令！", "问题", 12);
+                return;
+            }
             if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
             {
                 Task.Run(new Action(() =>
                 {
-                    urdp.SendURBaseControllerPowerOn();
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.PowerOn);
                 }));
             }
         }
@@ -1867,11 +1670,16 @@ namespace AssistantRobot
         /// </summary>
         public void BrakeLess()
         {
+            if (!(LocalEnable && RemoteEnable))
+            {
+                ShowDialog("连接有问题，无法下达指令！", "问题", 12);
+                return;
+            }
             if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
             {
                 Task.Run(new Action(() =>
                 {
-                    urdp.SendURBaseControllerBrakeRelease();
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.BrakeRelease);
                 }));
             }
         }
@@ -1881,11 +1689,16 @@ namespace AssistantRobot
         /// </summary>
         public void RobotPowerOff()
         {
+            if (!(LocalEnable && RemoteEnable))
+            {
+                ShowDialog("连接有问题，无法下达指令！", "问题", 12);
+                return;
+            }
             if (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
             {
                 Task.Run(new Action(() =>
                 {
-                    urdp.SendURBaseControllerPowerOff();
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.PowerOff);
                 }));
             }
         }
@@ -1894,9 +1707,7 @@ namespace AssistantRobot
         /// 控制箱关闭
         /// </summary>
         public async void ControllerBoxPowerOff()
-        {
-            bool result = await ShowBranchDialog("是否确认关闭控制箱？", "提问");
-            if (result) Task.Run(new Action(() => { urdp.SendURBaseControllerShutDown(); }));
+        { // Remote禁止
         }
 
         /// <summary>
@@ -1917,17 +1728,24 @@ namespace AssistantRobot
             switch (ShowPageNum)
             {
                 case ShowPage.MainNav:
-                    if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                    if (mw.frameNav.NavigationService.CanGoBack)
+                    {
+                        mw.frameNav.NavigationService.GoBack();
+                        cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
+                    }
                     break;
                 case ShowPage.BaseControl:
                     mw.frameNav.NavigationService.Navigate(bc);
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
 
                 case ShowPage.GalactophoreDetect:
                     mw.frameNav.NavigationService.Navigate(gd);
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
                 default:
                     mw.frameNav.NavigationService.Navigate(mp);
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
             }
         }
@@ -2038,51 +1856,11 @@ namespace AssistantRobot
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
 
-            int sign = IfPositive ? 1 : -1;
-            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedL;
-            speed = speed < minSpeedL ? minSpeedL : speed;
-            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationL;
-            acceleraton = acceleraton < minAccelerationL ? minAccelerationL : acceleraton;
-
-            if (baseMoveCordinate) // 工具
-            {
-                double[] currentTcpAxis;
-                switch (Axis)
-                {
-                    case 'y':
-                        currentTcpAxis = urdp.YDirectionOfTcpAtBaseReference();
-                        break;
-                    case 'z':
-                        currentTcpAxis = urdp.ZDirectionOfTcpAtBaseReference();
-                        break;
-                    case 'x':
-                    default:
-                        currentTcpAxis = urdp.XDirectionOfTcpAtBaseReference();
-                        break;
-                }
-                direction[0] = (double)sign * speed * currentTcpAxis[0];
-                direction[1] = (double)sign * speed * currentTcpAxis[1];
-                direction[2] = (double)sign * speed * currentTcpAxis[2];
-            }
-            else // 基座
-            {
-                switch (Axis)
-                {
-                    case 'y':
-                        direction[1] = (double)sign * speed;
-                        break;
-                    case 'z':
-                        direction[2] = (double)sign * speed;
-                        break;
-                    case 'x':
-                    default:
-                        direction[0] = (double)sign * speed;
-                        break;
-                }
-            }
-
-            urdp.SendURCommanderSpeedL(direction, acceleraton);
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                                    new byte[] {Convert.ToByte(IfPositive? 1:0),
+                                                        Convert.ToByte(0),
+                                                        Convert.ToByte(Axis=='z'? 2:Axis=='y'?1:0)},
+                                    CommunicationModel.AppProtocolCommand.MoveTcp);
         }
 
         /// <summary>
@@ -2094,51 +1872,11 @@ namespace AssistantRobot
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
 
-            int sign = IfPositive ? 1 : -1;
-            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedj;
-            speed = speed < minSpeedj ? minSpeedj : speed;
-            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationj;
-            acceleraton = acceleraton < minAccelerationj ? minAccelerationj : acceleraton;
-
-            if (baseMoveCordinate) // 工具
-            {
-                double[] currentTcpAxis;
-                switch (Axis)
-                {
-                    case 'y':
-                        currentTcpAxis = urdp.YDirectionOfTcpAtBaseReference();
-                        break;
-                    case 'z':
-                        currentTcpAxis = urdp.ZDirectionOfTcpAtBaseReference();
-                        break;
-                    case 'x':
-                    default:
-                        currentTcpAxis = urdp.XDirectionOfTcpAtBaseReference();
-                        break;
-                }
-                direction[3] = (double)sign * speed * currentTcpAxis[0];
-                direction[4] = (double)sign * speed * currentTcpAxis[1];
-                direction[5] = (double)sign * speed * currentTcpAxis[2];
-            }
-            else // 基座
-            {
-                switch (Axis)
-                {
-                    case 'y':
-                        direction[4] = (double)sign * speed;
-                        break;
-                    case 'z':
-                        direction[5] = (double)sign * speed;
-                        break;
-                    case 'x':
-                    default:
-                        direction[3] = (double)sign * speed;
-                        break;
-                }
-            }
-
-            urdp.SendURCommanderSpeedL(direction, acceleraton);
+           cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                                    new byte[] {Convert.ToByte(IfPositive? 1:0),
+                                                        Convert.ToByte(1),
+                                                        Convert.ToByte(Axis=='z'? 2:Axis=='y'?1:0)},
+                                    CommunicationModel.AppProtocolCommand.MoveTcp);
         }
 
         /// <summary>
@@ -2150,37 +1888,10 @@ namespace AssistantRobot
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
 
-            int sign = IfPositive ? 1 : -1;
-            double[] direction = new double[6] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-            double speed = (baseMoveSpeedRatio / 100.0) * fastSpeedj;
-            speed = speed < minSpeedj ? minSpeedj : speed;
-            double acceleraton = (baseMoveSpeedRatio / 100.0) * fastAccelerationj;
-            acceleraton = acceleraton < minAccelerationj ? minAccelerationj : acceleraton;
-
-            switch (Axis)
-            {
-                case '2':
-                    direction[1] = (double)sign * speed;
-                    break;
-                case '3':
-                    direction[2] = (double)sign * speed;
-                    break;
-                case '4':
-                    direction[3] = (double)sign * speed;
-                    break;
-                case '5':
-                    direction[4] = (double)sign * speed;
-                    break;
-                case '6':
-                    direction[5] = (double)sign * speed;
-                    break;
-                case '1':
-                default:
-                    direction[0] = (double)sign * speed;
-                    break;
-            }
-
-            urdp.SendURCommanderSpeedJ(direction, acceleraton);
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                                    new byte[] {Convert.ToByte(IfPositive? 1:0),
+                                                        byte.Parse(Convert.ToString(Axis))},
+                                    CommunicationModel.AppProtocolCommand.MoveJoint);
         }
 
         /// <summary>
@@ -2188,7 +1899,7 @@ namespace AssistantRobot
         /// </summary>
         public void BaseMovingEnd()
         {
-            urdp.SendURCommanderStopL();
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.MoveStop);
         }
 
         /// <summary>
@@ -2196,54 +1907,7 @@ namespace AssistantRobot
         /// </summary>
         /// <param name="SwitchMode">模式开关</param>
         public void TeachModeTurn(bool SwitchMode = true)
-        {
-            if (SwitchMode)
-            {
-                urdp.SendURCommanderBeginTeachMode();
-            }
-            else
-            {
-                urdp.SendURCommanderEndTeachMode();
-            }
-        }
-
-        /// <summary>
-        /// 检查当前工具是否合适
-        /// </summary>
-        /// <param name="AimTool">目标工具</param>
-        /// <returns>返回是否已经调整到合适状态</returns>
-        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool)
-        {
-            if (currentToolType == AimTool) return true;
-            SetToolParameter(AimTool);
-            return true;
-        }
-
-        /// <summary>
-        /// 设置工具参数到模块
-        /// <param name="AimTool">目标工具</param>
-        /// </summary>
-        private async void SetToolParameter(ToolType AimTool)
-        {
-            await Task.Run(new Action(() =>
-            {
-                if (!ToolParameterRefresh(AimTool)) return;
-
-                urdp.SetInstallation(currentRobotHanged);
-                gdr.InstallHanged = currentRobotHanged;
-
-                gdr.InitialJointAngles = currentRobotInitialPosJoints;
-
-                urdp.SetToolGravityModify(currentToolForceModifier, currentToolForceModifyingMode);
-
-                urdp.SetToolTCP(currentToolTcpEndPointCordinates);
-                gdr.InstallTcpPosition = currentToolTcpEndPointCordinates;
-
-                urdp.SetToolGravity(currentToolGravityValue);
-                gdr.ToolMass = currentToolGravityValue;
-
-                urdp.SendURCommanderBaseSetting();
-            }));
+        {// Remote禁止
         }
 
         #region GalactophoreDetect
@@ -2262,11 +1926,10 @@ namespace AssistantRobot
         /// </summary>
         public void EnterGalactophoreDetectModule()
         {
-            if (!CheckWhetherCurrentToolSuitable(ToolType.Probe)) return;
-
             Task.Run(new Action(() =>
             {
-                gdr.ActiveModule();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.EnterBreastScanMode);
             }));
         }
 
@@ -2277,7 +1940,8 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.FreezeModule();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, 
+                    CommunicationModel.AppProtocolCommand.ExitBreastScanMode);
             }));
         }
 
@@ -2288,7 +1952,8 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.InitialForceSensor();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                                    CommunicationModel.AppProtocolCommand.BreastScanModeBeginForceZeroed);
             }));
         }
 
@@ -2299,8 +1964,8 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.EnterParameterConfiguration();
-                ConfParamsNextParamsGalactophoreDetectModule();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                                    CommunicationModel.AppProtocolCommand.BreastScanModeBeginConfigurationSet);
             }));
         }
 
@@ -2312,7 +1977,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 SaveCachePos();
-                gdr.FindNippleTcpPosition();
+                BreastScanConfMovingEnable = true;
             }));
         }
 
@@ -2323,10 +1988,12 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.ConfirmNippleTcpPositionFound();
-                Thread.Sleep(40);
-                double[] nippleNow = urdp.PositionsTcpActual;
-                NipplePositionGDR = new double[] { nippleNow[0], nippleNow[1], nippleNow[2] };
+                BreastScanConfMovingEnable = false;
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.BreastScanModeConfirmNipplePos);
+
+                Thread.Sleep(100);
+                NipplePositionGDR = new double[] { ToolTCPCordinateX, ToolTCPCordinateY, ToolTCPCordinateZ };
                 //SaveCachePos(nippleNow);
             }));
         }
@@ -2339,7 +2006,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 SaveCachePos();
-                gdr.FindSafetyLiftDistance();
+                BreastScanConfMovingEnable = true;
             }));
         }
 
@@ -2350,10 +2017,9 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.EndFindSafetyLiftDistance();
-                Thread.Sleep(40);
-                double[] posNow = urdp.PositionsTcpActual;
-                double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
+                BreastScanConfMovingEnable = false;
+                Thread.Sleep(100);
+                double distanceBias = Math.Abs(ToolTCPCordinateZ - posCacheNow[2]);
                 DetectingSafetyLiftDistanceGDR = distanceBias;
                 //SaveCachePos(posNow);
             }));
@@ -2367,7 +2033,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 SaveCachePos();
-                gdr.FindMostConfigurationParameters();
+                BreastScanConfMovingEnable = true;
             }));
         }
 
@@ -2378,10 +2044,9 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.EndMostConfigurationParameters();
-                Thread.Sleep(40);
-                double[] posNow = urdp.PositionsTcpActual;
-                double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
+                BreastScanConfMovingEnable = false;
+                Thread.Sleep(100);
+                double distanceBias = Math.Sqrt(Math.Pow(ToolTCPCordinateX - posCacheNow[0], 2) + Math.Pow(ToolTCPCordinateY - posCacheNow[1], 2));
                 NippleForbiddenRadiusGDR = distanceBias;
                 //SaveCachePos(posNow);
             }));
@@ -2395,7 +2060,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 SaveCachePos();
-                gdr.FindMostConfigurationParameters();
+                BreastScanConfMovingEnable = true;
             }));
         }
 
@@ -2406,10 +2071,9 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.EndMostConfigurationParameters();
-                Thread.Sleep(40);
-                double[] posNow = urdp.PositionsTcpActual;
-                double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
+                BreastScanConfMovingEnable = false;
+                Thread.Sleep(100);
+                double distanceBias = Math.Abs(ToolTCPCordinateZ - posCacheNow[2]);
                 DetectingStopDistanceGDR = distanceBias;
                 //SaveCachePos(posNow);
             }));
@@ -2433,7 +2097,7 @@ namespace AssistantRobot
                 Task.Run(new Action(() =>
                 {
                     SaveCachePos();
-                    gdr.FindMostConfigurationParameters();
+                    BreastScanConfMovingEnable = true;
                 }));
             }
 
@@ -2448,10 +2112,9 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.EndMostConfigurationParameters();
-                Thread.Sleep(40);
-                double[] posNow = urdp.PositionsTcpActual;
-                double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
+                BreastScanConfMovingEnable = false;
+                Thread.Sleep(100);
+                double distanceBias = Math.Sqrt(Math.Pow(ToolTCPCordinateX - posCacheNow[0], 2) + Math.Pow(ToolTCPCordinateY - posCacheNow[1], 2));
                 if (Side == "tail") MovingDownEdgeDistanceGDR = distanceBias;
                 else if (Side == "out") MovingLeftEdgeDistanceGDR = distanceBias;
                 else if (Side == "in") MovingRightEdgeDistanceGDR = distanceBias;
@@ -2489,13 +2152,9 @@ namespace AssistantRobot
         /// </summary>
         public void ConfirmConfParamsGalactophoreDetectModule()
         {
-            List<string> conf = PickParametersFormView(ConfPage.GalactophoreDetect);
-
             Task.Run(new Action(() =>
             {
-                gdr.ConfirmConfigurationParameters(conf);
-                gdr.LoadParametersFromXmlAndOutput();
-                ConfParamsNextParamsGalactophoreDetectModule();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(ConfPage.GalactophoreDetect).ToArray(), CommunicationModel.AppProtocolCommand.BreastScanModeConfirmConfigurationSet);
             }));
         }
 
@@ -2506,8 +2165,8 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                gdr.BeReadyToWork();
-                gdr.StartModuleNow();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.BreastScanModeReadyAndStartBreastScan);
             }));
         }
 
@@ -2516,69 +2175,26 @@ namespace AssistantRobot
         /// </summary>
         public async void StopMotionNowGalactophoreDetectModule()
         {
-            GalactophoreDetectorParameterConfirmState = 0;
-
             Task.Run(new Action(() =>
             {
-                gdr.EndModuleNow();
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, 
+                    CommunicationModel.AppProtocolCommand.StopBreastScanImmediately);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
             }));
 
             await ShowDialog("乳腺扫查模块被紧急停止，请按下确定恢复控制权！", "紧急状态", 7);
-
-            Task.Run(new Action(() =>
-            {
-                gdr.RecoverToNormal();
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
-            }));
         }
 
         /// <summary>
         /// 乳腺扫查模块转到下一个配置参数
         /// </summary>
-        public async void ConfParamsNextParamsGalactophoreDetectModule()
+        public void ConfParamsNextParamsGalactophoreDetectModule()
         {
-            switch (galactophoreDetectorParameterConfirmState)
+            Task.Run(new Action(() =>
             {
-                case 1:
-                    if (nipplePositionGDR[0] * nipplePositionGDR[1] * nipplePositionGDR[2] > Double.Epsilon * 10.0) GalactophoreDetectorParameterConfirmState += 1;
-                    break;
-                case 5:
-                    if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary)
-                    {
-                        GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
-                    }
-                    else GalactophoreDetectorParameterConfirmState += 1;
-                    break;
-                case 6:
-                    if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.UpDownBoundary)
-                    {
-                        GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
-                    }
-                    else
-                    {
-                        GalactophoreDetectorParameterConfirmState = 0;
-                        await gdr.LongitudinalToHorizontalCheck();
-                        GalactophoreDetectorParameterConfirmState = 7;
-                    }
-                    break;
-                case 8:
-                    GalactophoreDetectorParameterConfirmState = 0;
-                    await gdr.LongitudinalToHorizontalCheck(true);
-                    GalactophoreDetectorParameterConfirmState = Byte.MaxValue;
-                    break;
-                case Byte.MaxValue:
-                    GalactophoreDetectorParameterConfirmState = 0;
-                    break;
-                case 0:
-                case 2:
-                case 3:
-                case 4:
-                case 7:
-                default:
-                    GalactophoreDetectorParameterConfirmState += 1;
-                    break;
-            }
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.BreastScanModeNextConfigurationItem);
+            }));
         }
 
         #endregion
@@ -2594,8 +2210,7 @@ namespace AssistantRobot
             switch (modifyPage)
             {
                 case ConfPage.GalactophoreDetect:
-                    gdr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
-                    gdr.LoadParametersFromXmlAndOutput();
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(modifyPage).ToArray(), CommunicationModel.AppProtocolCommand.BreastScanModeSaveConfigurationSet);
                     break;
 
                 default:
@@ -2608,7 +2223,7 @@ namespace AssistantRobot
         /// </summary>
         /// <param name="modifyPage">修改的页</param>
         /// <returns>返回配置参数</returns>
-        public List<string> PickParametersFormView(ConfPage modifyPage)
+        public List<byte> PickParametersFormView(ConfPage modifyPage)
         {
             List<byte> returnConf = new List<byte>(100);
             switch (modifyPage)
@@ -2663,23 +2278,58 @@ namespace AssistantRobot
 
                     returnConf.Add(Convert.ToByte(mw.IACheckSwitch.IsChecked.Value ? 1 : 0));
 
+                    returnConf.AddRange( // 占位
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(-2.0)), 0))));
 
+                    returnConf.Add(Convert.ToByte(Math.Round(mw.vibrateDegreeSlider.Value)));
+                    returnConf.Add(Convert.ToByte(Math.Round(mw.speedDegreeSlider.Value)));
+                    returnConf.Add(Convert.ToByte(Math.Round(mw.forceDegreeSlider.Value)));
+                    returnConf.Add(Convert.ToByte(mw.attachSwitch.IsChecked.Value ? 1 : 0));
 
-                    
-                        
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.headBound.Text.Trim()) / 1000.0)), 0))));
+                     returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.outBound.Text.Trim()) / 1000.0)), 0))));
+                     returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.tailBound.Text.Trim()) / 1000.0)), 0))));
+                     returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.inBound.Text.Trim()) / 1000.0)), 0))));
 
-                    returnConf.Add(Math.Round(mw.vibrateDegreeSlider.Value).ToString("0"));
-                    returnConf.Add(Math.Round(mw.speedDegreeSlider.Value).ToString("0"));
-                    returnConf.Add(Math.Round(mw.forceDegreeSlider.Value).ToString("0"));
-                    returnConf.Add(mw.attachSwitch.IsChecked == true ? "1" : "0");
-                    returnConf.Add((double.Parse(gd.headBound.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.outBound.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.tailBound.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.inBound.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add(mw.autoSaveSwitch.IsChecked.ToString());
-                    returnConf.Add(mw.galactophoreDirectionSwitch.IsChecked == true ? "1" : "0");
-                    returnConf.Add(Math.Round(mw.borderModeSlider.Value).ToString("0"));
-                    returnConf.Add((Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content)).ToString("0.0000"));
+                    returnConf.Add(Convert.ToByte(mw.autoSaveSwitch.IsChecked.Value ? 1 : 0));
+                    returnConf.Add(Convert.ToByte(mw.galactophoreDirectionSwitch.IsChecked.Value ? 1 : 0));
+                    returnConf.Add(Convert.ToByte(Math.Round(mw.borderModeSlider.Value)));
+
+                     returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content))), 0))));
 
                     return returnConf;
                 default:
@@ -2696,10 +2346,21 @@ namespace AssistantRobot
         /// </summary>
         private void SaveCachePos(double[] InputPos = null)
         {
-            if (Object.Equals(InputPos, null)) InputPos = urdp.PositionsTcpActual;
-            for (int i = 0; i < 6; ++i)
+            if (Object.Equals(InputPos, null))
             {
-                posCacheNow[i] = InputPos[i];
+                posCacheNow[0] = ToolTCPCordinateX;
+                posCacheNow[1] = ToolTCPCordinateY;
+                posCacheNow[2] = ToolTCPCordinateZ;
+                posCacheNow[3] = ToolTCPCordinateRX;
+                posCacheNow[4] = ToolTCPCordinateRY;
+                posCacheNow[5] = ToolTCPCordinateRZ;
+            }
+            else
+            {
+                for (int i = 0; i < 6; ++i)
+                {
+                    posCacheNow[i] = InputPos[i];
+                }
             }
         }
 
@@ -2864,7 +2525,7 @@ namespace AssistantRobot
 
 
             BindingItemsGalactophoreDetectorWorkingStatus();
-
+            BindingItemsGalactophoreDetectorMoveEnable();
         }
 
         #region SubBindingItems
@@ -3935,6 +3596,19 @@ namespace AssistantRobot
             //BindingOperations.SetBinding(gd.sinkDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToSinkDistanceNextBtn);
         }
 
+        /// <summary>
+        /// 绑定域 --| GalactophoreDetector Parameter Change Move |-- 内元素
+        /// </summary>
+        private void BindingItemsGalactophoreDetectorMoveEnable()
+        {
+            // 绑定：BreastScanConfMovingEnable {属性} ==> iconMoveSettingGalactophore {GalactophorDetect控件}
+            Binding bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore = new Binding();
+            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Source = this;
+            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Path = new PropertyPath("BreastScanConfMovingEnable");
+            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Mode = BindingMode.OneWay;
+            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(gd.iconMoveSettingGalactophore, Grid.IsEnabledProperty, bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore);
+        }
         #endregion
 
         /// <summary>

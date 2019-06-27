@@ -542,7 +542,7 @@
 					Style="{StaticResource CircleButtonStyle}"
 					Height="{Binding ActualHeight, ElementName=iconMotionYN}" Width="{Binding ActualHeight, ElementName=teachMotionBtn}"
 					Foreground="#FF0070BB" Cursor="Hand"
-					Margin="10 20 5 5">
+					Margin="10 20 5 5" IsEnabled="False">
                     <iconPacks:PackIconEntypo Width="Auto" Height="Auto"
                                               Kind="Hand" Margin="16"
 											  HorizontalAlignment="Center" VerticalAlignment="Center"/>

@@ -250,17 +250,19 @@ namespace AssistantRobot
             PowerOff = 53,
             AutoPowerOn = 61,
 
+            ChangePage = 81,
+
             EnterBreastScanMode = 101,
-            BeginForceZeroed = 102,
-            BeginConfigurationSet = 103,
-            NextConfigurationItem = 104,
-            ConfirmConfigurationSet = 105,
-            ReadyAndStartBreastScan = 106,
-            SaveConfigurationSet = 107,
+            BreastScanModeBeginForceZeroed = 102,
+            BreastScanModeBeginConfigurationSet = 103,
+            BreastScanModeConfirmNipplePos = 104,
+            BreastScanModeNextConfigurationItem = 105,
+            BreastScanModeConfirmConfigurationSet = 106,
+            BreastScanModeReadyAndStartBreastScan = 107,
+            BreastScanModeSaveConfigurationSet = 108,
 
-            StopBreastScanImmediately = 201,
-
-            ExitBreastScanMode = 251
+            StopBreastScanImmediately = 121,
+            ExitBreastScanMode = 131
         }
 
         /// <summary>
@@ -297,6 +299,15 @@ namespace AssistantRobot
         {
             SpeedRatio = 0, // float: 0.0~50.0
         }
+
+        /// <summary>
+        /// 应用协议指令 运动速度数据报格式
+        /// </summary>
+        public enum AppProtocolChangePageDatagram : byte
+        {
+            AimPage = 0, // URViewModel.ShowPage
+        }
+
         #endregion
 
         #region 字段 TCP
@@ -334,7 +345,6 @@ namespace AssistantRobot
 
         private CancellationTokenSource tcpRecieveCancel;
         private Task tcpRecieveTask;
-        private bool ifTCPOnceRecieveData = false;
 
         private string publicKey = null;
         private string privateKey = null;
@@ -585,6 +595,8 @@ namespace AssistantRobot
         /// <param name="appCmd">APP命令字</param>
         public void SendCmd(TCPProtocolKey tcpKey, byte[] content = null, AppProtocolCommand appCmd = AppProtocolCommand.PowerOff)
         {
+            if (!ifTCPTransferEstablished) return;
+
             switch (tcpKey)
             {
                 case TCPProtocolKey.EndBothControl:
@@ -628,11 +640,11 @@ namespace AssistantRobot
         #endregion
 
         #region Interface Event
-        private delegate void SendDoubleArray(double[] sendArray);
-        private delegate void SendVoid();
-        private delegate void SendIndex(int sendIndex);
-        private delegate void SendStringArrayList(List<string[]> sendList);
-        private delegate void SendBool(bool sendBool);
+        public delegate void SendDoubleArray(double[] sendArray);
+        public delegate void SendVoid();
+        public delegate void SendIndex(int sendIndex);
+        public delegate void SendStringArrayList(List<string[]> sendList);
+        public delegate void SendBool(bool sendBool);
 
         public event SendDoubleArray OnSendURRealTimeData;
         public event SendVoid OnSendURNetAbnormalAbort;
