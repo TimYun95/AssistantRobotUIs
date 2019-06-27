@@ -495,8 +495,8 @@ namespace AssistantRobot
         }
         #endregion
 
-
         #region Interface
+        #region Interface Functions
         /// <summary>
         /// 连接到服务器
         /// </summary>
@@ -570,20 +570,88 @@ namespace AssistantRobot
             // TCP连接未建立就退出
             if (!ifTCPTransferEstablished) return false;
 
-            // 发送停止接收视频
+            // 发送停止接收
             if (ifCloseLocalControl) SendCmd(TCPProtocolKey.EndBothControl);
             else SendCmd(TCPProtocolKey.EndRemoteControl);
 
             return true;
         }
 
+        /// <summary>
+        /// 发送指令
+        /// </summary>
+        /// <param name="tcpKey">TCP关键字</param>
+        /// <param name="content">发送内容</param>
+        /// <param name="appCmd">APP命令字</param>
+        public void SendCmd(TCPProtocolKey tcpKey, byte[] content = null, AppProtocolCommand appCmd = AppProtocolCommand.PowerOff)
+        {
+            switch (tcpKey)
+            {
+                case TCPProtocolKey.EndBothControl:
+                case TCPProtocolKey.EndRemoteControl:
+                case TCPProtocolKey.PingSignal:
+                    // TCP打包 无内容
+                    lock (tcpSendBufferLocker)
+                    { //  入队
+                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey));
+                    }
+                    break;
+                case TCPProtocolKey.RSAPublicKey:
+                    // TCP打包 有内容
+                    if (Object.Equals(content, null)) return;
+                    lock (tcpSendBufferLocker)
+                    { //  入队
+                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey, content));
+                    }
+                    break;
+                case TCPProtocolKey.NormalData:
+                    lock (tcpSendBufferLocker)
+                    {
+                        byte[] encryptedBytes = EncryptByAES( // AES加密
+                                                                        PackagePipe( // Pipe打包
+                                                                            appCmd, content
+                                                                        )
+                                                                    );
+                        if (Object.Equals(encryptedBytes, null)) return; // 加密出错
+                        tcpSendBuffer.Enqueue( //  入队
+                                PackageTCP( // TCP打包
+                                    tcpKey, encryptedBytes
+                                )
+                            );
+                    }
+                    break;
+                case TCPProtocolKey.AESCommonKeyAndIV:
+                default:
+                    break;
+            }
+        }
+        #endregion
 
+        #region Interface Event
+        private delegate void SendDoubleArray(double[] sendArray);
+        private delegate void SendVoid();
+        private delegate void SendIndex(int sendIndex);
+        private delegate void SendStringArrayList(List<string[]> sendList);
+        private delegate void SendBool(bool sendBool);
 
+        public event SendDoubleArray OnSendURRealTimeData;
+        public event SendVoid OnSendURNetAbnormalAbort;
+        public event SendIndex OnSendURWorkEmergencyState;
+        public event SendIndex OnSendURNearSingularState;
+        public event SendVoid OnSendURInitialPowerOnAsk;
+        public event SendVoid OnSendURInitialPowerOnAskReply;
+        public event SendIndex OnSendURAdditionalDeviceAbnormal;
 
+        public event SendStringArrayList OnSendBreastScanConfiguration;
+        public event SendIndex OnSendBreastScanWorkStatus;
+        public event SendBool OnSendBreastScanConfigurationConfirmStatus;
+        public event SendBool OnSendBreastScanForceZerodStatus;
+        public event SendIndex OnSendBreastScanConfigurationProcess;
+        public event SendVoid OnSendBreastScanImmediateStop;
+        public event SendVoid OnSendBreastScanImmediateStopRecovery;
 
-
-
-
+        public event SendVoid OnSendTcpDisconnected;
+        #endregion
         #endregion
 
         #region Transfer
@@ -645,6 +713,7 @@ namespace AssistantRobot
             Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "AssistantRobot remote controller tcp transfer stops to send datas, and recieve datas too.");
 
             FinishAllConnection();
+            OnSendTcpDisconnected();
 
             ifTCPTransferEstablished = false;
         }
@@ -720,100 +789,248 @@ namespace AssistantRobot
             switch (keyStatus)
             {
                 case AppProtocolStatus.URRealTimeData:
-
-
-
-
-
-
+                    OnSendURRealTimeData(GetURRealTimeDatasFromBytes(content));
                     break;
                 case AppProtocolStatus.URNetAbnormalAbort:
+                    OnSendURNetAbnormalAbort();
                     break;
                 case AppProtocolStatus.URWorkEmergencyState:
+                    OnSendURWorkEmergencyState(content[(byte)AppProtocolEmergencyStateDatagram.EmergencyState]);
                     break;
                 case AppProtocolStatus.URNearSingularState:
+                    OnSendURNearSingularState(content[(byte)AppProtocolNearSingularStateDatagram.SingularState]);
                     break;
                 case AppProtocolStatus.URInitialPowerOnAsk:
+                    OnSendURInitialPowerOnAsk();
                     break;
                 case AppProtocolStatus.URInitialPowerOnAskReply:
+                    OnSendURInitialPowerOnAskReply();
                     break;
                 case AppProtocolStatus.URAdditionalDeviceAbnormal:
+                    OnSendURAdditionalDeviceAbnormal(content[(byte)AppProtocolAdditionalDeviceAbnormalDatagram.AbnormalClass]);
                     break;
-
 
                 case AppProtocolStatus.BreastScanConfiguration:
+                    OnSendBreastScanConfiguration(GetBreastScanConfFromBytes(content));
                     break;
                 case AppProtocolStatus.BreastScanWorkStatus:
+                    OnSendBreastScanWorkStatus(Math.Min(Math.Max(content[(byte)AppProtocolBreastScanWorkStatusDatagram.ModuleWorkingStatus] - 10, 0), 100));
                     break;
                 case AppProtocolStatus.BreastScanConfigurationConfirmStatus:
+                    OnSendBreastScanConfigurationConfirmStatus(content[(byte)AppProtocolBreastScanConfigurationConfirmDatagram.HasConfirmConfiguration] == 1);
                     break;
                 case AppProtocolStatus.BreastScanForceZerodStatus:
+                    OnSendBreastScanForceZerodStatus(content[(byte)AppProtocolBreastScanForceZerodDatagram.HasForceZeroed] == 1);
                     break;
                 case AppProtocolStatus.BreastScanConfigurationProcess:
+                    OnSendBreastScanConfigurationProcess(content[(byte)AppProtocolBreastScanConfigurationProcessDatagram.ConfProcess]);
                     break;
                 case AppProtocolStatus.BreastScanImmediateStop:
+                    OnSendBreastScanImmediateStop();
                     break;
                 case AppProtocolStatus.BreastScanImmediateStopRecovery:
+                    OnSendBreastScanImmediateStopRecovery();
                     break;
 
-
                 case AppProtocolStatus.EndPipeConnection:
+                default:
                     break;
             }
         }
 
         /// <summary>
-        /// 发送指令
+        /// 获得实时UR数据
         /// </summary>
-        /// <param name="tcpKey">TCP关键字</param>
-        /// <param name="content">发送内容</param>
-        /// <param name="appCmd">APP命令字</param>
-        private void SendCmd(TCPProtocolKey tcpKey, byte[] content = null, AppProtocolCommand appCmd = AppProtocolCommand.PowerOff)
+        /// <param name="inputBytes">字节流</param>
+        /// <returns>返回数据数组</returns>
+        double[] GetURRealTimeDatasFromBytes(byte[] inputBytes)
         {
-            switch (tcpKey)
+            List<double> returnDoubleArray = new List<double>(26);
+
+            for (int i = 0; i < 6; ++i)
             {
-                case TCPProtocolKey.EndBothControl:
-                case TCPProtocolKey.EndRemoteControl:
-                case TCPProtocolKey.PingSignal:
-                    // TCP打包 无内容
-                    lock (tcpSendBufferLocker)
-                    { //  入队
-                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey));
-                    }
-                    break;
-                case TCPProtocolKey.RSAPublicKey:
-                    // TCP打包 有内容
-                    if (Object.Equals(content, null)) return;
-                    lock (tcpSendBufferLocker)
-                    { //  入队
-                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey, content));
-                    }
-                    break;
-                case TCPProtocolKey.NormalData:
-                    lock (tcpSendBufferLocker)
-                    {
-                        byte[] encryptedBytes = EncryptByAES( // AES加密
-                                                                        PackagePipe( // Pipe打包
-                                                                            appCmd, content
-                                                                        )
-                                                                    );
-                        if (Object.Equals(encryptedBytes, null)) return; // 加密出错
-                        tcpSendBuffer.Enqueue( //  入队
-                                PackageTCP( // TCP打包
-                                    tcpKey, encryptedBytes
-                                )
-                            );
-                    }
-                    break;
-                case TCPProtocolKey.AESCommonKeyAndIV:
-                default:
-                    break;
+                returnDoubleArray.Add(
+                    Convert.ToDouble(
+                    BitConverter.ToSingle(
+                    BitConverter.GetBytes(
+                    IPAddress.NetworkToHostOrder(
+                    BitConverter.ToInt32(inputBytes, (byte)AppProtocolRTFeedBackDatagram.TcpCoordinates + i * 4))), 0)));
             }
+            for (int i = 0; i < 6; ++i)
+            {
+                returnDoubleArray.Add(
+                    Convert.ToDouble(
+                    BitConverter.ToSingle(
+                    BitConverter.GetBytes(
+                    IPAddress.NetworkToHostOrder(
+                    BitConverter.ToInt32(inputBytes, (byte)AppProtocolRTFeedBackDatagram.JointCoordinates + i * 4))), 0)));
+            }
+            for (int i = 0; i < 6; ++i)
+            {
+                returnDoubleArray.Add(
+                    Convert.ToDouble(
+                    BitConverter.ToSingle(
+                    BitConverter.GetBytes(
+                    IPAddress.NetworkToHostOrder(
+                    BitConverter.ToInt32(inputBytes, (byte)AppProtocolRTFeedBackDatagram.CurrentCoordinates + i * 4))), 0)));
+            }
+            for (int i = 0; i < 6; ++i)
+            {
+                returnDoubleArray.Add(
+                    Convert.ToDouble(
+                    BitConverter.ToSingle(
+                    BitConverter.GetBytes(
+                    IPAddress.NetworkToHostOrder(
+                    BitConverter.ToInt32(inputBytes, (byte)AppProtocolRTFeedBackDatagram.TcpForce + i * 4))), 0)));
+            }
+
+            returnDoubleArray.Add(
+                Convert.ToDouble(inputBytes[(byte)AppProtocolRTFeedBackDatagram.RobotState]));
+            returnDoubleArray.Add(
+                Convert.ToDouble(inputBytes[(byte)AppProtocolRTFeedBackDatagram.RobotProgramState]));
+
+            return returnDoubleArray.ToArray();
         }
-        #endregion
 
-        #region Deal
+        /// <summary>
+        /// 获得乳腺扫描配置
+        /// </summary>
+        /// <param name="inputBytes">字节流</param>
+        /// <returns>返回数据列表</returns>
+        List<string[]> GetBreastScanConfFromBytes(byte[] inputBytes)
+        {
+            List<string[]> returnArray = new List<string[]>(24);
 
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMinGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMaxGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSpeedMinGDR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableAngleCorrectedGDR] == 1 ? "True" : "False"
+            });
+
+            returnArray.Add(new string[] { " " }); // {vibratingAttitudeMaxAtSmoothPart}
+            returnArray.Add(new string[] { " " }); // {vibratingAttitudeMinAtSteepPart}
+            returnArray.Add(new string[] { " " }); // {vibratingAttitudeMaxAtSteepPart}
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.NippleForbiddenRadiusGDR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] { " " }); // {movingStopDistance}
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingStopDistanceGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSafetyLiftDistanceGDR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableDetectingInitialForceGDR] == 1 ? "True" : "False"
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSinkDistanceGDR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.VibratingAngleDegreeGDR].ToString()
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.MovingSpeedDegreeGDR].ToString()
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingForceDegreeGDR].ToString()
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingAlignDegreeGDR].ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.MovingUpEdgeDistanceGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.MovingLeftEdgeDistanceGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.MovingDownEdgeDistanceGDR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.MovingRightEdgeDistanceGDR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfAutoReplaceConfigurationGDR] == 1 ? "True" : "False"
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfCheckRightGalactophoreGDR].ToString()
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IdentifyEdgeModeGDR].ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.CheckingStepGDR))), 0)).ToString()
+            });
+
+            return returnArray;
+        }
         #endregion
 
         #region (Unp|P)ack & (De|En)crypt
@@ -1108,17 +1325,6 @@ namespace AssistantRobot
         }
         #endregion
 
-
-
-
-
-
-
-
-
-
-
-
         #region Abort
         /// <summary>
         /// 结束所有循环等待
@@ -1144,13 +1350,5 @@ namespace AssistantRobot
             if (existError) ;// 未知网络传输错误
         }
         #endregion
-
-
-
-
-
-
-
-
     }
 }

@@ -133,6 +133,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="CommunicationModel.cs" />
+    <Compile Include="Functions.cs" />
     <Compile Include="SelfDefinedConverter.cs" />
     <Compile Include="URViewModel.cs" />
     <Page Include="BaseControl.xaml">

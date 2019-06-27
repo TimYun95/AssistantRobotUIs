@@ -11,12 +11,14 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
+using MahApps.Metro.IconPacks;
 
 using System.Windows;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Reflection;
 using System.Configuration;
+using System.Net;
 
 using LogPrinter;
 using ResourceCheck;
@@ -63,6 +65,7 @@ namespace AssistantRobot
         #endregion
 
         #region Model
+        /*
         private SQLServerConnector sqlsc;
         private SerialConnector sc;
         private URDataProcessor urdp;
@@ -97,6 +100,9 @@ namespace AssistantRobot
         private readonly int digitalIOVoltage = 0;
         private readonly double probeCalibrationMaxAmplitudeDeg = 60.0;
         private readonly byte punctureUsingAttitudeFlag = 0;
+        */
+
+        private CommunicationModel cm;
 
         // 移动最高最低速度和加速度
         private readonly double fastSpeedL = 0.2;
@@ -112,6 +118,7 @@ namespace AssistantRobot
         private readonly double slowAccelerationj = 0.2;
         private readonly double minAccelerationj = 0.002;
 
+        /*
         // 当前工具信息
         private ToolType currentToolType = ToolType.Probe;
         private bool currentRobotHanged = false;
@@ -120,15 +127,25 @@ namespace AssistantRobot
         private URDataProcessor.ForceModifiedMode currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
         private double[] currentToolTcpEndPointCordinates = null;
         private double currentToolGravityValue = 0;
+        */
 
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
 
+        // 是否正在初始化机械臂
+        private bool ifInitialArm = false;
+
+        // 是否正在等待恢复GDR控制权
+        private bool ifWaitForGDR = false;
+
+        /*
         // 指示是否正在检查下沉距离
         private bool ifCheckingSinkDistance = false;
 
+        
         // 指示是否首次运行本程序
         private bool ifFirstOpenTheProg = true;
+         */
         #endregion
 
         #region View
@@ -147,26 +164,147 @@ namespace AssistantRobot
         public event PropertyChangedEventHandler PropertyChanged;
 
         #region Global Controls Enable
-        private bool enableAll = false;
+        private bool localEnable = false;
         /// <summary>
-        /// 允许所有动作
+        /// 当地允许所有动作
         /// </summary>
-        public bool EnableAll
+        public bool LocalEnable
         {
-            get { return enableAll; }
+            get { return localEnable; }
             set
             {
-                enableAll = value;
+                localEnable = value;
                 if (this.PropertyChanged != null)
                 {
-                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("EnableAll"));
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("LocalEnable"));
+                }
+            }
+        }
+
+        private bool remoteEnable = false;
+        /// <summary>
+        /// 远程允许所有动作
+        /// </summary>
+        public bool RemoteEnable
+        {
+            get { return remoteEnable; }
+            set
+            {
+                remoteEnable = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RemoteEnable"));
+                }
+            }
+        }
+        #endregion
+
+        #region WindowCommand Kind And Text
+        private string superviseBtnText = "打开监控";
+        /// <summary>
+        /// 监控按钮文字
+        /// </summary>
+        public string SuperviseBtnText
+        {
+            get { return superviseBtnText; }
+            set
+            {
+                superviseBtnText = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("SuperviseBtnText"));
+                }
+            }
+        }
+
+        private string connectBtnText = "建立连接";
+        /// <summary>
+        /// 连接按钮文字
+        /// </summary>
+        public string ConnectBtnText
+        {
+            get { return connectBtnText; }
+            set
+            {
+                connectBtnText = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ConnectBtnText"));
+                }
+            }
+        }
+
+        private PackIconFontAwesomeKind superviseBtnIcon = PackIconFontAwesomeKind.EyeSolid;
+        /// <summary>
+        /// 监控按钮图标
+        /// </summary>
+        public PackIconFontAwesomeKind SuperviseBtnIcon
+        {
+            get { return superviseBtnIcon; }
+            set
+            {
+                superviseBtnIcon = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("SuperviseBtnIcon"));
+                }
+            }
+        }
+
+        private PackIconMaterialKind connectBtnIcon = PackIconMaterialKind.LanConnect;
+        /// <summary>
+        ///  连接按钮图标
+        /// </summary>
+        public PackIconMaterialKind ConnectBtnIcon
+        {
+            get { return connectBtnIcon; }
+            set
+            {
+                connectBtnIcon = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ConnectBtnIcon"));
+                }
+            }
+        }
+
+        private bool superviseBtnEnable = false;
+        /// <summary>
+        /// 监控按钮使能
+        /// </summary>
+        public bool SuperviseBtnEnable
+        {
+            get { return superviseBtnEnable; }
+            set
+            {
+                superviseBtnEnable = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("SuperviseBtnEnable"));
+                }
+            }
+        }
+
+        private bool connectBtnEnable = false;
+        /// <summary>
+        /// 连接按钮使能
+        /// </summary>
+        public bool ConnectBtnEnable
+        {
+            get { return connectBtnEnable; }
+            set
+            {
+                connectBtnEnable = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ConnectBtnEnable"));
                 }
             }
         }
         #endregion
 
         #region StatusBar Content And Color
-        private string statusBarContent = "网络连接未建立";
+        private string statusBarContent = "当地网络连接未建立";
         /// <summary>
         /// 状态栏内容
         /// </summary>
@@ -199,6 +337,42 @@ namespace AssistantRobot
                 if (this.PropertyChanged != null)
                 {
                     this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StatusBarBackgroundColor"));
+                }
+            }
+        }
+        #endregion
+
+        #region StatusBarRemote Content And Color
+        private string statusBarRemoteContent = "远程网络连接未建立";
+        /// <summary>
+        /// 远程状态栏内容
+        /// </summary>
+        public string StatusBarRemoteContent
+        {
+            get { return statusBarRemoteContent; }
+            set
+            {
+                statusBarRemoteContent = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StatusBarRemoteContent"));
+                }
+            }
+        }
+
+        private SolidColorBrush statusBarRemoteBackgroundColor = defaultBlueColor;
+        /// <summary>
+        /// 远程状态栏背景颜色
+        /// </summary>
+        public SolidColorBrush StatusBarRemoteBackgroundColor
+        {
+            get { return statusBarRemoteBackgroundColor; }
+            set
+            {
+                statusBarRemoteBackgroundColor = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StatusBarRemoteBackgroundColor"));
                 }
             }
         }
@@ -1315,6 +1489,7 @@ namespace AssistantRobot
             bool parseResult = true;
 
             bool ifUsingSerialPortTemp;
+            /*
             parseResult = bool.TryParse(ConfigurationManager.AppSettings["ifUsingSerialPort"], out ifUsingSerialPortTemp);
             if (parseResult) ifUsingSerialPort = ifUsingSerialPortTemp;
             else
@@ -1323,7 +1498,7 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifUsingSerialPort" + ") is wrong");
                 return;
             }
-
+            
             string numOfCOMTemp = ConfigurationManager.AppSettings["numOfCOM"];
             if (new string(numOfCOMTemp.Take(3).ToArray()) == "COM") numOfCOM = numOfCOMTemp;
             else
@@ -1528,6 +1703,7 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "punctureUsingAttitudeFlag" + ") is wrong");
                 return;
             }
+            */
 
             double fastSpeedLTemp;
             parseResult = double.TryParse(ConfigurationManager.AppSettings["fastSpeedL"], out fastSpeedLTemp);
@@ -1851,15 +2027,6 @@ namespace AssistantRobot
                 new ShowDialogDelegate(ShowDialogTask),
                 DispatcherPriority.Normal,
                 new object[] { message, title, occupyNum });
-        }
-
-        /// <summary>
-        /// 开始必要的连接检查和连接
-        /// </summary>
-        public void StartConnection()
-        {
-            if (ifUsingSerialPort) sc.OpenCOMConnection();
-            urdp.StartNetChecking();
         }
 
         /// <summary>
@@ -2443,23 +2610,64 @@ namespace AssistantRobot
         /// <returns>返回配置参数</returns>
         public List<string> PickParametersFormView(ConfPage modifyPage)
         {
-            List<string> returnConf = new List<string>(30);
+            List<byte> returnConf = new List<byte>(100);
             switch (modifyPage)
             {
                 case ConfPage.GalactophoreDetect:
-                    returnConf.Add((string)mw.minForceText.Content);
-                    returnConf.Add((string)mw.maxForceText.Content);
-                    returnConf.Add((double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0).ToString("0.0000"));
-                    returnConf.Add(mw.ARectifySwitch.IsChecked.ToString());
-                    returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSmoothPart
-                    returnConf.Add("-2.0"); // vibratingAttitudeMinAtSteepPart
-                    returnConf.Add("-2.0"); // vibratingAttitudeMaxAtSteepPart
-                    returnConf.Add((double.Parse(gd.minRadius.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add("-2.0"); // movingStopDistance
-                    returnConf.Add((double.Parse(gd.scanDistance.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add((double.Parse(gd.liftDistance.Text.Trim()) / 1000.0).ToString("0.000"));
-                    returnConf.Add(mw.IACheckSwitch.IsChecked.ToString());
-                    returnConf.Add("-2.0");
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        float.Parse(
+                        (string)mw.minForceText.Content)), 0))));
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        float.Parse(
+                        (string)mw.maxForceText.Content)), 0))));
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0)), 0))));
+
+                    returnConf.Add(Convert.ToByte(mw.ARectifySwitch.IsChecked.Value ? 1 : 0));
+
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.minRadius.Text.Trim()) / 1000.0)), 0))));
+
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.scanDistance.Text.Trim()) / 1000.0)), 0))));
+                    returnConf.AddRange(
+                        BitConverter.GetBytes(
+                        IPAddress.HostToNetworkOrder(
+                        BitConverter.ToInt32(
+                        BitConverter.GetBytes(
+                        Convert.ToSingle(
+                        double.Parse(gd.liftDistance.Text.Trim()) / 1000.0)), 0))));
+
+                    returnConf.Add(Convert.ToByte(mw.IACheckSwitch.IsChecked.Value ? 1 : 0));
+
+
+
+                    
+                        
+
                     returnConf.Add(Math.Round(mw.vibrateDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.speedDegreeSlider.Value).ToString("0"));
                     returnConf.Add(Math.Round(mw.forceDegreeSlider.Value).ToString("0"));
@@ -2512,8 +2720,7 @@ namespace AssistantRobot
             var mySettings = new MetroDialogSettings()
             {
                 AffirmativeButtonText = "关闭程序",
-                NegativeButtonText = " + 机械臂断电",
-                FirstAuxiliaryButtonText = " + 控制箱关闭",
+                NegativeButtonText = " + 当地程序",
                 DialogTitleFontSize = titleSize,
                 DialogMessageFontSize = messageSize,
                 CustomResourceDictionary = new ResourceDictionary(),
@@ -2521,56 +2728,44 @@ namespace AssistantRobot
             };
 
             MessageDialogResult result = await mw.ShowMessageAsync("选择", "请选择想要的关闭方式！",
-                MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary, mySettings);
+                MessageDialogStyle.AffirmativeAndNegative, mySettings);
 
+            var controller = await mw.ShowProgressAsync("请稍后", "正在关闭程序。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = false,
+                AnimateHide = false,
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
+
+            controller.SetIndeterminate();
+
+            bool closeResult = false;
             if (result == MessageDialogResult.Affirmative)
             {
-                await Task.Delay(100);
+                closeResult = cm.EndConnectionToServer();
+                if (!closeResult)
+                {
+                    Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Remote connection has not been established when closing remote ui.");
+                }
             }
             else if (result == MessageDialogResult.Negative)
             {
-                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂断电。。。", settings: new MetroDialogSettings()
+                closeResult = cm.EndConnectionToServer(true);
+                if (!closeResult)
                 {
-                    AnimateShow = false,
-                    AnimateHide = false,
-                    DialogTitleFontSize = titleSize,
-                    DialogMessageFontSize = messageSize,
-                    ColorScheme = MetroDialogColorScheme.Theme
-                });
-
-                controller.SetIndeterminate();
-                RobotPowerOff();
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
-                {
-                    await Task.Delay(200);
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Remote connection has not been established when closing both ui.");
                 }
-                await controller.CloseAsync();
             }
-            else
+
+            ClearAllEvents(cm);
+            while (RemoteEnable)
             {
-                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂断电。。。", settings: new MetroDialogSettings()
-                {
-                    AnimateShow = false,
-                    AnimateHide = false,
-                    DialogTitleFontSize = titleSize,
-                    DialogMessageFontSize = messageSize,
-                    ColorScheme = MetroDialogColorScheme.Theme
-                });
-
-                controller.SetIndeterminate();
-                RobotPowerOff();
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.PowerOff)
-                {
-                    await Task.Delay(200);
-                }
-                await controller.CloseAsync();
-                urdp.SendURBaseControllerShutDown();
-                await Task.Delay(25);
+                await Task.Delay(500);
             }
 
-            urdp.ActiveBreakCommunicationConncect();
-            ClearAllEvents(urdp);
-
+            await controller.CloseAsync();
             await Task.Delay(200);
             mw.Close();
         }
@@ -2608,6 +2803,25 @@ namespace AssistantRobot
             }
         }
 
+        /// <summary>
+        /// 连接Model服务器
+        /// </summary>
+        /// <returns>连接结果</returns>
+        public int ConnectToModelServer()
+        {
+            return cm.ConnectToServer();
+        }
+
+        /// <summary>
+        /// 断开Model服务器连接
+        /// </summary>
+        /// <param name="ifCloseLocalCtrl">是否一并关闭当地控制</param>
+        /// <returns>断开结果</returns>
+        public bool BreakFromModelServer(bool ifCloseLocalCtrl = false)
+        {
+            return cm.EndConnectionToServer(ifCloseLocalCtrl);
+        }
+
         #endregion
 
         #region Preparation
@@ -2625,6 +2839,7 @@ namespace AssistantRobot
         private readonly ConverterThatTransformEnumToDouble convertE2D = new ConverterThatTransformEnumToDouble();
         private readonly ConverterThatTransformEnumToBool convertE2B = new ConverterThatTransformEnumToBool();
         private readonly ConverterMultiStatusToEnableBool convertMS2EB = new ConverterMultiStatusToEnableBool();
+        private readonly ConverterMultiEnableToEnableAndLogicBool convertME2EALB = new ConverterMultiEnableToEnableAndLogicBool();
 
         /// <summary>
         /// 绑定元素
@@ -2632,7 +2847,9 @@ namespace AssistantRobot
         public void BindingItems()
         {
             BindingItemsGlobalControlsEnable();
+            BindingItemsWindowCommandKindAndText();
             BindingItemsStatusBarContentAndColor();
+            BindingItemsStatusBarRemoteContentAndColor();
             BindingItemsBaseMovingRefrenceCordinateAndMovingSpeedRatio();
             BindingItemsParametersNeededToShowOnWindowToolTCPCordinates();
             BindingItemsParametersNeededToShowOnWindowToolForceAndTorque();
@@ -2656,13 +2873,77 @@ namespace AssistantRobot
         /// </summary>
         private void BindingItemsGlobalControlsEnable()
         {
-            // 绑定：EnableAll {属性} ==> frameNav {MainWindow控件}
-            Binding bindingFromForbiddenAllToFrameNavOfMW = new Binding();
-            bindingFromForbiddenAllToFrameNavOfMW.Source = this;
-            bindingFromForbiddenAllToFrameNavOfMW.Path = new PropertyPath("EnableAll");
-            bindingFromForbiddenAllToFrameNavOfMW.Mode = BindingMode.OneWay;
-            bindingFromForbiddenAllToFrameNavOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            BindingOperations.SetBinding(mw.frameNav, Frame.IsEnabledProperty, bindingFromForbiddenAllToFrameNavOfMW);
+            // 绑定：LocalEnable | RemoteEnable {属性} ==> frameNav {MainWindow控件}
+            Binding bindingFromLocalEnable = new Binding();
+            bindingFromLocalEnable.Source = this;
+            bindingFromLocalEnable.Path = new PropertyPath("LocalEnable");
+            bindingFromLocalEnable.Mode = BindingMode.OneWay;
+            bindingFromLocalEnable.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            Binding bindingFromRemoteEnable = new Binding();
+            bindingFromRemoteEnable.Source = this;
+            bindingFromRemoteEnable.Path = new PropertyPath("RemoteEnable");
+            bindingFromRemoteEnable.Mode = BindingMode.OneWay;
+            bindingFromRemoteEnable.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            MultiBinding mbindingToFrameNavOfMW = new MultiBinding();
+            mbindingToFrameNavOfMW.Mode = BindingMode.OneWay;
+            mbindingToFrameNavOfMW.Bindings.Add(bindingFromLocalEnable);
+            mbindingToFrameNavOfMW.Bindings.Add(bindingFromRemoteEnable);
+            mbindingToFrameNavOfMW.Converter = convertME2EALB;
+            BindingOperations.SetBinding(mw.frameNav, Frame.IsEnabledProperty, mbindingToFrameNavOfMW);
+        }
+
+        /// <summary>
+        /// 绑定域 --| WindowCommand Kind And Text |-- 内元素
+        /// </summary>
+        private void BindingItemsWindowCommandKindAndText()
+        {
+            // 绑定：ConnectBtnText {属性} ==> btnRemoteConnectionText {MainWindow控件}
+            Binding bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW = new Binding();
+            bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW.Source = this;
+            bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW.Path = new PropertyPath("ConnectBtnText");
+            bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW.Mode = BindingMode.OneWay;
+            bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteConnectionText, TextBlock.TextProperty, bindingFromConnectBtnTextToBtnRemoteConnectionTextOfMW);
+
+            // 绑定：SuperviseBtnText {属性} ==> btnRemoteSuperviseText {MainWindow控件}
+            Binding bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW = new Binding();
+            bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW.Source = this;
+            bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW.Path = new PropertyPath("SuperviseBtnText");
+            bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW.Mode = BindingMode.OneWay;
+            bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteSuperviseText, TextBlock.TextProperty, bindingFromSuperviseBtnTextToBtnRemoteSuperviseTextOfMW);
+
+            // 绑定：ConnectBtnIcon {属性} ==> btnRemoteConnectionIcon {MainWindow控件}
+            Binding bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW = new Binding();
+            bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW.Source = this;
+            bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW.Path = new PropertyPath("ConnectBtnIcon");
+            bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW.Mode = BindingMode.OneWay;
+            bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteConnectionIcon, PackIconMaterial.KindProperty, bindingFromConnectBtnIconToBtnRemoteConnectionIconOfMW);
+
+            // 绑定：SuperviseBtnIcon {属性} ==> btnRemoteSuperviseIcon {MainWindow控件}
+            Binding bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW = new Binding();
+            bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW.Source = this;
+            bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW.Path = new PropertyPath("SuperviseBtnIcon");
+            bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW.Mode = BindingMode.OneWay;
+            bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteSuperviseIcon, PackIconFontAwesome.KindProperty, bindingFromSuperviseBtnIconToBtnRemoteSuperviseIconOfMW);
+
+            // 绑定：ConnectBtnEnable {属性} ==> btnRemoteConnection {MainWindow控件}
+            Binding bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW = new Binding();
+            bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW.Source = this;
+            bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW.Path = new PropertyPath("ConnectBtnEnable");
+            bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW.Mode = BindingMode.OneWay;
+            bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteConnection, Button.IsEnabledProperty, bindingFromConnectBtnEnableToBtnRemoteConnectionOfMW);
+
+            // 绑定：SuperviseBtnEnable {属性} ==> btnRemoteSupervise {MainWindow控件}
+            Binding bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW = new Binding();
+            bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW.Source = this;
+            bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW.Path = new PropertyPath("SuperviseBtnEnable");
+            bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW.Mode = BindingMode.OneWay;
+            bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnRemoteSupervise, Button.IsEnabledProperty, bindingFromSuperviseBtnEnableToBtnRemoteSuperviseOfMW);
         }
 
         /// <summary>
@@ -2685,6 +2966,28 @@ namespace AssistantRobot
             bindingFromStatusBarBackgroundColorToStatusBarOfMW.Mode = BindingMode.OneWay;
             bindingFromStatusBarBackgroundColorToStatusBarOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             BindingOperations.SetBinding(mw.statusBar, StatusBarItem.BackgroundProperty, bindingFromStatusBarBackgroundColorToStatusBarOfMW);
+        }
+
+        /// <summary>
+        /// 绑定域 --| StatusBarRemote Content And Color |-- 内元素
+        /// </summary>
+        private void BindingItemsStatusBarRemoteContentAndColor()
+        {
+            // 绑定：StatusBarRemoteContent {属性} ==> statusBarRemote {MainWindow控件}
+            Binding bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW = new Binding();
+            bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW.Source = this;
+            bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW.Path = new PropertyPath("StatusBarRemoteContent");
+            bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW.Mode = BindingMode.OneWay;
+            bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.statusBarRemote, StatusBarItem.ContentProperty, bindingFromStatusBarRemoteContentToStatusBarRemoteOfMW);
+
+            // 绑定：StatusBarRemoteBackgroundColor {属性} ==> statusBarRemote {MainWindow控件}
+            Binding bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW = new Binding();
+            bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW.Source = this;
+            bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW.Path = new PropertyPath("StatusBarRemoteBackgroundColor");
+            bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW.Mode = BindingMode.OneWay;
+            bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.statusBarRemote, StatusBarItem.BackgroundProperty, bindingFromStatusBarRemoteBackgroundColorToStatusBarOfMW);
         }
 
         /// <summary>
@@ -3655,305 +3958,52 @@ namespace AssistantRobot
         /// <returns>返回初始化结果</returns>
         public byte ModelInitialization()
         {
-            // 开始修改处
-            if (!ResourceChecker.ResourceChecking())
+            // 检查环境
+            if (!Functions.CheckEnvironment())
             {
-                EnableAll = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Resource directories or files are not correct.");
+                RemoteEnable = false;
                 return 1;
             }
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Starts with successful checked.");
 
-            if (!DataBaseInitialization()) return 2;
-            if (ifUsingSerialPort) SerialPortInitialization();
-            URExecutorInitialization();
-
-            GalactophoreDetectorInitialization();
+            if (!CommunicationModelInitialization()) return 9;
 
             return 0;
         }
 
         /// <summary>
-        /// 初始化数据库连接和数据
+        /// 数据传输模型初始化
         /// </summary>
         /// <returns>返回初始化结果</returns>
-        private bool DataBaseInitialization()
+        private bool CommunicationModelInitialization()
         {
-            sqlsc = new SQLServerConnector();
-            sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
+            bool result;
+            cm = new CommunicationModel(out result);
+            if (!result) return false;
 
-            return ToolParameterRefresh();
-        }
+            cm.OnSendURRealTimeData += URRefreshParams;
+            cm.OnSendURNetAbnormalAbort += URNetAbort;
+            cm.OnSendURWorkEmergencyState += UREmergencyStatus;
+            cm.OnSendURNearSingularState += URSingularState;
+            cm.OnSendURInitialPowerOnAsk += URInitialPowerOnQuestion;
+            cm.OnSendURInitialPowerOnAskReply += URInitialPowerOnQuestionReply;
+            cm.OnSendURAdditionalDeviceAbnormal += URAdditionalDeviceAbnormalStatus;
 
-        /// <summary>
-        /// 工具参数根据数据库读取结果更新
-        /// </summary>
-        /// <returns>返回更新结果</returns>
-        private bool ToolParameterRefresh(ToolType NeededToolType = ToolType.Probe)
-        {
-            double[] searchBase = sqlsc.SearchToolBaseInformation((int)NeededToolType);
-            var collectionWithAbnormalParameters =
-                from element in searchBase
-                where element < -0.5
-                select element;
-            if (collectionWithAbnormalParameters.Count<double>() == searchBase.Length)
-            {
-                return false;
-            }
+            cm.OnSendBreastScanConfiguration += GDRConfParams;
+            cm.OnSendBreastScanWorkStatus += GDRWorkStatus;
+            cm.OnSendBreastScanConfigurationConfirmStatus += GDRParameterConfirmStatus;
+            cm.OnSendBreastScanForceZerodStatus += GDRForceClearedStatus;
+            cm.OnSendBreastScanConfigurationProcess += GDRConfigurationProcess;
+            cm.OnSendBreastScanImmediateStop += GDRStopNow;
+            cm.OnSendBreastScanImmediateStopRecovery += GDRStopRecovery;
 
-            double[] searchPosition = sqlsc.SearchToolPositionInformation((int)NeededToolType);
-            collectionWithAbnormalParameters =
-                from element in searchPosition
-                where element < -0.5
-                select element;
-            if (collectionWithAbnormalParameters.Count<double>() == searchPosition.Length)
-            {
-                return false;
-            }
-
-            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType);
-            collectionWithAbnormalParameters =
-                from element in searchForce.Cast<double>()
-                where element < -0.5
-                select element;
-            if (collectionWithAbnormalParameters.Count<double>() == searchForce.Length)
-            {
-                return false;
-            }
-
-            currentToolType = NeededToolType;
-            if (currentRobotHanged =
-                (
-                Math.Abs(searchPosition[1]) + Math.Abs(searchPosition[2]) +
-                Math.Abs(searchPosition[3]) + Math.Abs(searchPosition[4]) +
-                Math.Abs(searchPosition[5]) + Math.Abs(searchPosition[6])
-                ) > Double.Epsilon * 10.0 ? true : false)
-            {
-                currentRobotInitialPosJoints = new double[] {
-                    searchPosition[1], searchPosition[2], searchPosition[3],
-                    searchPosition[4], searchPosition[5], searchPosition[6] };
-            }
-            else
-            {
-                currentRobotInitialPosJoints = new double[] {
-                    searchPosition[8], searchPosition[9], searchPosition[10],
-                    searchPosition[11], searchPosition[12], searchPosition[13] };
-            }
-            currentToolForceModifier = (double[,])searchForce.Clone();
-            currentToolForceModifyingMode = (UR30003Connector.ForceModifiedMode)((byte)currentToolType);
-            currentToolTcpEndPointCordinates = new double[] {
-                searchBase[0], searchBase[1], searchBase[2],
-                searchBase[3], searchBase[4], searchBase[5] };
-            currentToolGravityValue = searchBase[6];
-
+            cm.OnSendTcpDisconnected += RemoteConnectionBroken;
             return true;
         }
-
-        /// <summary>
-        /// 初始化串口连接
-        /// </summary>
-        private void SerialPortInitialization()
-        {
-            sc = new SerialConnector(numOfCOM);
-            sc.OnSendCOMInvalid += new SerialBase.SendVoid(SerialPortCanNotBeAttached);
-        }
-
-        /// <summary>
-        /// 初始化UR连接、控制和信息传输的基本处理类
-        /// </summary>
-        private void URExecutorInitialization()
-        {
-            urdp = new URDataProcessor(
-                currentRobotType, currentRobotProgramType, currentSensorType,
-                robotControllerIP, forceSensorIP, forceConnectorIP,
-                timeOutDurationMS, ifProlongTimeOutDurationWhenConnectionBegin,
-                autoCheckingConnectableDurationMS, ifUsingForceSensor,
-                ifEnableCurrentOverFlowProtect, ifEnableForceOverFlowProtect,
-                ifEnableToolIO, new double[] { currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue, currentOverFlowBoundValue },
-                new double[] { forceOverFlowBoundValue, torqueOverFlowBoundValue },
-                currentRobotHanged, digitalIOVoltage,
-                currentToolForceModifier, currentToolForceModifyingMode,
-                probeCalibrationMaxAmplitudeDeg, punctureUsingAttitudeFlag,
-                currentToolTcpEndPointCordinates, currentToolGravityValue);
-
-            urdp.OnSendEmergencyInformation += new UR30003Connector.SendShort(UREmergencyStatus);
-            urdp.OnSendURBrokenOrConnected += new UR30003Connector.SendShort(URNetState);
-            urdp.OnSendParams += new UR30003Connector.SendDoubleArray(URRefreshParams);
-            urdp.OnSendZeroedForceCompeleted += new URDataProcessor.SendVoid(URNullEventHandler);
-            urdp.OnSendPreciseCalibrationProcess += new UR30003Connector.SendShort(URNullEventHandler);
-            urdp.OnSendPreciseCalibrationDatas += new URDataProcessor.SendDoubleMatrix(URNullEventHandler);
-            urdp.OnSendNearSingularPoint += new UR30003Connector.SendShort(URSingularState);
-        }
-
-        /// <summary>
-        /// 初始化乳腺扫查类
-        /// </summary>
-        private void GalactophoreDetectorInitialization()
-        {
-            gdr = new GalactophoreDetector(urdp,
-                currentRobotInitialPosJoints, currentToolTcpEndPointCordinates,
-                currentRobotHanged, currentToolGravityValue);
-
-            gdr.OnSendModuleParameters += new GalactophoreDetector.SendStringList(GDRConfParams);
-            gdr.OnSendWorkingStatus += new OperateModuleBase.SendShort(GDRWorkStatus);
-            gdr.OnSendConfirmParametersStatus += new OperateModuleBase.SendBool(GDRParameterConfirmStatus);
-            gdr.OnSendForceClearedStatus += new OperateModuleBase.SendBool(GDRForceClearedStatus);
-
-            gdr.LoadParametersFromXmlAndOutput();
-        }
-
-
-
 
         #endregion
 
         #region BoundEvent
-        /// <summary>
-        /// 数据库连接出错
-        /// </summary>
-        private void DataBaseCanNotBeAttached()
-        {
-            EnableAll = false;
-            ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
-            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
-            return;
-        }
-
-        /// <summary>
-        /// COM口连接出错
-        /// </summary>
-        private void SerialPortCanNotBeAttached()
-        {
-            EnableAll = false;
-            ShowDialogAtUIThread("无法连接到串口" + numOfCOM + "！", "错误", 3);
-            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Post " + numOfCOM + " can not be attached.");
-            return;
-        }
-
-        /// <summary>
-        /// UR反馈状态异常
-        /// </summary>
-        /// <param name="AbnormalStatus">异常状态</param>
-        private void UREmergencyStatus(short AbnormalStatus)
-        {
-            string showStr;
-            if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ProtectiveStop)
-            {
-                showStr = "机械臂触发保护停止！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.EmergencyStop)
-            {
-                showStr = "机械臂触发紧急停止！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.CurrentOverflow)
-            {
-                showStr = "机械臂关节电流偏离超限，已停止断电！";
-            }
-            else if (AbnormalStatus == (short)URDataProcessor.RobotEmergency.ForceOverflow)
-            {
-                showStr = "机械臂末端力和力矩过大，已停止断电！";
-            }
-            else showStr = "机械臂发生未知的紧急状况！";
-
-            ShowDialogAtUIThread(showStr, "紧急状态", 4);
-
-            string outputStatus = ((URDataProcessor.RobotEmergency)AbnormalStatus).ToString();
-            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Robot Emergency status: " + outputStatus + ".");
-            return;
-        }
-
-        /// <summary>
-        /// UR网络连接状态反馈
-        /// </summary>
-        /// <param name="NetState">网络连接状态</param>
-        private void URNetState(short NetState)
-        {
-            if (NetState == (short)URDataProcessor.NetConnection.Broken)
-            {
-                if (ifUsingSerialPort) sc.SendOpenRelay(); // 急停按钮按下
-                StatusBarContent = "网络连接异常中断";
-                StatusBarBackgroundColor = defaultRedColor;
-                EnableAll = false;
-                ShowDialogAtUIThread("网络连接由于未知原因发生中断，机械臂急停！", "错误", 5);
-                Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is unexpectly broken.");
-            }
-            else if (NetState == (short)URDataProcessor.NetConnection.Connected)
-            {
-                if (ifUsingSerialPort) sc.SendCloseRelay(); // 急停按钮松开
-                StatusBarContent = "网络连接正常";
-                StatusBarBackgroundColor = defaultGreenColor;
-                if (!EnableAll) EnableAll = true;
-                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is established automatically.");
-            }
-            else if (NetState == (short)URDataProcessor.NetConnection.ActiveBroken)
-            {
-                StatusBarContent = "网络连接被主动中断";
-                StatusBarBackgroundColor = defaultBlueColor;
-                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Net connection is established automatically.");
-            }
-        }
-
-        /// <summary>
-        /// 处理首次连接网络的问题
-        /// </summary>
-        /// <param name="result">操作指示标志</param>
-        private async void DealWithFirstNetConnection(bool result)
-        {
-            if (result)
-            {
-                if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
-                {
-                    var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂上电。。。", settings: new MetroDialogSettings()
-                    {
-                        AnimateShow = false,
-                        AnimateHide = false,
-                        DialogTitleFontSize = titleSize,
-                        DialogMessageFontSize = messageSize,
-                        ColorScheme = MetroDialogColorScheme.Theme
-                    });
-
-                    controller.SetIndeterminate();
-                    urdp.SendURBaseControllerPowerOn();
-                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Idle)
-                    {
-                        await Task.Delay(200);
-                    }
-
-                    controller.SetMessage("正在释放机械臂的制动器。。。");
-
-                    urdp.SendURBaseControllerBrakeRelease();
-                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
-                    {
-                        await Task.Delay(200);
-                    }
-
-                    await controller.CloseAsync();
-
-                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
-                }
-                else if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
-                {
-                    var controller = await mw.ShowProgressAsync("请稍后", "正在释放机械臂的制动器。。。", settings: new MetroDialogSettings()
-                    {
-                        AnimateShow = false,
-                        AnimateHide = false,
-                        DialogTitleFontSize = titleSize,
-                        DialogMessageFontSize = messageSize,
-                        ColorScheme = MetroDialogColorScheme.Theme
-                    });
-
-                    urdp.SendURBaseControllerBrakeRelease();
-                    while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
-                    {
-                        await Task.Delay(200);
-                    }
-
-                    await controller.CloseAsync();
-
-                    await ShowDialog("机械臂已处于运行状态！", "完成", 8);
-                }
-            }
-        }
-
         /// <summary>
         /// UR相关数据反馈
         /// </summary>
@@ -3974,63 +4024,93 @@ namespace AssistantRobot
             RobotJointWrist2Angle = Parameters[10];
             RobotJointWrist3Angle = Parameters[11];
 
-            RobotJointBaseTemperature = Parameters[12];
-            RobotJointShoulderTemperature = Parameters[13];
-            RobotJointElbowTemperature = Parameters[14];
-            RobotJointWrist1Temperature = Parameters[15];
-            RobotJointWrist2Temperature = Parameters[16];
-            RobotJointWrist3Temperature = Parameters[17];
+            RobotJointBaseCurrent = Parameters[12];
+            RobotJointShoulderCurrent = Parameters[13];
+            RobotJointElbowCurrent = Parameters[14];
+            RobotJointWrist1Current = Parameters[15];
+            RobotJointWrist2Current = Parameters[16];
+            RobotJointWrist3Current = Parameters[17];
 
-            RobotJointBaseCurrent = Parameters[18];
-            RobotJointShoulderCurrent = Parameters[19];
-            RobotJointElbowCurrent = Parameters[20];
-            RobotJointWrist1Current = Parameters[21];
-            RobotJointWrist2Current = Parameters[22];
-            RobotJointWrist3Current = Parameters[23];
+            ToolForceX = Parameters[18];
+            ToolForceY = Parameters[19];
+            ToolForceZ = Parameters[20];
+            ToolTorqueX = Parameters[21];
+            ToolTorqueY = Parameters[22];
+            ToolTorqueZ = Parameters[23];
 
-            ToolInputDigitialIO1 = Parameters[24] > 0.5 ? true : false;
-            ToolInputDigitialIO2 = Parameters[25] > 0.5 ? true : false;
+            RobotCurrentStatus = (URDataProcessor.RobotStatus)Parameters[24];
+            RobotProgramCurrentStatus = (URDataProcessor.RobotProgramStatus)Parameters[25];
 
-            RobotCurrentStatus = (URDataProcessor.RobotStatus)Parameters[26];
-            RobotProgramCurrentStatus = (URDataProcessor.RobotProgramStatus)Parameters[27];
-
-            ToolForceX = Parameters[28];
-            ToolForceY = Parameters[29];
-            ToolForceZ = Parameters[30];
-            ToolTorqueX = Parameters[31];
-            ToolTorqueY = Parameters[32];
-            ToolTorqueZ = Parameters[33];
-
-            if (ifFirstOpenTheProg)
+            if (!RemoteEnable)
             {
-                ifFirstOpenTheProg = false;
-
-                if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
-                {
-                    ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
-                }
+                RemoteEnable = true;
+                ConnectBtnEnable = true;
             }
+        }
+
+        /// <summary>
+        /// UR网络连接断开
+        /// </summary>
+        private void URNetAbort()
+        {
+            StatusBarContent = "当地网络连接异常中断";
+            StatusBarBackgroundColor = defaultRedColor;
+            LocalEnable = false;
+            ShowDialogAtUIThread("当地网络连接由于未知原因发生中断，机械臂急停！", "错误", 5);
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Local net connection is unexpectly broken.");
+        }
+
+        /// <summary>
+        /// UR反馈状态异常
+        /// </summary>
+        /// <param name="AbnormalStatus">异常状态</param>
+        private void UREmergencyStatus(int AbnormalStatus)
+        {
+            string showStr;
+            if (AbnormalStatus == (int)URDataProcessor.RobotEmergency.ProtectiveStop)
+            {
+                showStr = "机械臂触发保护停止！";
+            }
+            else if (AbnormalStatus == (int)URDataProcessor.RobotEmergency.EmergencyStop)
+            {
+                showStr = "机械臂触发紧急停止！";
+            }
+            else if (AbnormalStatus == (int)URDataProcessor.RobotEmergency.CurrentOverflow)
+            {
+                showStr = "机械臂关节电流偏离超限，已停止断电！";
+            }
+            else if (AbnormalStatus == (int)URDataProcessor.RobotEmergency.ForceOverflow)
+            {
+                showStr = "机械臂末端力和力矩过大，已停止断电！";
+            }
+            else showStr = "机械臂发生未知的紧急状况！";
+
+            ShowDialogAtUIThread(showStr, "紧急状态", 4);
+
+            string outputStatus = ((URDataProcessor.RobotEmergency)AbnormalStatus).ToString();
+            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Robot Emergency status: " + outputStatus + ".");
+            return;
         }
 
         /// <summary>
         /// UR奇异点临近状态反馈
         /// </summary>
         /// <param name="SingularState">奇异点临近状态</param>
-        private void URSingularState(short SingularState)
+        private void URSingularState(int SingularState)
         {
             string showStr;
             switch (SingularState)
             {
                 case 1:
-                    showStr = "临近肩部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    showStr = "临近肩部奇异位置，已停止相关运动，请当地手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at shoulder.");
                     break;
                 case 2:
-                    showStr = "临近肘部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    showStr = "临近肘部奇异位置，已停止相关运动，请当地手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at elbow.");
                     break;
                 case 3:
-                    showStr = "临近腕部奇异位置，已停止相关运动，请手动控制机械臂远离奇异点！";
+                    showStr = "临近腕部奇异位置，已停止相关运动，请当地手动控制机械臂远离奇异点！";
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Near singular point at wrist.");
                     break;
                 default:
@@ -4039,6 +4119,100 @@ namespace AssistantRobot
                     break;
             }
             ShowDialogAtUIThread(showStr, "紧急状态", 6);
+            return;
+        }
+
+        /// <summary>
+        /// UR初始化询问
+        /// </summary>
+        private void URInitialPowerOnQuestion()
+        {
+            ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
+        }
+
+        /// <summary>
+        /// UR初始化结束
+        /// </summary>
+        private void URInitialPowerOnQuestionReply()
+        {
+            ifInitialArm = false;
+        }
+
+        /// <summary>
+        /// 处理首次连接网络的问题
+        /// </summary>
+        /// <param name="result">操作指示标志</param>
+        private async void DealWithFirstNetConnection(bool result)
+        {
+            if (result)
+            {
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.AutoPowerOn);
+                ifInitialArm = true;
+
+                var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂初始化。。。", settings: new MetroDialogSettings()
+                {
+                    AnimateShow = false,
+                    AnimateHide = false,
+                    DialogTitleFontSize = titleSize,
+                    DialogMessageFontSize = messageSize,
+                    ColorScheme = MetroDialogColorScheme.Theme
+                });
+
+                controller.SetIndeterminate();
+                while (ifInitialArm) await Task.Delay(500);
+
+                await controller.CloseAsync();
+
+                await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+            }
+        }
+
+        /// <summary>
+        /// UR额外设备问题
+        /// </summary>
+        /// <param name="status">状态字</param>
+        private void URAdditionalDeviceAbnormalStatus(int status)
+        {
+            CommunicationModel.AppProtocolAdditionalDeviceAbnormalDatagramClass key = (CommunicationModel.AppProtocolAdditionalDeviceAbnormalDatagramClass)status;
+
+            switch (key)
+            {
+                case CommunicationModel.AppProtocolAdditionalDeviceAbnormalDatagramClass.DataBaseAttachFailed:
+                    DataBaseCanNotBeAttached();
+                    break;
+                case CommunicationModel.AppProtocolAdditionalDeviceAbnormalDatagramClass.SerialPortAttachFailed:
+                    SerialPortCanNotBeAttached();
+                    break;
+                case CommunicationModel.AppProtocolAdditionalDeviceAbnormalDatagramClass.URNetConnectionRecovery:
+                    StatusBarContent = "当地网络连接正常";
+                    StatusBarBackgroundColor = defaultGreenColor;
+                    if (!LocalEnable) LocalEnable = true;
+                    Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Local net connection is established automatically.");
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 数据库连接出错
+        /// </summary>
+        private void DataBaseCanNotBeAttached()
+        {
+            LocalEnable = false;
+            ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
+            return;
+        }
+
+        /// <summary>
+        /// COM口连接出错
+        /// </summary>
+        private void SerialPortCanNotBeAttached()
+        {
+            LocalEnable = false;
+            ShowDialogAtUIThread("无法连接到串口！", "错误", 3);
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Port can not be attached.");
             return;
         }
 
@@ -4079,9 +4253,9 @@ namespace AssistantRobot
         /// GDR工作状态反馈
         /// </summary>
         /// <param name="Status">反馈的工作状态</param>
-        private void GDRWorkStatus(short Status)
+        private void GDRWorkStatus(int Status)
         {
-            GalactophoreDetectorWorkStatus = Status;
+            GalactophoreDetectorWorkStatus = Convert.ToInt16(Status);
         }
 
         /// <summary>
@@ -4102,16 +4276,63 @@ namespace AssistantRobot
             GalactophoreDetectorForceSensorCleared = Status;
         }
 
+        /// <summary>
+        /// GDR配置过程状态
+        /// </summary>
+        /// <param name="process">过程状态</param>
+        private void GDRConfigurationProcess(int process)
+        {
+            GalactophoreDetectorParameterConfirmState = Convert.ToByte(process);
+        }
 
-        #region Null Event Callback Functions
-        private void URNullEventHandler()
-        { return; }
-        private void URNullEventHandler(short nullShort)
-        { return; }
-        private void URNullEventHandler(object nullObject)
-        { return; }
-        #endregion
+        /// <summary>
+        /// GDR立即停止
+        /// </summary>
+        private void GDRStopNow()
+        {
+            ifWaitForGDR = true;
+            GDRStopLogic();
+        }
 
+        /// <summary>
+        /// GDR急停逻辑
+        /// </summary>
+        private async void GDRStopLogic()
+        {
+            var controller = await mw.ShowProgressAsync("请稍后", "当地急停乳腺扫查，请等待当地恢复控制权。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = false,
+                AnimateHide = false,
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
+
+            controller.SetIndeterminate();
+
+            while (ifWaitForGDR) await Task.Delay(500);
+
+            await controller.CloseAsync();
+
+            await ShowDialog("当地已经恢复乳腺扫查控制权！", "完成", 18);
+        }
+
+        /// <summary>
+        /// GDR立即停止恢复
+        /// </summary>
+        private void GDRStopRecovery()
+        {
+            ifWaitForGDR = false;
+        }
+
+        /// <summary>
+        /// 远程连接断开
+        /// </summary>
+        private void RemoteConnectionBroken()
+        {
+            RemoteEnable = false;
+            ConnectBtnEnable = true;
+        }
         #endregion
 
     }

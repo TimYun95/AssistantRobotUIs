@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using MahApps.Metro.Controls;
+using MahApps.Metro.IconPacks;
 
 namespace AssistantRobot
 {
@@ -163,8 +164,27 @@ namespace AssistantRobot
                 return;
             }
 
-            // UR连接
-            urvm.StartConnection();
+            // Model连接
+            int connectReply = urvm.ConnectToModelServer();
+            if (connectReply != 0)
+            {
+                urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
+                urvm.ConnectBtnText = "建立连接";
+            }
+            else
+            {
+                urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
+                urvm.ConnectBtnText = "断开连接";
+                urvm.ConnectBtnEnable = false;
+            }
+
+            // 监控打开
+
+
+
+
+
+
         }
 
         /// <summary>
@@ -184,9 +204,9 @@ namespace AssistantRobot
             {
                 await urvm.ShowDialog("资源配置检查过程出错！", "错误", 1);
             }
-            else if (modelInitialResult == 2)
+            else if (modelInitialResult == 9)
             {
-                await urvm.ShowDialog("数据库数据更新过程出错！", "错误", 12);
+                await urvm.ShowDialog("程序配置参数有误！", "错误", 13);
             }
             urvm.ImmediateCloseWin();
         }
@@ -194,6 +214,8 @@ namespace AssistantRobot
         private void btnPowerOff_Click(object sender, RoutedEventArgs e)
         {
             urvm.CloseModelLogic();
+
+            e.Handled = true;
         }
 
         private void btnElectricContorl_Click(object sender, RoutedEventArgs e)
@@ -237,6 +259,52 @@ namespace AssistantRobot
             urvm.ControllerBoxPowerOff();
 
             e.Handled = true;
+        }
+
+        private void btnRemoteConnection_Click(object sender, RoutedEventArgs e)
+        {
+            // Model连接
+            if (urvm.ConnectBtnText == "建立连接")
+            {
+                int connectReply = urvm.ConnectToModelServer();
+                if (connectReply != 0)
+                {
+                    urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
+                    urvm.ConnectBtnText = "建立连接";
+                }
+                else
+                {
+                    urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
+                    urvm.ConnectBtnText = "断开连接";
+                    urvm.ConnectBtnEnable = false;
+                }
+            }
+            else
+            {
+                bool connectReply = urvm.BreakFromModelServer();
+                if (!connectReply)
+                {
+                    urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
+                    urvm.ConnectBtnText = "断开连接";
+                }
+                else
+                {
+                    urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
+                    urvm.ConnectBtnText = "建立连接";
+                    urvm.ConnectBtnEnable = false;
+                }
+            }
+
+            e.Handled = true;
+        }
+
+        private void btnRemoteSupervise_Click(object sender, RoutedEventArgs e)
+        {
+
+
+
+
+
         }
 
 

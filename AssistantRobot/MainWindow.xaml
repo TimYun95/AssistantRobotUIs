@@ -32,16 +32,16 @@
 
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands ShowLastSeparator="False">
-            <Button x:Name="btnRemoteConnection" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand">
+            <Button x:Name="btnRemoteConnection" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnRemoteConnection_Click">
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Width="24" Height="24" Kind="LanConnect" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="建立连接" HorizontalAlignment="Center" />
+                    <iconPacks:PackIconMaterial x:Name="btnRemoteConnectionIcon" Width="24" Height="24" Kind="LanConnect" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="btnRemoteConnectionText" Margin="4 0 0 0" VerticalAlignment="Center" Text="建立连接" HorizontalAlignment="Center" />
                 </StackPanel>
             </Button>
-            <Button x:Name="btnRemoteSupervise" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand">
+            <Button x:Name="btnRemoteSupervise" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnRemoteSupervise_Click">
                 <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconFontAwesome Width="24" Height="24" Kind="EyeSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                    <TextBlock Margin="4 0 0 0" VerticalAlignment="Center" Text="打开监控" HorizontalAlignment="Center" />
+                    <iconPacks:PackIconFontAwesome x:Name="btnRemoteSuperviseIcon" Width="24" Height="24" Kind="EyeSolid" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="btnRemoteSuperviseText" Margin="4 0 0 0" VerticalAlignment="Center" Text="打开监控" HorizontalAlignment="Center" />
                 </StackPanel>
             </Button>
             <Button x:Name="btnElectricContorl" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Click="btnElectricContorl_Click">
@@ -425,6 +425,7 @@
 
         <StatusBar Grid.Row="2">
             <StatusBarItem x:Name="statusBar" FontSize="18.667"/>
+            <StatusBarItem x:Name="statusBarRemote" FontSize="18.667"/>
         </StatusBar>
 	</Grid>
 
