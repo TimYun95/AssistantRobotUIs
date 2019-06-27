@@ -174,16 +174,16 @@ namespace AssistantRobot
         public enum AppProtocolBreastScanConfigurationProcessDatagram : byte
         {
             ConfProcess = 0 // byte: 0--BeforeConfiguration
-                                                  // 1--NipplePos
-                                                  // 2--LiftDistance
-                                                  // 3--ForbiddenDistance
-                                                  // 4--ScanDepth
-                                                  // 5--UpEdge
-                                                  // 6--DownEdge
-                                                  // 7--LeftEdge
-                                                  // 8--RightEdge
-                                                  // 9--UpEdge
-                                                  // max--All
+            // 1--NipplePos
+            // 2--LiftDistance
+            // 3--ForbiddenDistance
+            // 4--ScanDepth
+            // 5--UpEdge
+            // 6--DownEdge
+            // 7--LeftEdge
+            // 8--RightEdge
+            // 9--UpEdge
+            // max--All
         }
 
         /// <summary>
@@ -202,17 +202,19 @@ namespace AssistantRobot
             PowerOff = 53,
             AutoPowerOn = 61,
 
+            ChangePage = 81,
+
             EnterBreastScanMode = 101,
-            BeginForceZeroed = 102,
-            BeginConfigurationSet = 103,
-            NextConfigurationItem = 104,
-            ConfirmConfigurationSet = 105,
-            ReadyAndStartBreastScan = 106,
-            SaveConfigurationSet = 107,
+            BreastScanModeBeginForceZeroed = 102,
+            BreastScanModeBeginConfigurationSet = 103,
+            BreastScanModeConfirmNipplePos = 104,
+            BreastScanModeNextConfigurationItem = 105,
+            BreastScanModeConfirmConfigurationSet = 106,
+            BreastScanModeReadyAndStartBreastScan = 107,
+            BreastScanModeSaveConfigurationSet = 108,
 
-            StopBreastScanImmediately = 201,
-
-            ExitBreastScanMode = 251
+            StopBreastScanImmediately = 121,
+            ExitBreastScanMode = 131
         }
 
         /// <summary>
@@ -248,6 +250,14 @@ namespace AssistantRobot
         public enum AppProtocolMoveSpeedDatagram : byte
         {
             SpeedRatio = 0, // float: 0.0~50.0
+        }
+
+        /// <summary>
+        /// 应用协议指令 运动速度数据报格式
+        /// </summary>
+        public enum AppProtocolChangePageDatagram : byte
+        {
+            AimPage = 0, // URViewModel.ShowPage
         }
 
         #endregion
@@ -364,26 +374,33 @@ namespace AssistantRobot
                 case AppProtocolCommand.AutoPowerOn:
                     urvm.DealWithFirstNetConnection();
                     break;
+
+                case AppProtocolCommand.ChangePage:
+                    urvm.NavigateToPage((URViewModel.ShowPage)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolChangePageDatagram.AimPage]);
+                    break;
                     
                 case AppProtocolCommand.EnterBreastScanMode:
                     urvm.EnterGalactophoreDetectModule();
                     break;
-                case AppProtocolCommand.BeginForceZeroed:
+                case AppProtocolCommand.BreastScanModeBeginForceZeroed:
                     urvm.ForceClearGalactophoreDetectModule();
                     break;
-                case AppProtocolCommand.BeginConfigurationSet:
+                case AppProtocolCommand.BreastScanModeBeginConfigurationSet:
                     urvm.ConfParamsGalactophoreDetectModule();
                     break;
-                case AppProtocolCommand.NextConfigurationItem:
+                case AppProtocolCommand.BreastScanModeConfirmNipplePos:
+                    urvm.NippleFoundGalactophoreDetectModule();
+                    break;
+                case AppProtocolCommand.BreastScanModeNextConfigurationItem:
                     urvm.ConfParamsNextParamsGalactophoreDetectModule();
                     break;
-                case AppProtocolCommand.ConfirmConfigurationSet:
+                case AppProtocolCommand.BreastScanModeConfirmConfigurationSet:
                     urvm.ConfirmConfParamsGalactophoreDetectModule(UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
-                case AppProtocolCommand.ReadyAndStartBreastScan:
+                case AppProtocolCommand.BreastScanModeReadyAndStartBreastScan:
                     urvm.ReadyAndStartGalactophoreDetectModule();
                     break;
-                case AppProtocolCommand.SaveConfigurationSet:
+                case AppProtocolCommand.BreastScanModeSaveConfigurationSet:
                     urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray())); 
                     break;
                 case AppProtocolCommand.StopBreastScanImmediately:
