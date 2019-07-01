@@ -4065,7 +4065,7 @@ namespace AssistantRobot
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
                 new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.SerialPortAttachFailed });
 
-            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Post " + numOfCOM + " can not be attached.");
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Port " + numOfCOM + " can not be attached.");
             return;
         }
 
