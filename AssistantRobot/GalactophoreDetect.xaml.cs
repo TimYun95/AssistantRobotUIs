@@ -30,7 +30,7 @@ namespace AssistantRobot
 
         private void iconBackGalactophore_Click(object sender, RoutedEventArgs e)
         {
-            if (NavigationService.CanGoBack) NavigationService.GoBack();
+            urvm.NavigateToPage(URViewModel.ShowPage.MainNav);
 
             // 退出乳腺扫描模块
             urvm.ExitGalactophoreDetectModule();

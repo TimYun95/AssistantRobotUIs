@@ -3824,7 +3824,7 @@ namespace AssistantRobot
         {
             EnableAll = false;
             ShowDialogAtUIThread("无法连接到串口" + numOfCOM + "！", "错误", 3);
-            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Post " + numOfCOM + " can not be attached.");
+            Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Serial Port " + numOfCOM + " can not be attached.");
             return;
         }
 
