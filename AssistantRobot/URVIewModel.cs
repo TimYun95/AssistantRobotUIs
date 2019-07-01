@@ -19,6 +19,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Configuration;
 using System.Net;
+using System.Diagnostics;
 
 using LogPrinter;
 using URCommunication;
@@ -62,43 +63,6 @@ namespace AssistantRobot
         #endregion
 
         #region Model
-        /*
-        private SQLServerConnector sqlsc;
-        private SerialConnector sc;
-        private URDataProcessor urdp;
-        private GalactophoreDetector gdr;
-
-        // COM连接
-        private readonly bool ifUsingSerialPort = false;
-        private readonly string numOfCOM = "COM3";
-
-        // 所使用硬件版本，不可更改
-        private readonly URDataProcessor.RobotType currentRobotType = URDataProcessor.RobotType.CBUR3;
-        private readonly URDataProcessor.RobotProgramType currentRobotProgramType = UR30003Connector.RobotProgramType.SW34;
-        private readonly OPTODataProcessor.SensorType currentSensorType = OPTO49152Connector.SensorType.OldOptoForce;
-
-        // 各TCP连接点IP地址，不可更改
-        private readonly string forceSensorIP = "192.168.1.9";
-        private readonly string forceConnectorIP = "192.168.1.11";
-        private readonly string robotControllerIP = "192.168.1.5";
-        private readonly string robotConnectorIP = "192.168.1.7";
-
-        // 部分配置参数，不必更改
-        private readonly int timeOutDurationMS = 200;
-        private readonly bool ifProlongTimeOutDurationWhenConnectionBegin = true;
-        private readonly int autoCheckingConnectableDurationMS = 1000;
-        private readonly bool ifUsingForceSensor = true;
-        private readonly bool ifEnableCurrentOverFlowProtect = true;
-        private readonly bool ifEnableForceOverFlowProtect = true;
-        private readonly bool ifEnableToolIO = false;
-        private readonly double currentOverFlowBoundValue = 2.0;
-        private readonly double forceOverFlowBoundValue = 100.0;
-        private readonly double torqueOverFlowBoundValue = 15.0;
-        private readonly int digitalIOVoltage = 0;
-        private readonly double probeCalibrationMaxAmplitudeDeg = 60.0;
-        private readonly byte punctureUsingAttitudeFlag = 0;
-        */
-
         private CommunicationModel cm;
 
         // 移动最高最低速度和加速度
@@ -115,17 +79,6 @@ namespace AssistantRobot
         private readonly double slowAccelerationj = 0.2;
         private readonly double minAccelerationj = 0.002;
 
-        /*
-        // 当前工具信息
-        private ToolType currentToolType = ToolType.Probe;
-        private bool currentRobotHanged = false;
-        private double[] currentRobotInitialPosJoints = null;
-        private double[,] currentToolForceModifier = null;
-        private URDataProcessor.ForceModifiedMode currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
-        private double[] currentToolTcpEndPointCordinates = null;
-        private double currentToolGravityValue = 0;
-        */
-
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
 
@@ -135,14 +88,10 @@ namespace AssistantRobot
         // 是否正在等待恢复GDR控制权
         private bool ifWaitForGDR = false;
 
-        /*
-        // 指示是否正在检查下沉距离
-        private bool ifCheckingSinkDistance = false;
-
+        // 监控程序
+        private readonly string superviseProgramAddress = "AssistantRobotRemoteSupervisor.exe";
+        Process supervisingProgram = new Process();
         
-        // 指示是否首次运行本程序
-        private bool ifFirstOpenTheProg = true;
-         */
         #endregion
 
         #region View
@@ -151,9 +100,9 @@ namespace AssistantRobot
         private BaseControl bc;
         private GalactophoreDetect gd;
 
-        private bool[] occupyArray = new bool[20] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
-        private readonly double titleSize = 18;
-        private readonly double messageSize = 22;
+        private bool[] occupyArray = new bool[30] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+        public readonly double titleSize = 18;
+        public readonly double messageSize = 22;
 
         #endregion
 
@@ -1642,10 +1591,63 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "messageSize" + ") is wrong");
                 return;
             }
+
+            string superviseProgramAddressTemp = ConfigurationManager.AppSettings["superviseProgramAddress"];
+            if (superviseProgramAddressTemp.Substring(superviseProgramAddressTemp.LastIndexOf('.') - 30) == "AssistantRobotRemoteSupervisor.exe") superviseProgramAddress = superviseProgramAddressTemp;
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramAddress" + ") is wrong");
+                return;
+            }
+            supervisingProgram.StartInfo.FileName = superviseProgramAddress;
+            supervisingProgram.EnableRaisingEvents = true;
+            supervisingProgram.Exited += supervisingProgram_Exited;
+        }
+
+        private void supervisingProgram_Exited(object sender, EventArgs e)
+        {
+            SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSolid;
+            SuperviseBtnText = "打开监控";
+            SuperviseBtnEnable = false;
+            Task.Run(new Action(() =>
+            {
+                Thread.Sleep(500);
+                SuperviseBtnEnable = true;
+            }));
         }
         #endregion
 
         #region Method
+        /// <summary>
+        /// 打开监控程序
+        /// </summary>
+        /// <returns>返回监控器打开结果</returns>
+        public bool OpenSuperViseProgram()
+        {
+            try
+            {
+                supervisingProgram.Start();
+            }
+            catch (Exception ex)
+            {
+
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Open supervising program error.", ex);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 关闭监控程序
+        /// </summary>
+        /// <returns>返回关闭结果</returns>
+        public bool CloseSuperViseProgram()
+        {
+            return supervisingProgram.CloseMainWindow();
+        }
+
         /// <summary>
         /// 机械臂上电
         /// </summary>

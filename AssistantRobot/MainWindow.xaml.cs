@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,7 @@ using System.Windows.Shapes;
 
 using MahApps.Metro.Controls;
 using MahApps.Metro.IconPacks;
+using MahApps.Metro.Controls.Dialogs;
 
 namespace AssistantRobot
 {
@@ -164,12 +166,23 @@ namespace AssistantRobot
                 return;
             }
 
+            AutoConnectAfterShowing();
+        }
+
+        /// <summary>
+        /// 自动连接
+        /// </summary>
+        private async void AutoConnectAfterShowing()
+        {
             // Model连接
             int connectReply = urvm.ConnectToModelServer();
             if (connectReply != 0)
             {
                 urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
                 urvm.ConnectBtnText = "建立连接";
+
+                await urvm.ShowDialog("网络自动连接失败，请手动尝试！", "问题", 21);
+                return;
             }
             else
             {
@@ -179,12 +192,36 @@ namespace AssistantRobot
             }
 
             // 监控打开
+            var controller = await this.ShowProgressAsync("请稍后", "正在尝试打开监控器。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = false,
+                AnimateHide = false,
+                DialogTitleFontSize = urvm.titleSize,
+                DialogMessageFontSize = urvm.messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
 
+            controller.SetIndeterminate();
+            await Task.Delay(500);
+            bool ifSuperviseOpen = urvm.OpenSuperViseProgram();
 
+            await controller.CloseAsync();
+            if (!ifSuperviseOpen)
+            {
+                urvm.SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSolid;
+                urvm.SuperviseBtnText = "打开监控";
 
-
-
-
+                await urvm.ShowDialog("监控器自动打开失败，请手动尝试！", "问题", 21);
+                return;
+            }
+            else
+            {
+                urvm.SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSlashSolid;
+                urvm.SuperviseBtnText = "关闭监控";
+                urvm.SuperviseBtnEnable = false;
+                await Task.Delay(1500);
+                urvm.SuperviseBtnEnable = true;
+            }
         }
 
         /// <summary>
@@ -302,11 +339,41 @@ namespace AssistantRobot
 
         private void btnRemoteSupervise_Click(object sender, RoutedEventArgs e)
         {
+            if (urvm.SuperviseBtnText == "打开监控")
+            {
+                bool ifSuperviseOpen = urvm.OpenSuperViseProgram();
+                if (!ifSuperviseOpen)
+                {
+                    urvm.SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSolid;
+                    urvm.SuperviseBtnText = "打开监控";
 
+                    urvm.ShowDialog("监控器打开失败！", "问题", 21);
+                }
+                else
+                {
+                    urvm.SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSlashSolid;
+                    urvm.SuperviseBtnText = "关闭监控";
+                    urvm.SuperviseBtnEnable = false;
+                    Task.Run(new Action(() =>
+                    {
+                        Thread.Sleep(1500);
+                        urvm.SuperviseBtnEnable = true;
+                    }));
+                }
+            }
+            else
+            {
+                bool ifSuperviseClose = urvm.CloseSuperViseProgram();
+                if (!ifSuperviseClose)
+                {
+                    urvm.SuperviseBtnIcon = PackIconFontAwesomeKind.EyeSlashSolid;
+                    urvm.SuperviseBtnText = "关闭监控";
 
+                    urvm.ShowDialog("监控器关闭失败！", "问题", 21);
+                }
+            }
 
-
-
+            e.Handled = true;
         }
 
     }
