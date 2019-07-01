@@ -14,6 +14,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using System.Reflection;
+
+using LogPrinter;
 using MahApps.Metro.Controls;
 
 namespace AssistantRobot
@@ -212,7 +215,8 @@ namespace AssistantRobot
         private async void ReadyToCloseForPipe()
         {
             await urvm.ShowDialog("Pipe连接失败！", "错误", 15);
-
+            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Pipe connection failed.");
+            
             urvm.ImmediateCloseWin();
         }
 
