@@ -495,7 +495,7 @@ namespace AssistantRobot
 
             // 装上TCP心跳定时器
             tcpBeatClocker = new System.Timers.Timer(tcpBeatInterval);
-            tcpBeatClocker.AutoReset = false;
+            tcpBeatClocker.AutoReset = true;
             tcpBeatClocker.Elapsed += tcpBeatClocker_Elapsed;
 
             // 缓冲区初始化
