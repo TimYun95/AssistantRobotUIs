@@ -372,7 +372,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifAtSamePC" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifAtSamePC" + ") is wrong.");
                 return;
             }
 
@@ -382,7 +382,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifAtSameLAN" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "ifAtSameLAN" + ") is wrong.");
                 return;
             }
 
@@ -411,7 +411,7 @@ namespace AssistantRobot
             if (!parseResult)
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "netAdapterName" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "netAdapterName" + ") is wrong.");
                 return;
             }
 
@@ -420,7 +420,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "serverIPAtSameLAN" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "serverIPAtSameLAN" + ") is wrong.");
                 return;
             }
 
@@ -429,7 +429,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "serverIPAtWAN" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "serverIPAtWAN" + ") is wrong.");
                 return;
             }
 
@@ -439,7 +439,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "clientDeviceIndex" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "clientDeviceIndex" + ") is wrong.");
                 return;
             }
 
@@ -449,7 +449,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpSocketSendTimeOut" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpSocketSendTimeOut" + ") is wrong.");
                 return;
             }
 
@@ -459,7 +459,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpSocketRecieveTimeOut" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpSocketRecieveTimeOut" + ") is wrong.");
                 return;
             }
 
@@ -469,7 +469,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpBeatInterval" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "tcpBeatInterval" + ") is wrong.");
                 return;
             }
 
@@ -479,7 +479,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "maxBufferSize" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "maxBufferSize" + ") is wrong.");
                 return;
             }
 
@@ -489,7 +489,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccessConstructed = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "waitTimerMsForBuffer" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "waitTimerMsForBuffer" + ") is wrong.");
                 return;
             }
 

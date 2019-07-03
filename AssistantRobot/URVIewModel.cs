@@ -1599,7 +1599,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramName" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramName" + ") is wrong.");
                 return;
             }
 
@@ -1611,7 +1611,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramPath" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramPath" + ") is wrong.");
                 return;
             }
             supervisingProgram.StartInfo.FileName = superviseProgramPath + superviseProgramName;
