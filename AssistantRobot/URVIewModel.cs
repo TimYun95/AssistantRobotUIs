@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Configuration;
 using System.Net;
 using System.Diagnostics;
+using System.IO;
 
 using LogPrinter;
 using URCommunication;
@@ -89,7 +90,8 @@ namespace AssistantRobot
         private bool ifWaitForGDR = false;
 
         // 监控程序
-        private readonly string superviseProgramAddress = "AssistantRobotRemoteSupervisor.exe";
+        private readonly string superviseProgramName = "AssistantRobotRemoteSupervisor.exe";
+        private readonly string superviseProgramPath = "D:\\";
         Process supervisingProgram = new Process();
         
         #endregion
@@ -1592,15 +1594,27 @@ namespace AssistantRobot
                 return;
             }
 
-            string superviseProgramAddressTemp = ConfigurationManager.AppSettings["superviseProgramAddress"];
-            if (superviseProgramAddressTemp.Substring(superviseProgramAddressTemp.LastIndexOf('.') - 30) == "AssistantRobotRemoteSupervisor.exe") superviseProgramAddress = superviseProgramAddressTemp;
+            string superviseProgramNameTemp = ConfigurationManager.AppSettings["superviseProgramName"];
+            if (superviseProgramNameTemp == "AssistantRobotRemoteSupervisor.exe") superviseProgramName = superviseProgramNameTemp;
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramAddress" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramName" + ") is wrong");
                 return;
             }
-            supervisingProgram.StartInfo.FileName = superviseProgramAddress;
+
+            string superviseProgramPathTemp = ConfigurationManager.AppSettings["superviseProgramPath"];
+            if (Directory.Exists(superviseProgramPathTemp) && File.Exists(superviseProgramPathTemp + superviseProgramName))
+            {
+                superviseProgramPath = superviseProgramPathTemp;
+            }
+            else
+            {
+                ifSuccess = false;
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "superviseProgramPath" + ") is wrong");
+                return;
+            }
+            supervisingProgram.StartInfo.FileName = superviseProgramPath + superviseProgramName;
             supervisingProgram.EnableRaisingEvents = true;
             supervisingProgram.Exited += supervisingProgram_Exited;
         }
