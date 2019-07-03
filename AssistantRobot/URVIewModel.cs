@@ -1460,7 +1460,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedL" + ") is wrong.");
                 return;
             }
 
@@ -1470,7 +1470,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedL" + ") is wrong.");
                 return;
             }
 
@@ -1480,7 +1480,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedL" + ") is wrong.");
                 return;
             }
 
@@ -1490,7 +1490,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationL" + ") is wrong.");
                 return;
             }
 
@@ -1500,7 +1500,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationL" + ") is wrong.");
                 return;
             }
 
@@ -1510,7 +1510,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationL" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationL" + ") is wrong.");
                 return;
             }
 
@@ -1520,7 +1520,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastSpeedj" + ") is wrong.");
                 return;
             }
 
@@ -1530,7 +1530,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowSpeedj" + ") is wrong.");
                 return;
             }
 
@@ -1540,7 +1540,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minSpeedj" + ") is wrong.");
                 return;
             }
 
@@ -1550,7 +1550,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "fastAccelerationj" + ") is wrong.");
                 return;
             }
 
@@ -1560,7 +1560,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "slowAccelerationj" + ") is wrong.");
                 return;
             }
 
@@ -1570,7 +1570,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationj" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "minAccelerationj" + ") is wrong.");
                 return;
             }
 
@@ -1580,7 +1580,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "titleSize" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "titleSize" + ") is wrong.");
                 return;
             }
 
@@ -1590,7 +1590,7 @@ namespace AssistantRobot
             else
             {
                 ifSuccess = false;
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "messageSize" + ") is wrong");
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "messageSize" + ") is wrong.");
                 return;
             }
 
