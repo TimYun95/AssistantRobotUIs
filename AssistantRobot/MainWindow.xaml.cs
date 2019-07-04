@@ -190,7 +190,7 @@ namespace AssistantRobot
                 urvm.ConnectBtnText = "断开连接";
                 urvm.ConnectBtnEnable = false;
             }
-
+            return;
             // 监控打开
             var controller = await this.ShowProgressAsync("请稍后", "正在尝试打开监控器。。。", settings: new MetroDialogSettings()
             {

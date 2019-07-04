@@ -1146,7 +1146,8 @@ namespace AssistantRobot
         /// <returns>返回打包内容</returns>
         private byte[] PackageTCP(TCPProtocolKey functionalNum, byte[] unPackagedData = null)
         {
-            List<byte> packagedBytes = new List<byte>(8 + unPackagedData.Length);
+            List<byte> packagedBytes = new List<byte>(8 +
+                (Object.Equals(unPackagedData, null) ? 0 : unPackagedData.Length));
             packagedBytes.Add(header1);
             packagedBytes.Add(header2);
             packagedBytes.Add(clientDeviceIndex);

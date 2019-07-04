@@ -425,8 +425,9 @@
         <Frame x:Name="frameNav" Grid.Row="0" NavigationUIVisibility="Hidden"/>
 
         <StatusBar Grid.Row="2">
-            <StatusBarItem x:Name="statusBar" FontSize="18.667"/>
-            <StatusBarItem x:Name="statusBarRemote" FontSize="18.667"/>
+            <StatusBarItem x:Name="statusBar" FontSize="18.667" Padding="8 3 8 3"/>
+            <StatusBarItem x:Name="statusBarRemote" FontSize="18.667" Padding="8 3 8 3"/>
+            <StatusBarItem x:Name="statusBarLast" FontSize="18.667" Background="#FF41B1E1" Padding="8 3 8 3"/>
         </StatusBar>
 	</Grid>
 

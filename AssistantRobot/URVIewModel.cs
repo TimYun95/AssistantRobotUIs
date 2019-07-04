@@ -2436,11 +2436,11 @@ namespace AssistantRobot
                 }
             }
 
-            ClearAllEvents(cm);
             while (RemoteEnable)
             {
                 await Task.Delay(500);
             }
+            ClearAllEvents(cm);
 
             await controller.CloseAsync();
             await Task.Delay(200);
@@ -3733,6 +3733,8 @@ namespace AssistantRobot
 
             if (!RemoteEnable)
             {
+                StatusBarRemoteContent = "远程网络连接正常";
+                StatusBarRemoteBackgroundColor = defaultGreenColor;
                 RemoteEnable = true;
                 ConnectBtnEnable = true;
             }
@@ -4020,6 +4022,8 @@ namespace AssistantRobot
         /// </summary>
         private void RemoteConnectionBroken()
         {
+            StatusBarRemoteContent = "远程网络连接异常中断";
+            StatusBarRemoteBackgroundColor = defaultRedColor;
             RemoteEnable = false;
             ConnectBtnEnable = true;
         }
