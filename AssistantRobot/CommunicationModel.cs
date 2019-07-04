@@ -788,6 +788,7 @@ namespace AssistantRobot
             if (!dealResult) return; // 解包失败
 
             // 数据处理
+            if (tcpTransferSocket.ReceiveTimeout < 0) tcpTransferSocket.ReceiveTimeout = tcpSocketRecieveTimeOut;
             DealRecievedPipeData((AppProtocolStatus)key, contentPipe);
         }
 
