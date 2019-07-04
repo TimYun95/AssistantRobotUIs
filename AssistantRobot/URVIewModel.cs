@@ -2789,7 +2789,11 @@ namespace AssistantRobot
             ClearAllEvents(urdp);
 
             await Task.Delay(400);
-            mw.Close();
+            if (mw.CheckAccess()) mw.Close();
+            else
+            {
+                await mw.Dispatcher.BeginInvoke(new Action(() => { mw.Close(); }));
+            }
         }
 
         /// <summary>

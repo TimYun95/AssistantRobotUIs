@@ -264,7 +264,7 @@ namespace AssistantRobot
 
         #region 字段
         private readonly URViewModel urvm;
-        private PipeConnector ppc = new PipeConnector("innerCommunication");
+        private PipeConnector ppc = new PipeConnector();
 
         private const double maxSpeedRatio = 50.0; // 最大速度比例
         private bool ifPipeConnected = false;

@@ -98,8 +98,9 @@
     <Reference Include="MotionAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\MotionAgent\bin\x64\Release\MotionAgent.dll</HintPath>
     </Reference>
-    <Reference Include="PipeAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\x64\Release\PipeAgent.dll</HintPath>
+    <Reference Include="PipeAgent, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\PipeAgent\bin\x64\Release\PipeAgent.dll</HintPath>
     </Reference>
     <Reference Include="ResourceAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\ResourceAgent\bin\x64\Release\ResourceAgent.dll</HintPath>
@@ -139,7 +140,6 @@
     <Compile Include="SelfDefinedConverter.cs" />
     <Compile Include="URViewModel.cs" />
     <Compile Include="URViewModelRemote_LocalPart.cs" />
-
     <Page Include="BaseControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -63,9 +63,6 @@ namespace AssistantRobot
             // 绑定必要元素
             urvm.BindingItems();
 
-            // Model初始化
-            modelInitialResult = urvm.ModelInitialization();
-
             // 建立部分绑定
             PartialBindingsEstablish();
 
@@ -166,18 +163,21 @@ namespace AssistantRobot
                 return;
             }
 
-            // model初始化失败
-            if (modelInitialResult != 0)
-            {
-                ReadyToClose();
-                return;
-            }
-
             // pipe连接
             bool pipeConnectResult = urvmr_lp.PipeBeginToConnect();
             if (!pipeConnectResult)
             {
                 ReadyToCloseForPipe();
+                return;
+            }
+
+            // Model初始化
+            modelInitialResult = urvm.ModelInitialization();
+
+            // model初始化失败
+            if (modelInitialResult != 0)
+            {
+                ReadyToClose();
                 return;
             }
 
