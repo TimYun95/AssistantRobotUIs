@@ -2517,7 +2517,8 @@ namespace AssistantRobot
         private readonly ConverterThatTransformEnumToBool convertE2B = new ConverterThatTransformEnumToBool();
         private readonly ConverterMultiStatusToEnableBool convertMS2EB = new ConverterMultiStatusToEnableBool();
         private readonly ConverterMultiEnableToEnableAndLogicBool convertME2EALB = new ConverterMultiEnableToEnableAndLogicBool();
-
+        private readonly ConverterMultiEnableToBackgroundAndLogicColor convertME2BKALC = new ConverterMultiEnableToBackgroundAndLogicColor();
+        
         /// <summary>
         /// 绑定元素
         /// </summary>
@@ -2550,7 +2551,6 @@ namespace AssistantRobot
         /// </summary>
         private void BindingItemsGlobalControlsEnable()
         {
-            // 绑定：LocalEnable | RemoteEnable {属性} ==> frameNav {MainWindow控件}
             Binding bindingFromLocalEnable = new Binding();
             bindingFromLocalEnable.Source = this;
             bindingFromLocalEnable.Path = new PropertyPath("LocalEnable");
@@ -2561,12 +2561,23 @@ namespace AssistantRobot
             bindingFromRemoteEnable.Path = new PropertyPath("RemoteEnable");
             bindingFromRemoteEnable.Mode = BindingMode.OneWay;
             bindingFromRemoteEnable.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：LocalEnable | RemoteEnable {属性} ==> frameNav {MainWindow控件}
             MultiBinding mbindingToFrameNavOfMW = new MultiBinding();
             mbindingToFrameNavOfMW.Mode = BindingMode.OneWay;
             mbindingToFrameNavOfMW.Bindings.Add(bindingFromLocalEnable);
             mbindingToFrameNavOfMW.Bindings.Add(bindingFromRemoteEnable);
             mbindingToFrameNavOfMW.Converter = convertME2EALB;
             BindingOperations.SetBinding(mw.frameNav, Frame.IsEnabledProperty, mbindingToFrameNavOfMW);
+
+            // 绑定：LocalEnable | RemoteEnable {属性} ==> statusBarLast {MainWindow控件}
+            MultiBinding mbindingToStatusBarLastOfMW = new MultiBinding();
+            mbindingToStatusBarLastOfMW.Mode = BindingMode.OneWay;
+            mbindingToStatusBarLastOfMW.Bindings.Add(bindingFromLocalEnable);
+            mbindingToStatusBarLastOfMW.Bindings.Add(bindingFromRemoteEnable);
+            mbindingToStatusBarLastOfMW.Converter = convertME2BKALC;
+            mbindingToStatusBarLastOfMW.ConverterParameter = new object[] { defaultBlueColor, defaultGreenColor };
+            BindingOperations.SetBinding(mw.statusBarLast, StatusBarItem.BackgroundProperty, mbindingToStatusBarLastOfMW);
         }
 
         /// <summary>
@@ -3737,6 +3748,13 @@ namespace AssistantRobot
                 StatusBarRemoteBackgroundColor = defaultGreenColor;
                 RemoteEnable = true;
                 ConnectBtnEnable = true;
+            }
+
+            if (!LocalEnable)
+            {
+                StatusBarContent = "当地网络连接正常";
+                StatusBarBackgroundColor = defaultGreenColor;
+                LocalEnable = true;
             }
         }
 

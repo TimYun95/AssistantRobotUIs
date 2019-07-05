@@ -295,6 +295,28 @@ namespace AssistantRobot
         }
     }
 
+    /// <summary>
+    /// 多源绑定 与逻辑 画板色输出
+    /// </summary>
+    public class ConverterMultiEnableToBackgroundAndLogicColor : IMultiValueConverter
+    {
+        // source --> target
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            object[] paramsGet = (object[])parameter;
+            foreach (bool item in values)
+            {
+                if (!item) return paramsGet[0];
+            }
+            return paramsGet[1];
+        }
+
+        // source <-- target
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 
 

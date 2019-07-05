@@ -301,7 +301,7 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 应用协议指令 运动速度数据报格式
+        /// 应用协议指令 页面转变数据报格式
         /// </summary>
         public enum AppProtocolChangePageDatagram : byte
         {
@@ -750,7 +750,7 @@ namespace AssistantRobot
                 }
                 catch (SocketException ex)
                 {
-                    if (ex.SocketErrorCode == SocketError.ConnectionReset || ex.SocketErrorCode == SocketError.TimedOut)
+                    if (ex.SocketErrorCode == SocketError.ConnectionReset || ex.SocketErrorCode == SocketError.ConnectionAborted || ex.SocketErrorCode == SocketError.TimedOut)
                     {
                         EndAllLoop();
                         Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "AssistantRobot remote controller tcp transfer recieve datas failed.", ex);
@@ -1275,7 +1275,7 @@ namespace AssistantRobot
                 return null; // AES密钥和初始向量未知
             }
 
-            string nonEncryptedString = Encoding.UTF8.GetString(nonEncryptedBytes);
+            string nonEncryptedString = Convert.ToBase64String(nonEncryptedBytes);
 
             byte[] encryptedBytes = null;
             using (AesCryptoServiceProvider aes = new AesCryptoServiceProvider())
@@ -1330,7 +1330,7 @@ namespace AssistantRobot
                         using (StreamReader swDecrypt = new StreamReader(csDecrypt))
                         {
                             string decryptedString = swDecrypt.ReadToEnd();
-                            decryptedBytes = Encoding.UTF8.GetBytes(decryptedString);
+                            decryptedBytes = Convert.FromBase64String(decryptedString);
                         }
                     }
                 }
@@ -1361,7 +1361,10 @@ namespace AssistantRobot
             tcpTransferSocket.Shutdown(SocketShutdown.Both);
             tcpTransferSocket.Close();
 
-            if (existError) ;// 未知网络传输错误
+            if (existError) // 未知网络传输错误
+            {
+ 
+            }
         }
         #endregion
     }
