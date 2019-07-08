@@ -1757,6 +1757,32 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 主窗口输入弹窗
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <param name="title">抬头</param>
+        /// <returns>返回bool值，指示是否点击确定或者可以弹窗</returns>
+        public async Task<string> ShowInputDialog(string message, string title)
+        {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "确定",
+                NegativeButtonText = "取消",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            };
+
+            if (mw.CheckAccess())
+            {
+                string result = await mw.ShowInputAsync(title, message, mySettings);
+                return result;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// 主窗口分支弹窗
         /// </summary>
         /// <param name="message">消息</param>
@@ -2335,10 +2361,14 @@ namespace AssistantRobot
         /// <summary>
         /// 乳腺扫查模块准备并开始
         /// </summary>
-        public void ReadyAndStartGalactophoreDetectModule()
+        /// <param name="ifWhole">是否完整扫描</param>
+        /// <param name="scanAngle">单程扫描角度</param>
+        public void ReadyAndStartGalactophoreDetectModule(bool ifWhole = true, double scanAngle = 0.0)
         {
             Task.Run(new Action(() =>
             {
+                gdr.IfEntireScan = ifWhole;
+                gdr.AngleScan = scanAngle;
                 gdr.BeReadyToWork();
                 gdr.StartModuleNow();
             }));

@@ -222,9 +222,13 @@ namespace AssistantRobot
         private async void BeginScan()
         {
             bool result = await urvm.ShowBranchDialog("是否开始扫查？", "提问");
-
-            // 确认参数配置
+            if (result) result = await urvm.ShowBranchDialog("是否进行完整扫查？", "提问");
             if (result) urvm.ReadyAndStartGalactophoreDetectModule();
+            else
+            {
+                string reply = await urvm.ShowInputDialog("请输入要扫描的角度(Deg)：", "输入");
+                if (!string.IsNullOrEmpty(reply)) urvm.ReadyAndStartGalactophoreDetectModule(false, double.Parse(reply) / 180.0 * Math.PI);
+            }
         }
 
         private void iconStopGalactophore_Click(object sender, RoutedEventArgs e)

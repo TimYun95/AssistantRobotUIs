@@ -49,29 +49,30 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
-                <ColumnDefinition/>
+                <!--<ColumnDefinition/>-->
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
                 <RowDefinition/>
-                <RowDefinition/>
+                <!--<RowDefinition/>-->
             </Grid.RowDefinitions>
 
             <Controls:Tile x:Name="baseControl" 
 						   Grid.Row="0" 
 						   Grid.Column="0"
 						   Title="基本控制"
-                           Margin="4"
+                           Margin="8"
                            Controls:ControlsHelper.MouseOverBorderBrush="White"
                            HorizontalTitleAlignment="Right" 
 						   Background="#FFE1417F" 
 						   Width="Auto" 
 						   Height="Auto" 
-						   TitleFontSize="24"
+						   TitleFontSize="40"
                            Cursor="Hand"
                            Click="baseControl_Click" >
-                <iconPacks:PackIconModern Width="160" Height="160" Kind="ControllerXbox" />
+                <iconPacks:PackIconModern Width="320" Height="320" Kind="ControllerXbox" />
             </Controls:Tile>
+            <!--
             <Controls:Tile x:Name="ultraHold" 
 						   Grid.Row="0" 
 						   Grid.Column="1"
@@ -86,21 +87,23 @@
                            Cursor="Hand">
                 <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="HandsHelpingSolid" />
             </Controls:Tile>
+            -->
             <Controls:Tile x:Name="galactophoreCheck" 
 						   Grid.Row="0" 
 						   Grid.Column="2"
 						   Title="乳腺扫查"
-                           Margin="4"
+                           Margin="8"
                            Controls:ControlsHelper.MouseOverBorderBrush="White"
                            HorizontalTitleAlignment="Right" 
 						   Background="#FF3DD8AF" 
 						   Width="Auto" 
 						   Height="Auto" 
-						   TitleFontSize="24"
+						   TitleFontSize="40"
                            Cursor="Hand" 
                            Click="galactophoreCheck_Click">
-                <iconPacks:PackIconMaterial Width="160" Height="160" Kind="AccountSearch" />
+                <iconPacks:PackIconMaterial Width="320" Height="320" Kind="AccountSearch" />
             </Controls:Tile>
+            <!--
             <Controls:Tile x:Name="puncture" 
 						   Grid.Row="1" 
 						   Grid.Column="0"
@@ -143,6 +146,7 @@
                            Cursor="Hand">
                 <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="EllipsisHSolid" />
             </Controls:Tile>
+            -->
         </Grid>
     </Grid>
 </Page>
