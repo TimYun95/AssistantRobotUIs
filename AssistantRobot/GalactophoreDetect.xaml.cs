@@ -195,7 +195,7 @@ namespace AssistantRobot
         private void nextBtn_Click(object sender, RoutedEventArgs e)
         {
             urvm.ConfParamsNextParamsGalactophoreDetectModule();
-         
+
             e.Handled = true;
         }
 
@@ -223,11 +223,21 @@ namespace AssistantRobot
         {
             bool result = await urvm.ShowBranchDialog("是否开始扫查？", "提问");
             if (result) result = await urvm.ShowBranchDialog("是否进行完整扫查？", "提问");
-            if (result) urvm.ReadyAndStartGalactophoreDetectModule();
+            if (result)
+            {
+                result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问");
+                if (result) urvm.ReadyAndStartGalactophoreDetectModule();
+                else urvm.ReadyAndStartGalactophoreDetectModule(false);
+            }
             else
             {
                 string reply = await urvm.ShowInputDialog("请输入要扫描的角度(Deg)：", "输入");
-                if (!string.IsNullOrEmpty(reply)) urvm.ReadyAndStartGalactophoreDetectModule(false, double.Parse(reply) / 180.0 * Math.PI);
+                if (!string.IsNullOrEmpty(reply))
+                {
+                    result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问");
+                    if (result) urvm.ReadyAndStartGalactophoreDetectModule(true, false, double.Parse(reply) / 180.0 * Math.PI);
+                    else urvm.ReadyAndStartGalactophoreDetectModule(false, false, double.Parse(reply) / 180.0 * Math.PI);
+                }
             }
         }
 
@@ -235,7 +245,7 @@ namespace AssistantRobot
         {
             // 急停
             urvm.StopMotionNowGalactophoreDetectModule();
-            
+
             e.Handled = true;
         }
     }

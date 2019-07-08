@@ -2361,12 +2361,14 @@ namespace AssistantRobot
         /// <summary>
         /// 乳腺扫查模块准备并开始
         /// </summary>
+        /// <param name="ifChangAngle">是否改变姿态角</param>
         /// <param name="ifWhole">是否完整扫描</param>
         /// <param name="scanAngle">单程扫描角度</param>
-        public void ReadyAndStartGalactophoreDetectModule(bool ifWhole = true, double scanAngle = 0.0)
+        public void ReadyAndStartGalactophoreDetectModule(bool ifChangAngle = true, bool ifWhole = true, double scanAngle = 0.0)
         {
             Task.Run(new Action(() =>
             {
+                gdr.IfAttitudeChange = ifChangAngle;
                 gdr.IfEntireScan = ifWhole;
                 gdr.AngleScan = scanAngle;
                 gdr.BeReadyToWork();
