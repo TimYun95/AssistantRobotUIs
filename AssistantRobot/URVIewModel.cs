@@ -1943,21 +1943,46 @@ namespace AssistantRobot
         /// <param name="ShowPageNum">要显示的页</param>
         public void NavigateToPage(ShowPage ShowPageNum)
         {
-            switch (ShowPageNum)
+            if (mw.CheckAccess())
             {
-                case ShowPage.MainNav:
-                    if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
-                    break;
-                case ShowPage.BaseControl:
-                    mw.frameNav.NavigationService.Navigate(bc);
-                    break;
+                switch (ShowPageNum)
+                {
+                    case ShowPage.MainNav:
+                        if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                        break;
+                    case ShowPage.BaseControl:
+                        mw.frameNav.NavigationService.Navigate(bc);
+                        break;
 
-                case ShowPage.GalactophoreDetect:
-                    mw.frameNav.NavigationService.Navigate(gd);
-                    break;
-                default:
-                    mw.frameNav.NavigationService.Navigate(mp);
-                    break;
+                    case ShowPage.GalactophoreDetect:
+                        mw.frameNav.NavigationService.Navigate(gd);
+                        break;
+                    default:
+                        mw.frameNav.NavigationService.Navigate(mp);
+                        break;
+                }
+            }
+            else
+            {
+                mw.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    switch (ShowPageNum)
+                    {
+                        case ShowPage.MainNav:
+                            if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                            break;
+                        case ShowPage.BaseControl:
+                            mw.frameNav.NavigationService.Navigate(bc);
+                            break;
+
+                        case ShowPage.GalactophoreDetect:
+                            mw.frameNav.NavigationService.Navigate(gd);
+                            break;
+                        default:
+                            mw.frameNav.NavigationService.Navigate(mp);
+                            break;
+                    }
+                }));
             }
         }
 
