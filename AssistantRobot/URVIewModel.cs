@@ -4045,6 +4045,7 @@ namespace AssistantRobot
             StatusBarRemoteBackgroundColor = defaultRedColor;
             RemoteEnable = false;
             ConnectBtnEnable = true;
+            ConnectBtnText = "建立连接";
         }
         #endregion
 

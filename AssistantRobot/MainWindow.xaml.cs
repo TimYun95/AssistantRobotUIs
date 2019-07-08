@@ -175,24 +175,7 @@ namespace AssistantRobot
         private async void AutoConnectAfterShowing()
         {
             // Model连接
-            int connectReply = urvm.ConnectToModelServer();
-            if (connectReply != 0)
-            {
-                urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
-                urvm.ConnectBtnText = "建立连接";
-
-                await urvm.ShowDialog("网络自动连接失败，请手动尝试！", "问题", 21);
-                return;
-            }
-            else
-            {
-                urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
-                urvm.ConnectBtnText = "断开连接";
-                urvm.ConnectBtnEnable = false;
-            }
-            return;
-            // 监控打开
-            var controller = await this.ShowProgressAsync("请稍后", "正在尝试打开监控器。。。", settings: new MetroDialogSettings()
+            var controller = await this.ShowProgressAsync("请稍后", "正在尝试连接服务器。。。", settings: new MetroDialogSettings()
             {
                 AnimateShow = false,
                 AnimateHide = false,
@@ -200,8 +183,30 @@ namespace AssistantRobot
                 DialogMessageFontSize = urvm.messageSize,
                 ColorScheme = MetroDialogColorScheme.Theme
             });
-
             controller.SetIndeterminate();
+            await Task.Delay(500);
+
+            int connectReply = await Task.Run<int>(new Func<int>(urvm.ConnectToModelServer));
+            if (connectReply != 0)
+            {
+                urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
+                urvm.ConnectBtnText = "建立连接";
+
+                await urvm.ShowDialog("网络自动连接失败，请手动尝试！", "问题", 21);
+            }
+            else
+            {
+                urvm.ConnectBtnIcon = PackIconMaterialKind.LanDisconnect;
+                urvm.ConnectBtnText = "断开连接";
+                urvm.ConnectBtnEnable = false;
+            }
+
+            await controller.CloseAsync();
+            return;
+            // 监控打开
+            controller.SetMessage("正在尝试打开监控器。。。");
+            controller.SetIndeterminate();
+
             await Task.Delay(500);
             bool ifSuperviseOpen = urvm.OpenSuperViseProgram();
 
