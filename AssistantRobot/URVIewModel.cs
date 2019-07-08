@@ -106,6 +106,7 @@ namespace AssistantRobot
         public readonly double titleSize = 18;
         public readonly double messageSize = 22;
 
+
         #endregion
 
         #region ViewModel
