@@ -137,7 +137,7 @@ namespace AssistantRobot
         private BaseControl bc;
         private GalactophoreDetect gd;
 
-        private bool[] occupyArray = new bool[20] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+        private bool[] occupyArray = new bool[30] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
         private readonly double titleSize = 18;
         private readonly double messageSize = 22;
 
