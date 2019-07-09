@@ -421,6 +421,8 @@ namespace AssistantRobot
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "No such command, command number: +" + ((byte)getKey).ToString() + ".");
                     break;
             }
+
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve cmd \"" + Enum.GetName(getKey.GetType(), getKey) + "\".");
         }
 
         /// <summary>
