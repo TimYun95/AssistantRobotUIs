@@ -657,8 +657,8 @@ namespace AssistantRobot
                     break;
             }
 
-            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Ready to send msg \"" + Enum.GetName(tcpKey.GetType(), tcpKey) +
-                (tcpKey == TCPProtocolKey.NormalData ? " - " + Enum.GetName(appCmd.GetType(), appCmd) + "\"." : "\"."));
+            //Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Ready to send msg \"" + Enum.GetName(tcpKey.GetType(), tcpKey) +
+            //    (tcpKey == TCPProtocolKey.NormalData ? " - " + Enum.GetName(appCmd.GetType(), appCmd) + "\"." : "\"."));
         }
         #endregion
 
@@ -798,17 +798,21 @@ namespace AssistantRobot
             // TCP解包
             bool dealResult;
             byte[] contentTcp = UnpackageTCP(datas, out dealResult);
-            if (!dealResult) return; // 解包失败
-            if (Object.Equals(contentTcp, null)) return; // 无需后续操作
+            if (!dealResult) 
+                return; // 解包失败
+            if (Object.Equals(contentTcp, null)) 
+                return; // 无需后续操作
 
             // AES解密
             byte[] bytesDecryptedByAES = DecryptByAES(contentTcp);
-            if (Object.Equals(bytesDecryptedByAES, null)) return; // AES解密失败
+            if (Object.Equals(bytesDecryptedByAES, null)) 
+                return; // AES解密失败
 
             // Pipe解包
             byte key;
             byte[] contentPipe = UnpackagePipe(bytesDecryptedByAES, out key, out dealResult);
-            if (!dealResult) return; // 解包失败
+            if (!dealResult) 
+                return; // 解包失败
 
             // 数据处理
             if (tcpTransferSocket.ReceiveTimeout < 0) tcpTransferSocket.ReceiveTimeout = tcpSocketRecieveTimeOut;
@@ -873,7 +877,7 @@ namespace AssistantRobot
                     break;
             }
 
-            if (keyStatus != AppProtocolStatus.URRealTimeData)
+            if (keyStatus == AppProtocolStatus.URRealTimeData)
                 Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
         }
 
