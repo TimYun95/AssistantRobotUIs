@@ -301,7 +301,15 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 应用协议指令 页面转变数据报格式
+        /// 应用协议指令 自动上电数据报格式
+        /// </summary>
+        public enum AppProtocolAutoPowerOnDatagram : byte
+        {
+            WhetherAutoPowerOn = 0, // byte: 0--No 1--Yes
+        }
+
+        /// <summary>
+        /// 应用协议指令 换页数据报格式
         /// </summary>
         public enum AppProtocolChangePageDatagram : byte
         {

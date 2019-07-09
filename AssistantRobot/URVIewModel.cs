@@ -3857,7 +3857,7 @@ namespace AssistantRobot
         {
             if (result)
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, CommunicationModel.AppProtocolCommand.AutoPowerOn);
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { 1 }, CommunicationModel.AppProtocolCommand.AutoPowerOn);
                 ifInitialArm = true;
 
                 var controller = await mw.ShowProgressAsync("请稍后", "正在为机械臂初始化。。。", settings: new MetroDialogSettings()
@@ -3875,6 +3875,10 @@ namespace AssistantRobot
                 await controller.CloseAsync();
 
                 await ShowDialog("机械臂已处于运行状态！", "完成", 8);
+            }
+            else
+            {
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { 0 }, CommunicationModel.AppProtocolCommand.AutoPowerOn); 
             }
         }
 
