@@ -386,7 +386,7 @@ namespace AssistantRobot
                 case AppProtocolCommand.ChangePage:
                     urvm.NavigateToPage((URViewModel.ShowPage)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolChangePageDatagram.AimPage]);
                     break;
-                    
+
                 case AppProtocolCommand.EnterBreastScanMode:
                     urvm.EnterGalactophoreDetectModule();
                     break;
@@ -409,7 +409,7 @@ namespace AssistantRobot
                     urvm.ReadyAndStartGalactophoreDetectModule();
                     break;
                 case AppProtocolCommand.BreastScanModeSaveConfigurationSet:
-                    urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray())); 
+                    urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
                 case AppProtocolCommand.StopBreastScanImmediately:
                     urvm.StopMotionNowGalactophoreDetectModule(500);
@@ -452,7 +452,8 @@ namespace AssistantRobot
 
             ppc.SendBytes(sendBytes.ToArray());
 
-            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send status \"" + Enum.GetName(statusFlag.GetType(), statusFlag) + "\".");
+            if (statusFlag != AppProtocolStatus.URRealTimeData)
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send status \"" + Enum.GetName(statusFlag.GetType(), statusFlag) + "\".");
         }
 
         /// <summary>
@@ -479,9 +480,9 @@ namespace AssistantRobot
                             IPAddress.NetworkToHostOrder(
                             BitConverter.ToInt32(bufferBytes,
                                                                 (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSpeedMinGDR))), 0).ToString());
-           
+
             returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableAngleCorrectedGDR] == 1).ToString());
-            
+
             returnedString.Add("-2.0");
             returnedString.Add("-2.0");
             returnedString.Add("-2.0");
@@ -548,7 +549,7 @@ namespace AssistantRobot
 
             return returnedString;
         }
-        
+
         #endregion
 
     }
