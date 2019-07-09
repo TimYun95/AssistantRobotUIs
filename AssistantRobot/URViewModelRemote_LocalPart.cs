@@ -253,7 +253,15 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 应用协议指令 运动速度数据报格式
+        /// 应用协议指令 自动上电数据报格式
+        /// </summary>
+        public enum AppProtocolAutoPowerOnDatagram : byte
+        {
+            WhetherAutoPowerOn = 0, // byte: 0--No 1--Yes
+        }
+
+        /// <summary>
+        /// 应用协议指令 换页数据报格式
         /// </summary>
         public enum AppProtocolChangePageDatagram : byte
         {
@@ -372,7 +380,7 @@ namespace AssistantRobot
                     urvm.RobotPowerOff();
                     break;
                 case AppProtocolCommand.AutoPowerOn:
-                    urvm.DealWithFirstNetConnection();
+                    urvm.ChooseFirstNetConnection(getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolAutoPowerOnDatagram.WhetherAutoPowerOn] == 1);
                     break;
 
                 case AppProtocolCommand.ChangePage:

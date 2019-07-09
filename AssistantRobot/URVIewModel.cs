@@ -1306,6 +1306,9 @@ namespace AssistantRobot
         #endregion
 
         #region ViewModelRemote_LocalPart
+        private bool firstConnectionReply = false;
+        private bool firstConnectionReplyContent = false;
+
         /// <summary>
         /// 乳腺扫查模块确认配置参数 远程传参
         /// </summary>
@@ -1509,7 +1512,7 @@ namespace AssistantRobot
         }
         #endregion
 
-		#region Construct Function
+        #region Construct Function
         /// <summary>
         /// 构造函数，载入配置
         /// </summary>
@@ -1874,8 +1877,8 @@ namespace AssistantRobot
                 return;
             }
         }
-		#endregion
-		
+        #endregion
+
         #region Method
         /// <summary>
         /// 机械臂上电
@@ -4235,29 +4238,49 @@ namespace AssistantRobot
         /// <summary>
         /// 处理首次连接网络的问题
         /// </summary>
-        public async void DealWithFirstNetConnection()
+        /// <param name="ifAutoOn">操作指示标志</param>
+        public void ChooseFirstNetConnection(bool ifAutoOn)
         {
-            if (robotCurrentStatus == UR30003Connector.RobotStatus.PowerOff)
-            {
-                urdp.SendURBaseControllerPowerOn();
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.Idle)
-                {
-                    await Task.Delay(200);
-                }
+            firstConnectionReplyContent = ifAutoOn;
+            firstConnectionReply = true;
+        }
 
-                urdp.SendURBaseControllerBrakeRelease();
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
+        /// <summary>
+        /// 处理首次连接网络的问题
+        /// </summary>
+        private async void DealWithFirstNetConnection()
+        {
+            var controller = await mw.ShowProgressAsync("请稍后", "正在等待远程指令。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = true,
+                AnimateHide = false,
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
+
+            controller.SetIndeterminate();
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URInitialPowerOnAsk);
+
+            int tempCount = 0;
+            while (!firstConnectionReply)
+            {
+                await Task.Delay(1000);
+                if (++tempCount > 60)
                 {
-                    await Task.Delay(200);
+                    await controller.CloseAsync();
+                    return; 
                 }
             }
-            else if (robotCurrentStatus == UR30003Connector.RobotStatus.Idle)
+
+            if (firstConnectionReplyContent)
             {
-                urdp.SendURBaseControllerBrakeRelease();
-                while (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
-                {
-                    await Task.Delay(200);
-                }
+                await controller.CloseAsync();
+                DealWithFirstNetConnection(true);
+            }
+            else
+            {
+                await controller.CloseAsync(); 
             }
         }
 
@@ -4317,7 +4340,7 @@ namespace AssistantRobot
                 if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
                 {
                     //ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
-                    urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URInitialPowerOnAsk);
+                    DealWithFirstNetConnection();
                 }
             }
         }
@@ -4398,7 +4421,7 @@ namespace AssistantRobot
         {
             GalactophoreDetectorWorkStatus = Status;
 
-           // 偏置+10
+            // 偏置+10
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanWorkStatus,
                 new List<byte> { Convert.ToByte(Status + 10) });
         }
