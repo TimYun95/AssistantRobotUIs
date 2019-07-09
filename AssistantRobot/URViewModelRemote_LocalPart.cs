@@ -451,6 +451,8 @@ namespace AssistantRobot
             sendBytes.InsertRange(0, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(sendLength)));
 
             ppc.SendBytes(sendBytes.ToArray());
+
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send status \"" + Enum.GetName(statusFlag.GetType(), statusFlag) + "\".");
         }
 
         /// <summary>
