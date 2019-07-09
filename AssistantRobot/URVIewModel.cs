@@ -4340,7 +4340,7 @@ namespace AssistantRobot
                 if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
                 {
                     //ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
-                    DealWithFirstNetConnection();
+                    mw.Dispatcher.BeginInvoke(new Action(DealWithFirstNetConnection));
                 }
             }
         }
