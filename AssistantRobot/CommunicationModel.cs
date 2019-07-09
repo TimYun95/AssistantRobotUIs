@@ -857,6 +857,9 @@ namespace AssistantRobot
                 default:
                     break;
             }
+
+            if (Enum.GetName(keyStatus.GetType(), keyStatus) != "URRealTimeData")
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
         }
 
         /// <summary>
@@ -1128,7 +1131,7 @@ namespace AssistantRobot
                     break;
                 case TCPProtocolKey.NormalData:
                     // 返回数据部分
-                    Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Get data part for TCP.");
+                    //Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Get data part for TCP.");
                     unpackageSuccess = true;
                     return packagedData.Skip((byte)TCPProtocol.DataContent).ToArray();
                 case TCPProtocolKey.PingSignal:
