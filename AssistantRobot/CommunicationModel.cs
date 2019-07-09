@@ -873,7 +873,8 @@ namespace AssistantRobot
                     break;
             }
 
-            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
+            if (keyStatus != AppProtocolStatus.URRealTimeData)
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
         }
 
         /// <summary>
