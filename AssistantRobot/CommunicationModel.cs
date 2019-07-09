@@ -613,7 +613,10 @@ namespace AssistantRobot
                     // TCP打包 无内容
                     lock (tcpSendBufferLocker)
                     { //  入队
-                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey));
+                        if (tcpSendBuffer.Count < maxBufferSize)
+                            tcpSendBuffer.Enqueue(PackageTCP(tcpKey));
+                        else
+                            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send queue is full.");
                     }
                     break;
                 case TCPProtocolKey.RSAPublicKey:
@@ -621,29 +624,41 @@ namespace AssistantRobot
                     if (Object.Equals(content, null)) return;
                     lock (tcpSendBufferLocker)
                     { //  入队
-                        tcpSendBuffer.Enqueue(PackageTCP(tcpKey, content));
+                        if (tcpSendBuffer.Count < maxBufferSize)
+                            tcpSendBuffer.Enqueue(PackageTCP(tcpKey, content));
+                        else
+                            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send queue is full.");
                     }
                     break;
                 case TCPProtocolKey.NormalData:
-                    lock (tcpSendBufferLocker)
-                    {
-                        byte[] encryptedBytes = EncryptByAES( // AES加密
+                    byte[] encryptedBytes = EncryptByAES( // AES加密
                                                                         PackagePipe( // Pipe打包
                                                                             appCmd, content
                                                                         )
                                                                     );
-                        if (Object.Equals(encryptedBytes, null)) return; // 加密出错
-                        tcpSendBuffer.Enqueue( //  入队
-                                PackageTCP( // TCP打包
-                                    tcpKey, encryptedBytes
-                                )
-                            );
+                    if (Object.Equals(encryptedBytes, null)) return; // 加密出错
+
+                    lock (tcpSendBufferLocker)
+                    {
+                        if (tcpSendBuffer.Count < maxBufferSize)
+                        {
+                            tcpSendBuffer.Enqueue( //  入队
+                                                            PackageTCP( // TCP打包
+                                                                tcpKey, encryptedBytes
+                                                            )
+                                                        );
+                        }
+                        else
+                            Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send queue is full.");
                     }
                     break;
                 case TCPProtocolKey.AESCommonKeyAndIV:
                 default:
                     break;
             }
+
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Ready to send msg \"" + Enum.GetName(tcpKey.GetType(), tcpKey) +
+                (tcpKey == TCPProtocolKey.NormalData ? " - " + Enum.GetName(appCmd.GetType(), appCmd) + "\"." : "\"."));
         }
         #endregion
 
@@ -700,7 +715,7 @@ namespace AssistantRobot
                 byte[] sendBytes = null;
                 lock (tcpSendBufferLocker)
                 {
-                    if (tcpSendBuffer.Count > 0)
+                    if (tcpSendBuffer.Count > 0) // 出队
                     {
                         sendBytes = tcpSendBuffer.Dequeue();
                     }
@@ -858,8 +873,7 @@ namespace AssistantRobot
                     break;
             }
 
-            if (Enum.GetName(keyStatus.GetType(), keyStatus) != "URRealTimeData")
-                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
         }
 
         /// <summary>
@@ -1374,7 +1388,7 @@ namespace AssistantRobot
 
             if (existError) // 未知网络传输错误
             {
- 
+
             }
         }
         #endregion
