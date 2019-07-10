@@ -422,7 +422,7 @@ namespace AssistantRobot
                     break;
             }
 
-            //Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve cmd \"" + Enum.GetName(getKey.GetType(), getKey) + "\".");
+            Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve cmd \"" + Enum.GetName(getKey.GetType(), getKey) + "\".");
         }
 
         /// <summary>
@@ -452,8 +452,8 @@ namespace AssistantRobot
 
             ppc.SendBytes(sendBytes.ToArray());
 
-            if (statusFlag == AppProtocolStatus.URRealTimeData)
-                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Send status \"" + Enum.GetName(statusFlag.GetType(), statusFlag) + "\".");
+            if (statusFlag != AppProtocolStatus.URRealTimeData)
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Data enqueue for pipe to msgserver.");
         }
 
         /// <summary>
