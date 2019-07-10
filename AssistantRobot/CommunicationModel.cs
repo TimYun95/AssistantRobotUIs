@@ -657,8 +657,12 @@ namespace AssistantRobot
                     break;
             }
 
-            //Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Ready to send msg \"" + Enum.GetName(tcpKey.GetType(), tcpKey) +
-            //    (tcpKey == TCPProtocolKey.NormalData ? " - " + Enum.GetName(appCmd.GetType(), appCmd) + "\"." : "\"."));
+            if (tcpKey != TCPProtocolKey.PingSignal)
+            {
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Ready to send msg \"" +
+                    Enum.GetName(tcpKey.GetType(), tcpKey) +
+                    (tcpKey == TCPProtocolKey.NormalData ? " - " + Enum.GetName(appCmd.GetType(), appCmd) + "\"." : "\"."));
+            }
         }
         #endregion
 
@@ -877,7 +881,7 @@ namespace AssistantRobot
                     break;
             }
 
-            if (keyStatus == AppProtocolStatus.URRealTimeData)
+            if (keyStatus != AppProtocolStatus.URRealTimeData)
                 Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Recieve msg \"" + Enum.GetName(keyStatus.GetType(), keyStatus) + "\".");
         }
 
