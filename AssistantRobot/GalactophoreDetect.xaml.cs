@@ -221,20 +221,20 @@ namespace AssistantRobot
 
         private async void BeginScan()
         {
-            bool result = await urvm.ShowBranchDialog("是否开始扫查？", "提问");
-            if (result) result = await urvm.ShowBranchDialog("是否进行完整扫查？", "提问");
+            bool result = await urvm.ShowBranchDialog("是否开始扫查？", "提问", true, false);
+            if (result) result = await urvm.ShowBranchDialog("是否进行完整扫查？", "提问", false, false);
             if (result)
             {
-                result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问");
+                result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问", false, true);
                 if (result) urvm.ReadyAndStartGalactophoreDetectModule();
                 else urvm.ReadyAndStartGalactophoreDetectModule(false);
             }
             else
             {
-                string reply = await urvm.ShowInputDialog("请输入要扫描的角度(Deg)：", "输入");
+                string reply = await urvm.ShowInputDialog("请输入要扫描的角度(Deg)：", "输入", false, false);
                 if (!string.IsNullOrEmpty(reply))
                 {
-                    result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问");
+                    result = await urvm.ShowBranchDialog("是否改变姿态角？", "提问", false, true);
                     if (result) urvm.ReadyAndStartGalactophoreDetectModule(true, false, double.Parse(reply) / 180.0 * Math.PI);
                     else urvm.ReadyAndStartGalactophoreDetectModule(false, false, double.Parse(reply) / 180.0 * Math.PI);
                 }
