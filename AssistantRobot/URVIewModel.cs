@@ -1761,11 +1761,15 @@ namespace AssistantRobot
         /// </summary>
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
+        /// <param name="showStartAnimation">显示入场动画</param>
+        /// <param name="showEndAnimation">显示退场动画</param>
         /// <returns>返回bool值，指示是否点击确定或者可以弹窗</returns>
-        public async Task<bool> ShowBranchDialog(string message, string title)
+        public async Task<bool> ShowBranchDialog(string message, string title, bool showStartAnimation = true, bool showEndAnimation = true)
         {
             var mySettings = new MetroDialogSettings()
             {
+                AnimateShow = showStartAnimation,
+                AnimateHide = showEndAnimation,
                 AffirmativeButtonText = "是",
                 NegativeButtonText = "否",
                 DialogTitleFontSize = titleSize,
@@ -1782,11 +1786,11 @@ namespace AssistantRobot
             return false;
         }
 
-        public delegate void ShowBranchDialogDelegate(string message, string title, DealBranchDialogDelegate dealFunction);
+        public delegate void ShowBranchDialogDelegate(string message, string title, DealBranchDialogDelegate dealFunction, bool showStartAnimation, bool showEndAnimation);
         public delegate void DealBranchDialogDelegate(bool messageResult);
-        private async void ShowBranchDialogTask(string message, string title, DealBranchDialogDelegate dealFunction)
+        private async void ShowBranchDialogTask(string message, string title, DealBranchDialogDelegate dealFunction, bool showStartAnimation = true, bool showEndAnimation = true)
         {
-            bool result = await ShowBranchDialog(message, title);
+            bool result = await ShowBranchDialog(message, title, showStartAnimation, showEndAnimation);
             dealFunction(result);
         }
 
@@ -1796,12 +1800,14 @@ namespace AssistantRobot
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
         /// <param name="dealFunction">信息获取后的回调函数</param>
-        private void ShowBranchDialogAtUIThread(string message, string title, DealBranchDialogDelegate dealFunction)
+        /// <param name="showStartAnimation">显示入场动画</param>
+        /// <param name="showEndAnimation">显示退场动画</param>
+        private void ShowBranchDialogAtUIThread(string message, string title, DealBranchDialogDelegate dealFunction, bool showStartAnimation = true, bool showEndAnimation = true)
         {
             mw.Dispatcher.BeginInvoke(
                 new ShowBranchDialogDelegate(ShowBranchDialogTask),
                 DispatcherPriority.Normal,
-                new object[] { message, title, dealFunction });
+                new object[] { message, title, dealFunction, showStartAnimation, showEndAnimation });
         }
 
         /// <summary>
@@ -1810,14 +1816,18 @@ namespace AssistantRobot
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
         /// <param name="occupyNum">控制位</param>
+        /// <param name="showStartAnimation">显示入场动画</param>
+        /// <param name="showEndAnimation">显示退场动画</param>
         /// <returns>返回bool值，指示是否已经点击确定</returns>
-        public async Task<bool> ShowDialog(string message, string title, int occupyNum)
+        public async Task<bool> ShowDialog(string message, string title, int occupyNum, bool showStartAnimation = true, bool showEndAnimation = true)
         {
             if (occupyArray[occupyNum]) return false;
             occupyArray[occupyNum] = true;
 
             var mySettings = new MetroDialogSettings()
             {
+                AnimateShow = showStartAnimation,
+                AnimateHide = showEndAnimation,
                 AffirmativeButtonText = "确认",
                 DialogTitleFontSize = titleSize,
                 DialogMessageFontSize = messageSize,
@@ -1833,10 +1843,10 @@ namespace AssistantRobot
             return true;
         }
 
-        public delegate void ShowDialogDelegate(string message, string title, int occupyNum);
-        private void ShowDialogTask(string message, string title, int occupyNum)
+        public delegate void ShowDialogDelegate(string message, string title, int occupyNum, bool showStartAnimation = true, bool showEndAnimation = true);
+        private void ShowDialogTask(string message, string title, int occupyNum, bool showStartAnimation = true, bool showEndAnimation = true)
         {
-            ShowDialog(message, title, occupyNum);
+            ShowDialog(message, title, occupyNum, showStartAnimation, showEndAnimation);
         }
 
         /// <summary>
@@ -1845,12 +1855,14 @@ namespace AssistantRobot
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
         /// <param name="occupyNum">控制位</param>
-        private void ShowDialogAtUIThread(string message, string title, int occupyNum)
+        /// <param name="showStartAnimation">显示入场动画</param>
+        /// <param name="showEndAnimation">显示退场动画</param>
+        private void ShowDialogAtUIThread(string message, string title, int occupyNum, bool showStartAnimation = true, bool showEndAnimation = true)
         {
             mw.Dispatcher.BeginInvoke(
                 new ShowDialogDelegate(ShowDialogTask),
                 DispatcherPriority.Normal,
-                new object[] { message, title, occupyNum });
+                new object[] { message, title, occupyNum, showStartAnimation, showEndAnimation });
         }
 
         /// <summary>
