@@ -1761,11 +1761,15 @@ namespace AssistantRobot
         /// </summary>
         /// <param name="message">消息</param>
         /// <param name="title">抬头</param>
+        /// <param name="showStartAnimation">显示入场动画</param>
+        /// <param name="showEndAnimation">显示退场动画</param>
         /// <returns>返回bool值，指示是否点击确定或者可以弹窗</returns>
-        public async Task<string> ShowInputDialog(string message, string title)
+        public async Task<string> ShowInputDialog(string message, string title, bool showStartAnimation = true, bool showEndAnimation = true)
         {
             var mySettings = new MetroDialogSettings()
             {
+                AnimateShow = showStartAnimation,
+                AnimateHide = showEndAnimation,
                 AffirmativeButtonText = "确定",
                 NegativeButtonText = "取消",
                 DialogTitleFontSize = titleSize,
