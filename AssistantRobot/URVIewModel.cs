@@ -4018,7 +4018,7 @@ namespace AssistantRobot
         private void GDRStopNow()
         {
             ifWaitForGDR = true;
-            GDRStopLogic();
+            mw.Dispatcher.BeginInvoke(new Action(GDRStopLogic));
         }
 
         /// <summary>
