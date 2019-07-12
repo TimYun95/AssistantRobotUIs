@@ -4055,14 +4055,37 @@ namespace AssistantRobot
         /// <summary>
         /// 远程连接断开
         /// </summary>
-        private void RemoteConnectionBroken()
+        private void RemoteConnectionBroken(bool error)
         {
             StatusBarRemoteContent = "远程网络连接异常中断";
             StatusBarRemoteBackgroundColor = defaultRedColor;
             RemoteEnable = false;
             ConnectBtnEnable = true;
             ConnectBtnText = "建立连接";
+
+            if (error) mw.Dispatcher.BeginInvoke(new Action(ErrorAtRemoteConnection));
         }
+
+        /// <summary>
+        /// 出现未知网络错误
+        /// </summary>
+        private async void ErrorAtRemoteConnection()
+        {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "确认",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            };
+
+            await mw.ShowMessageAsync("问题", "出现未知远程网络连接错误！", MessageDialogStyle.Affirmative, mySettings);
+
+            ClearAllEvents(cm);
+            await Task.Delay(200);
+            mw.Close();
+        }
+
         #endregion
 
     }

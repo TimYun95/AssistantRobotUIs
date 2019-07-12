@@ -324,19 +324,23 @@ namespace AssistantRobot
         private readonly string netAdapterName = "unknown";
 
         private const string clientIPAtSamePC = "127.0.0.1";
-        private const int clientPortTCPAtSamePC = 40002;
+        private const int clientPortTCPSendAtSamePC = 40003;
+        private const int clientPortTCPRecieveAtSamePC = 40004;
         private const string serverIPAtSamePC = "127.0.0.1";
 
         private string clientIPAtDiffPC;
-        private const int clientPortTCPAtDiffPC = 40001;
+        private const int clientPortTCPSendAtDiffPC = 40001;
+        private const int clientPortTCPRecieveAtDiffPC = 40002;
         private readonly string serverIPAtSameLAN = "192.168.1.13";
         private readonly string serverIPAtWAN = "202.120.48.24"; // 路由器的公网IP
 
-        private const int serverPortTCPAny = 40001; // 端口转发应该设置同一端口
+        private const int serverPortTCPRecieveAny = 40001; // 端口转发应该设置同一端口
+        private const int serverPortTCPSendAny = 40002; // 端口转发应该设置同一端口
 
         private readonly byte clientDeviceIndex = 1;
 
-        private Socket tcpTransferSocket;
+        private Socket tcpTransferSendSocket;
+        private Socket tcpTransferRecieveSocket;
         private bool ifTCPTransferEstablished = false;
 
         private readonly int tcpSocketSendTimeOut = 500;
@@ -530,17 +534,18 @@ namespace AssistantRobot
             privateKey = rsa.ToXmlString(true);
 
             // 建立新的TCP连接
-            tcpTransferSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            tcpTransferSocket.Bind(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? clientIPAtSamePC : clientIPAtDiffPC), ifAtSamePC ? clientPortTCPAtSamePC : clientPortTCPAtDiffPC));
-            tcpTransferSocket.SendTimeout = tcpSocketSendTimeOut;
-            tcpTransferSocket.ReceiveTimeout = -1;
+            // Client --> Server
+            tcpTransferSendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            tcpTransferSendSocket.Bind(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? clientIPAtSamePC : clientIPAtDiffPC), ifAtSamePC ? clientPortTCPSendAtSamePC : clientPortTCPSendAtDiffPC));
+            tcpTransferSendSocket.SendTimeout = tcpSocketSendTimeOut;
+            tcpTransferSendSocket.ReceiveTimeout = -1;
             try
             {
-                tcpTransferSocket.Connect(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? serverIPAtSamePC : (ifAtSameLAN ? serverIPAtSameLAN : serverIPAtWAN)), serverPortTCPAny));
+                tcpTransferSendSocket.Connect(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? serverIPAtSamePC : (ifAtSameLAN ? serverIPAtSameLAN : serverIPAtWAN)), serverPortTCPRecieveAny));
             }
             catch (SocketException ex)
             {
-                tcpTransferSocket.Close();
+                tcpTransferSendSocket.Close();
                 if (ex.SocketErrorCode == SocketError.ConnectionRefused || ex.SocketErrorCode == SocketError.TimedOut)
                 {
                     Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "AssistantRobot remote contoller tcp connection can not established.", ex);
@@ -548,7 +553,42 @@ namespace AssistantRobot
                 }
                 else
                 {
-                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Not deal exception.", ex);
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Not deal exception during tcp connection.", ex);
+                    return -3;
+                }
+            }
+
+            // Client <-- Server
+            tcpTransferRecieveSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            tcpTransferRecieveSocket.Bind(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? clientIPAtSamePC : clientIPAtDiffPC), ifAtSamePC ? clientPortTCPRecieveAtSamePC : clientPortTCPRecieveAtDiffPC));
+            tcpTransferRecieveSocket.SendTimeout = -1;
+            tcpTransferRecieveSocket.ReceiveTimeout = -1;
+            try
+            {
+                tcpTransferRecieveSocket.Connect(new IPEndPoint(IPAddress.Parse(ifAtSamePC ? serverIPAtSamePC : (ifAtSameLAN ? serverIPAtSameLAN : serverIPAtWAN)), serverPortTCPSendAny));
+            }
+            catch (SocketException ex)
+            {
+                try
+                {
+                    tcpTransferSendSocket.Shutdown(SocketShutdown.Both);
+                    tcpTransferSendSocket.Close();
+                    Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Half-connection is established, close the established direction.");
+                }
+                catch (Exception a_ex)
+                {
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Half-connection is established, close the established direction but failed.");
+                }
+
+                tcpTransferRecieveSocket.Close();
+                if (ex.SocketErrorCode == SocketError.ConnectionRefused || ex.SocketErrorCode == SocketError.TimedOut)
+                {
+                    Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "AssistantRobot remote contoller tcp connection can not established.", ex);
+                    return -2;
+                }
+                else
+                {
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Not deal exception during tcp connection.", ex);
                     return -3;
                 }
             }
@@ -689,7 +729,7 @@ namespace AssistantRobot
         public event SendVoid OnSendBreastScanImmediateStop;
         public event SendVoid OnSendBreastScanImmediateStopRecovery;
 
-        public event SendVoid OnSendTcpDisconnected;
+        public event SendBool OnSendTcpDisconnected;
         #endregion
         #endregion
 
@@ -729,7 +769,7 @@ namespace AssistantRobot
 
                 try
                 {
-                    tcpTransferSocket.Send(sendBytes.ToArray());
+                    tcpTransferSendSocket.Send(sendBytes.ToArray());
                 }
                 catch (SocketException ex)
                 {
@@ -751,8 +791,8 @@ namespace AssistantRobot
             tcpRecieveTask.Wait();
             Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "AssistantRobot remote controller tcp transfer stops to send datas, and recieve datas too.");
 
-            FinishAllConnection();
-            OnSendTcpDisconnected();
+            bool ifError = FinishAllConnection();
+            OnSendTcpDisconnected(ifError);
 
             ifTCPTransferEstablished = false;
         }
@@ -772,7 +812,7 @@ namespace AssistantRobot
                 try
                 {
                     byte[] reciveDatas = new byte[1024 + 8];
-                    int actualLength = tcpTransferSocket.Receive(reciveDatas);
+                    int actualLength = tcpTransferRecieveSocket.Receive(reciveDatas);
                     DealWithTcpRecieveDatas(reciveDatas.Take(actualLength).ToArray());
                 }
                 catch (SocketException ex)
@@ -819,7 +859,7 @@ namespace AssistantRobot
                 return; // 解包失败
 
             // 数据处理
-            if (tcpTransferSocket.ReceiveTimeout < 0) tcpTransferSocket.ReceiveTimeout = tcpSocketRecieveTimeOut;
+            if (tcpTransferRecieveSocket.ReceiveTimeout < 0) tcpTransferRecieveSocket.ReceiveTimeout = tcpSocketRecieveTimeOut;
             DealRecievedPipeData((AppProtocolStatus)key, contentPipe);
         }
 
@@ -1390,15 +1430,17 @@ namespace AssistantRobot
         /// <summary>
         /// 结束所有连接
         /// </summary>
-        private void FinishAllConnection()
+        /// <returns>返回是否有未知错误</returns>
+        private bool FinishAllConnection()
         {
-            tcpTransferSocket.Shutdown(SocketShutdown.Both);
-            tcpTransferSocket.Close();
+            tcpTransferSendSocket.Shutdown(SocketShutdown.Both);
+            tcpTransferSendSocket.Close();
 
-            if (existError) // 未知网络传输错误
-            {
+            tcpTransferRecieveSocket.Shutdown(SocketShutdown.Both);
+            tcpTransferRecieveSocket.Close();
 
-            }
+            // 未知网络传输错误
+            return existError;
         }
         #endregion
     }
