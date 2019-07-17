@@ -262,6 +262,7 @@ namespace AssistantRobot
             BreastScanModeSaveConfigurationSet = 108,
 
             StopBreastScanImmediately = 121,
+            RecoveryFromStopBreastScanImmediately = 122,
             ExitBreastScanMode = 131
         }
 
