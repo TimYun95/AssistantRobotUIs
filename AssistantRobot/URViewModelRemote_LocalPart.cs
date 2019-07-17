@@ -214,6 +214,7 @@ namespace AssistantRobot
             BreastScanModeSaveConfigurationSet = 108,
 
             StopBreastScanImmediately = 121,
+            RecoveryFromStopBreastScanImmediately = 122,
             ExitBreastScanMode = 131
         }
 
@@ -412,7 +413,10 @@ namespace AssistantRobot
                     urvm.SaveConfParameters(URViewModel.ConfPage.GalactophoreDetect, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
                 case AppProtocolCommand.StopBreastScanImmediately:
-                    urvm.StopMotionNowGalactophoreDetectModule(500);
+                    urvm.StopMotionNowGalactophoreDetectModule(true);
+                    break;
+                case AppProtocolCommand.RecoveryFromStopBreastScanImmediately:
+                    urvm.RemoteRecoveryFromStopImmediately();
                     break;
                 case AppProtocolCommand.ExitBreastScanMode:
                     urvm.ExitGalactophoreDetectModule();

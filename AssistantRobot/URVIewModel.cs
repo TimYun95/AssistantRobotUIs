@@ -1309,6 +1309,8 @@ namespace AssistantRobot
         private bool firstConnectionReply = false;
         private bool firstConnectionReplyContent = false;
 
+        private bool ifRecoveryFromImmediateStop = false;
+
         /// <summary>
         /// 乳腺扫查模块确认配置参数 远程传参
         /// </summary>
@@ -1345,9 +1347,11 @@ namespace AssistantRobot
         /// <summary>
         /// 立即停止所有乳腺扫查模块中的活动
         /// </summary>
-        /// <param name="timeInterval">恢复时间间隔 ms</param>
-        public void StopMotionNowGalactophoreDetectModule(int timeInterval)
+        /// <param name="onlyFlag">函数指示</param>
+        public void StopMotionNowGalactophoreDetectModule(bool onlyFlag)
         {
+            ifRecoveryFromImmediateStop = false;
+
             GalactophoreDetectorParameterConfirmState = 0;
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
                 new List<byte> { GalactophoreDetectorParameterConfirmState });
@@ -1357,11 +1361,39 @@ namespace AssistantRobot
                 gdr.EndModuleNow();
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
 
-                Thread.Sleep(timeInterval);
+                mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteShowingLogic));
+            }));
+        }
 
+        /// <summary>
+        /// 远程急停本地显示逻辑
+        /// </summary>
+        private void StopMotionFromRemoteShowingLogic()
+        {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "确认",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme,
+            };
+
+            Task tempTask = mw.ShowMessageAsync("紧急状态", "乳腺扫查模块被紧急停止，可以按下确定或等待远程信号恢复控制权！", MessageDialogStyle.Affirmative, mySettings);
+            while (!(tempTask.IsCompleted || ifRecoveryFromImmediateStop)) tempTask.Wait(1000);
+
+            Task.Run(new Action(() =>
+            {
                 gdr.RecoverToNormal();
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
             }));
+        }
+
+        /// <summary>
+        /// 从急停状态恢复，远程命令
+        /// </summary>
+        public void RemoteRecoveryFromStopImmediately()
+        {
+            ifRecoveryFromImmediateStop = true;
         }
         #endregion
 
@@ -4281,7 +4313,7 @@ namespace AssistantRobot
                 if (++tempCount > 60)
                 {
                     await controller.CloseAsync();
-                    return; 
+                    return;
                 }
             }
 
@@ -4292,7 +4324,7 @@ namespace AssistantRobot
             }
             else
             {
-                await controller.CloseAsync(); 
+                await controller.CloseAsync();
             }
         }
 
