@@ -2212,6 +2212,13 @@ namespace AssistantRobot
             }));
 
             await ShowDialog("乳腺扫查模块被紧急停止，请按下确定恢复控制权！", "紧急状态", 7);
+
+            Task.Run(new Action(() =>
+            {
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.RecoveryFromStopBreastScanImmediately);
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recoveried from stopping immediately.");
+            }));
         }
 
         /// <summary>
