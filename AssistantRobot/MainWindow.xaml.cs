@@ -180,7 +180,7 @@ namespace AssistantRobot
                 ReadyToClose();
                 return;
             }
-
+            
             // UR连接
             urvm.StartConnection();
         }

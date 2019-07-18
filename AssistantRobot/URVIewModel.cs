@@ -1370,7 +1370,7 @@ namespace AssistantRobot
         /// <summary>
         /// 远程急停本地显示逻辑
         /// </summary>
-        private void StopMotionFromRemoteShowingLogic()
+        private async void StopMotionFromRemoteShowingLogic()
         {
             var mySettings = new MetroDialogSettings()
             {
@@ -1380,8 +1380,9 @@ namespace AssistantRobot
                 ColorScheme = MetroDialogColorScheme.Theme,
             };
 
-            Task tempTask = mw.ShowMessageAsync("紧急状态", "乳腺扫查模块被紧急停止，可以按下确定或等待远程信号恢复控制权！", MessageDialogStyle.Affirmative, mySettings);
-            while (!(tempTask.IsCompleted || ifRecoveryFromImmediateStop)) tempTask.Wait(1000);
+            await mw.ShowMessageAsync("紧急状态", "乳腺扫查模块被紧急停止，可以按下确定或等待远程信号恢复控制权！", MessageDialogStyle.Affirmative, mySettings);
+            if (ifRecoveryFromImmediateStop) return;
+            ifRecoveryFromImmediateStop = true;
 
             Task.Run(new Action(() =>
             {
@@ -1395,7 +1396,25 @@ namespace AssistantRobot
         /// </summary>
         public void RemoteRecoveryFromStopImmediately()
         {
+            mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteCloseShowingLogic));
+        }
+
+        /// <summary>
+        /// 远程急停本地关闭显示逻辑
+        /// </summary>
+        private async void StopMotionFromRemoteCloseShowingLogic()
+        {
+            if (ifRecoveryFromImmediateStop) return;
+
+            await mw.HideMetroDialogAsync(await mw.GetCurrentDialogAsync<BaseMetroDialog>());
+            if (ifRecoveryFromImmediateStop) return;
             ifRecoveryFromImmediateStop = true;
+
+            Task.Run(new Action(() =>
+            {
+                gdr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is recovered.");
+            }));
         }
 
         /// <summary>
