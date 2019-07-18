@@ -1311,6 +1311,8 @@ namespace AssistantRobot
 
         private bool ifRecoveryFromImmediateStop = false;
 
+        private bool ifRemoteConnected = false;
+
         /// <summary>
         /// 乳腺扫查模块确认配置参数 远程传参
         /// </summary>
@@ -1394,6 +1396,33 @@ namespace AssistantRobot
         public void RemoteRecoveryFromStopImmediately()
         {
             ifRecoveryFromImmediateStop = true;
+        }
+
+        /// <summary>
+        /// 页导航
+        /// </summary>
+        /// <param name="ShowPageNum">要显示的页</param>
+        public void NavigateToPageRemote(ShowPage ShowPageNum)
+        {
+            mw.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                switch (ShowPageNum)
+                {
+                    case ShowPage.MainNav:
+                        if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                        break;
+                    case ShowPage.BaseControl:
+                        mw.frameNav.NavigationService.Navigate(bc);
+                        break;
+
+                    case ShowPage.GalactophoreDetect:
+                        mw.frameNav.NavigationService.Navigate(gd);
+                        break;
+                    default:
+                        mw.frameNav.NavigationService.Navigate(mp);
+                        break;
+                }
+            }));
         }
         #endregion
 
@@ -1978,47 +2007,25 @@ namespace AssistantRobot
         /// <param name="ShowPageNum">要显示的页</param>
         public void NavigateToPage(ShowPage ShowPageNum)
         {
-            if (mw.CheckAccess())
+            switch (ShowPageNum)
             {
-                switch (ShowPageNum)
-                {
-                    case ShowPage.MainNav:
-                        if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
-                        break;
-                    case ShowPage.BaseControl:
-                        mw.frameNav.NavigationService.Navigate(bc);
-                        break;
+                case ShowPage.MainNav:
+                    if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                    break;
+                case ShowPage.BaseControl:
+                    mw.frameNav.NavigationService.Navigate(bc);
+                    break;
 
-                    case ShowPage.GalactophoreDetect:
-                        mw.frameNav.NavigationService.Navigate(gd);
-                        break;
-                    default:
-                        mw.frameNav.NavigationService.Navigate(mp);
-                        break;
-                }
+                case ShowPage.GalactophoreDetect:
+                    mw.frameNav.NavigationService.Navigate(gd);
+                    break;
+                default:
+                    mw.frameNav.NavigationService.Navigate(mp);
+                    break;
             }
-            else
-            {
-                mw.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    switch (ShowPageNum)
-                    {
-                        case ShowPage.MainNav:
-                            if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
-                            break;
-                        case ShowPage.BaseControl:
-                            mw.frameNav.NavigationService.Navigate(bc);
-                            break;
 
-                        case ShowPage.GalactophoreDetect:
-                            mw.frameNav.NavigationService.Navigate(gd);
-                            break;
-                        default:
-                            mw.frameNav.NavigationService.Navigate(mp);
-                            break;
-                    }
-                }));
-            }
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.ChangePage,
+                new List<byte> { (byte)ShowPageNum });
         }
 
         /// <summary>
@@ -2389,6 +2396,14 @@ namespace AssistantRobot
             {
                 gdr.FreezeModule();
             }));
+        }
+
+        /// <summary>
+        /// 通知远程连接成功
+        /// </summary>
+        public void NotifyRemoteConnectedNow()
+        {
+            ifRemoteConnected = true;
         }
 
         /// <summary>
@@ -4310,7 +4325,7 @@ namespace AssistantRobot
             while (!firstConnectionReply)
             {
                 await Task.Delay(1000);
-                if (++tempCount > 60)
+                if (++tempCount > 20)
                 {
                     await controller.CloseAsync();
                     return;
@@ -4383,8 +4398,8 @@ namespace AssistantRobot
 
                 if (robotCurrentStatus != UR30003Connector.RobotStatus.Running)
                 {
-                    //ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
-                    mw.Dispatcher.BeginInvoke(new Action(DealWithFirstNetConnection));
+                    if (ifRemoteConnected) mw.Dispatcher.BeginInvoke(new Action(DealWithFirstNetConnection));
+                    else ShowBranchDialogAtUIThread("检测到机械臂未处于运行状态，是否为机械臂上电并松开制动器？", "提问", new DealBranchDialogDelegate(DealWithFirstNetConnection));
                 }
             }
         }

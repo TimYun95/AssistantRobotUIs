@@ -56,6 +56,8 @@ namespace AssistantRobot
             BreastScanImmediateStop = 201,
             BreastScanImmediateStopRecovery = 202,
 
+            ChangePage = 221,
+
             EndPipeConnection = 251
         }
 
@@ -215,7 +217,9 @@ namespace AssistantRobot
 
             StopBreastScanImmediately = 121,
             RecoveryFromStopBreastScanImmediately = 122,
-            ExitBreastScanMode = 131
+            ExitBreastScanMode = 131,
+
+            NotifyRemoteConnected = 251
         }
 
         /// <summary>
@@ -268,7 +272,6 @@ namespace AssistantRobot
         {
             AimPage = 0, // URViewModel.ShowPage
         }
-
         #endregion
 
         #region 字段
@@ -385,7 +388,7 @@ namespace AssistantRobot
                     break;
 
                 case AppProtocolCommand.ChangePage:
-                    urvm.NavigateToPage((URViewModel.ShowPage)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolChangePageDatagram.AimPage]);
+                    urvm.NavigateToPageRemote((URViewModel.ShowPage)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolChangePageDatagram.AimPage]);
                     break;
 
                 case AppProtocolCommand.EnterBreastScanMode:
@@ -420,6 +423,10 @@ namespace AssistantRobot
                     break;
                 case AppProtocolCommand.ExitBreastScanMode:
                     urvm.ExitGalactophoreDetectModule();
+                    break;
+
+                case AppProtocolCommand.NotifyRemoteConnected:
+                    urvm.NotifyRemoteConnectedNow();
                     break;
                 default:
                     Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "No such command, command number: +" + ((byte)getKey).ToString() + ".");
