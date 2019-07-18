@@ -93,7 +93,7 @@ namespace AssistantRobot
         private readonly string superviseProgramName = "AssistantRobotRemoteSupervisor.exe";
         private readonly string superviseProgramPath = "D:\\";
         Process supervisingProgram = new Process();
-        
+
         #endregion
 
         #region View
@@ -111,6 +111,25 @@ namespace AssistantRobot
 
         #region ViewModel
         public event PropertyChangedEventHandler PropertyChanged;
+
+        #region Close Window Enable
+        private bool closeWinEnable = false;
+        /// <summary>
+        /// 关闭程序使能
+        /// </summary>
+        public bool CloseWinEnable
+        {
+            get { return closeWinEnable; }
+            set
+            {
+                closeWinEnable = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("CloseWinEnable"));
+                }
+            }
+        }
+        #endregion
 
         #region Global Controls Enable
         private bool localEnable = false;
@@ -1757,20 +1776,24 @@ namespace AssistantRobot
                 case ShowPage.MainNav:
                     if (mw.frameNav.NavigationService.CanGoBack)
                     {
+                        CloseWinEnable = true;
                         mw.frameNav.NavigationService.GoBack();
                         cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     }
                     break;
                 case ShowPage.BaseControl:
+                    CloseWinEnable = false;
                     mw.frameNav.NavigationService.Navigate(bc);
                     cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
 
                 case ShowPage.GalactophoreDetect:
+                    CloseWinEnable = false;
                     mw.frameNav.NavigationService.Navigate(gd);
                     cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
                 default:
+                    CloseWinEnable = true;
                     mw.frameNav.NavigationService.Navigate(mp);
                     cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { (byte)ShowPageNum }, CommunicationModel.AppProtocolCommand.ChangePage);
                     break;
@@ -1790,16 +1813,20 @@ namespace AssistantRobot
                 switch (ShowPageNum)
                 {
                     case ShowPage.MainNav:
+                        CloseWinEnable = true;
                         if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
                         break;
                     case ShowPage.BaseControl:
+                        CloseWinEnable = false;
                         mw.frameNav.NavigationService.Navigate(bc);
                         break;
 
                     case ShowPage.GalactophoreDetect:
+                        CloseWinEnable = false;
                         mw.frameNav.NavigationService.Navigate(gd);
                         break;
                     default:
+                        CloseWinEnable = true;
                         mw.frameNav.NavigationService.Navigate(mp);
                         break;
                 }
@@ -1916,6 +1943,35 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 基本运动参数设置
+        /// </summary>
+        /// <param name="cordinateTool">是否以工具为参考</param>
+        /// <param name="moveSpeed">移动速度</param>
+        public void BaseMovingParameterSet(bool cordinateTool, double moveSpeed)
+        {
+            BaseMoveCordinate = cordinateTool;
+            BaseMoveSpeedRatio = moveSpeed;
+        }
+
+        /// <summary>
+        /// 基本运动参数发送
+        /// </summary>
+        private void BaseMovingParameterSend()
+        {
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+               new byte[] { Convert.ToByte(baseMoveCordinate ? 1 : 0) },
+               CommunicationModel.AppProtocolCommand.MoveReference);
+
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(baseMoveSpeedRatio)), 0))),
+                    CommunicationModel.AppProtocolCommand.MoveSpeed);
+        }
+
+        /// <summary>
         /// 基本平移开始
         /// </summary>
         /// <param name="Axis">移动轴</param>
@@ -1923,6 +1979,8 @@ namespace AssistantRobot
         public void BaseMovingTranslationBegin(char Axis, bool IfPositive)
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
+
+            BaseMovingParameterSend();
 
             cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
                                     new byte[] {Convert.ToByte(IfPositive? 1:0),
@@ -1940,11 +1998,13 @@ namespace AssistantRobot
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
 
-           cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
-                                    new byte[] {Convert.ToByte(IfPositive? 1:0),
+            BaseMovingParameterSend();
+
+            cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                                     new byte[] {Convert.ToByte(IfPositive? 1:0),
                                                         Convert.ToByte(1),
                                                         Convert.ToByte(Axis=='z'? 2:Axis=='y'?1:0)},
-                                    CommunicationModel.AppProtocolCommand.MoveTcp);
+                                     CommunicationModel.AppProtocolCommand.MoveTcp);
         }
 
         /// <summary>
@@ -1955,6 +2015,8 @@ namespace AssistantRobot
         public void BaseMovingSingleSpinBegin(char Axis, bool IfPositive)
         {
             if (baseMoveSpeedRatio < Double.Epsilon * 10.0) return;
+
+            BaseMovingParameterSend();
 
             cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
                                     new byte[] {Convert.ToByte(IfPositive? 1:0),
@@ -2008,7 +2070,7 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, 
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
                     CommunicationModel.AppProtocolCommand.ExitBreastScanMode);
             }));
         }
@@ -2245,7 +2307,7 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null, 
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
                     CommunicationModel.AppProtocolCommand.StopBreastScanImmediately);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
             }));
@@ -2300,118 +2362,134 @@ namespace AssistantRobot
         /// <returns>返回配置参数</returns>
         public List<byte> PickParametersFormView(ConfPage modifyPage)
         {
-            List<byte> returnConf = new List<byte>(100);
             switch (modifyPage)
             {
                 case ConfPage.GalactophoreDetect:
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        float.Parse(
-                        (string)mw.minForceText.Content)), 0))));
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        float.Parse(
-                        (string)mw.maxForceText.Content)), 0))));
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0)), 0))));
-
-                    returnConf.Add(Convert.ToByte(mw.ARectifySwitch.IsChecked.Value ? 1 : 0));
-
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.minRadius.Text.Trim()) / 1000.0)), 0))));
-
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.scanDistance.Text.Trim()) / 1000.0)), 0))));
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.liftDistance.Text.Trim()) / 1000.0)), 0))));
-
-                    returnConf.Add(Convert.ToByte(mw.IACheckSwitch.IsChecked.Value ? 1 : 0));
-
-                    returnConf.AddRange( // 占位
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(-2.0)), 0))));
-
-                    returnConf.Add(Convert.ToByte(Math.Round(mw.vibrateDegreeSlider.Value)));
-                    returnConf.Add(Convert.ToByte(Math.Round(mw.speedDegreeSlider.Value)));
-                    returnConf.Add(Convert.ToByte(Math.Round(mw.forceDegreeSlider.Value)));
-                    returnConf.Add(Convert.ToByte(mw.attachSwitch.IsChecked.Value ? 1 : 0));
-
-                    returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.headBound.Text.Trim()) / 1000.0)), 0))));
-                     returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.outBound.Text.Trim()) / 1000.0)), 0))));
-                     returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.tailBound.Text.Trim()) / 1000.0)), 0))));
-                     returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        double.Parse(gd.inBound.Text.Trim()) / 1000.0)), 0))));
-
-                    returnConf.Add(Convert.ToByte(mw.autoSaveSwitch.IsChecked.Value ? 1 : 0));
-                    returnConf.Add(Convert.ToByte(mw.galactophoreDirectionSwitch.IsChecked.Value ? 1 : 0));
-                    returnConf.Add(Convert.ToByte(Math.Round(mw.borderModeSlider.Value)));
-
-                     returnConf.AddRange(
-                        BitConverter.GetBytes(
-                        IPAddress.HostToNetworkOrder(
-                        BitConverter.ToInt32(
-                        BitConverter.GetBytes(
-                        Convert.ToSingle(
-                        Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content))), 0))));
-
-                    return returnConf;
+                    if (mw.CheckAccess())
+                        return PickParameterFromBreastScan();
+                    else
+                    {
+                        DispatcherOperation pickOperation = mw.Dispatcher.BeginInvoke(new Func<List<byte>>(PickParameterFromBreastScan));
+                        pickOperation.Wait();
+                        return (List<byte>)pickOperation.Result;
+                    }
                 default:
                     return null;
             }
         }
 
+        /// <summary>
+        /// 从乳腺扫描界面获取数据
+        /// </summary>
+        /// <returns>返回配置参数</returns>
+        private List<byte> PickParameterFromBreastScan()
+        {
+            List<byte> returnConf = new List<byte>(100);
+
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                float.Parse(
+                (string)mw.minForceText.Content)), 0))));
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                float.Parse(
+                (string)mw.maxForceText.Content)), 0))));
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                double.Parse((string)mw.minDetectSpeedText.Content) / 1000.0)), 0))));
+
+            returnConf.Add(Convert.ToByte(mw.ARectifySwitch.IsChecked.Value ? 1 : 0));
+
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                double.Parse(gd.minRadius.Text.Trim()) / 1000.0)), 0))));
+
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                double.Parse(gd.scanDistance.Text.Trim()) / 1000.0)), 0))));
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                double.Parse(gd.liftDistance.Text.Trim()) / 1000.0)), 0))));
+
+            returnConf.Add(Convert.ToByte(mw.IACheckSwitch.IsChecked.Value ? 1 : 0));
+
+            returnConf.AddRange( // 占位
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(-2.0)), 0))));
+
+            returnConf.Add(Convert.ToByte(Math.Round(mw.vibrateDegreeSlider.Value)));
+            returnConf.Add(Convert.ToByte(Math.Round(mw.speedDegreeSlider.Value)));
+            returnConf.Add(Convert.ToByte(Math.Round(mw.forceDegreeSlider.Value)));
+            returnConf.Add(Convert.ToByte(mw.attachSwitch.IsChecked.Value ? 1 : 0));
+
+            returnConf.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                double.Parse(gd.headBound.Text.Trim()) / 1000.0)), 0))));
+            returnConf.AddRange(
+               BitConverter.GetBytes(
+               IPAddress.HostToNetworkOrder(
+               BitConverter.ToInt32(
+               BitConverter.GetBytes(
+               Convert.ToSingle(
+               double.Parse(gd.outBound.Text.Trim()) / 1000.0)), 0))));
+            returnConf.AddRange(
+               BitConverter.GetBytes(
+               IPAddress.HostToNetworkOrder(
+               BitConverter.ToInt32(
+               BitConverter.GetBytes(
+               Convert.ToSingle(
+               double.Parse(gd.tailBound.Text.Trim()) / 1000.0)), 0))));
+            returnConf.AddRange(
+               BitConverter.GetBytes(
+               IPAddress.HostToNetworkOrder(
+               BitConverter.ToInt32(
+               BitConverter.GetBytes(
+               Convert.ToSingle(
+               double.Parse(gd.inBound.Text.Trim()) / 1000.0)), 0))));
+
+            returnConf.Add(Convert.ToByte(mw.autoSaveSwitch.IsChecked.Value ? 1 : 0));
+            returnConf.Add(Convert.ToByte(mw.galactophoreDirectionSwitch.IsChecked.Value ? 1 : 0));
+            returnConf.Add(Convert.ToByte(Math.Round(mw.borderModeSlider.Value)));
+
+            returnConf.AddRange(
+               BitConverter.GetBytes(
+               IPAddress.HostToNetworkOrder(
+               BitConverter.ToInt32(
+               BitConverter.GetBytes(
+               Convert.ToSingle(
+               Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content))), 0))));
+
+            return returnConf;
+        }
         #endregion
 
 
@@ -2577,12 +2655,13 @@ namespace AssistantRobot
         private readonly ConverterMultiStatusToEnableBool convertMS2EB = new ConverterMultiStatusToEnableBool();
         private readonly ConverterMultiEnableToEnableAndLogicBool convertME2EALB = new ConverterMultiEnableToEnableAndLogicBool();
         private readonly ConverterMultiEnableToBackgroundAndLogicColor convertME2BKALC = new ConverterMultiEnableToBackgroundAndLogicColor();
-        
+
         /// <summary>
         /// 绑定元素
         /// </summary>
         public void BindingItems()
         {
+            BindingItemsCloseWindowEnable();
             BindingItemsGlobalControlsEnable();
             BindingItemsWindowCommandKindAndText();
             BindingItemsStatusBarContentAndColor();
@@ -2605,6 +2684,20 @@ namespace AssistantRobot
         }
 
         #region SubBindingItems
+        /// <summary>
+        /// 绑定域 --| Close Window Enable |-- 内元素
+        /// </summary>
+        private void BindingItemsCloseWindowEnable()
+        {
+            // 绑定：CloseWinEnable {属性} ==> btnPowerOff {MainWindow控件}
+            Binding bindingFromCloseWinEnableToBtnPowerOff = new Binding();
+            bindingFromCloseWinEnableToBtnPowerOff.Source = this;
+            bindingFromCloseWinEnableToBtnPowerOff.Path = new PropertyPath("CloseWinEnable");
+            bindingFromCloseWinEnableToBtnPowerOff.Mode = BindingMode.OneWay;
+            bindingFromCloseWinEnableToBtnPowerOff.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(mw.btnPowerOff, Button.IsEnabledProperty, bindingFromCloseWinEnableToBtnPowerOff);
+        }
+
         /// <summary>
         /// 绑定域 --| Global Controls Enable |-- 内元素
         /// </summary>
@@ -3938,7 +4031,7 @@ namespace AssistantRobot
             }
             else
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { 0 }, CommunicationModel.AppProtocolCommand.AutoPowerOn); 
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, new byte[] { 0 }, CommunicationModel.AppProtocolCommand.AutoPowerOn);
             }
         }
 

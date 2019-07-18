@@ -257,6 +257,7 @@ namespace AssistantRobot
                     break;
             }
 
+            urvm.BaseMovingParameterSet(true, 5.0);
             urvm.BaseMovingTranslationBegin(axis, ifPos);
 
             e.Handled = true;
