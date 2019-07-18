@@ -371,7 +371,11 @@ namespace AssistantRobot
                     urvm.BaseMoveCordinate = getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolMoveReferenceDatagram.ReferToBase] == 1;
                     break;
                 case AppProtocolCommand.MoveSpeed:
-                    urvm.BaseMoveSpeedRatio = (double)getBytes[(byte)AppProtocol.DataContent + (byte)AppProtocolMoveSpeedDatagram.SpeedRatio];
+                    urvm.BaseMoveSpeedRatio = Convert.ToDouble(
+                                                                        BitConverter.ToSingle(
+                                                                        BitConverter.GetBytes(
+                                                                        IPAddress.NetworkToHostOrder(
+                                                                        BitConverter.ToInt32(getBytes, (byte)AppProtocol.DataContent + (byte)AppProtocolMoveSpeedDatagram.SpeedRatio))), 0));
                     break;
 
                 case AppProtocolCommand.PowerOn:
