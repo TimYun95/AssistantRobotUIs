@@ -1768,6 +1768,35 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 页导航
+        /// </summary>
+        /// <param name="showPage">要显示的页</param>
+        public void NavigateToPageLocal(int showPage)
+        {
+            ShowPage ShowPageNum = (ShowPage)showPage;
+
+            mw.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                switch (ShowPageNum)
+                {
+                    case ShowPage.MainNav:
+                        if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                        break;
+                    case ShowPage.BaseControl:
+                        mw.frameNav.NavigationService.Navigate(bc);
+                        break;
+
+                    case ShowPage.GalactophoreDetect:
+                        mw.frameNav.NavigationService.Navigate(gd);
+                        break;
+                    default:
+                        mw.frameNav.NavigationService.Navigate(mp);
+                        break;
+                }
+            }));
+        }
+
+        /// <summary>
         /// 主窗口分支弹窗
         /// </summary>
         /// <param name="message">消息</param>
@@ -3719,6 +3748,8 @@ namespace AssistantRobot
             cm.OnSendBreastScanImmediateStopRecovery += GDRStopRecovery;
 
             cm.OnSendTcpDisconnected += RemoteConnectionBroken;
+
+            cm.OnSendChangePage += NavigateToPageLocal;
             return true;
         }
 

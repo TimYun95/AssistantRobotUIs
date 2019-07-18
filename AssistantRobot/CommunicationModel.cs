@@ -104,6 +104,8 @@ namespace AssistantRobot
             BreastScanImmediateStop = 201,
             BreastScanImmediateStopRecovery = 202,
 
+            ChangePage = 221,
+
             EndPipeConnection = 251
         }
 
@@ -731,6 +733,8 @@ namespace AssistantRobot
         public event SendVoid OnSendBreastScanImmediateStopRecovery;
 
         public event SendBool OnSendTcpDisconnected;
+
+        public event SendIndex OnSendChangePage;
         #endregion
         #endregion
 
@@ -915,6 +919,10 @@ namespace AssistantRobot
                     break;
                 case AppProtocolStatus.BreastScanImmediateStopRecovery:
                     OnSendBreastScanImmediateStopRecovery();
+                    break;
+
+                case AppProtocolStatus.ChangePage:
+                    OnSendChangePage(content[(byte)AppProtocolChangePageDatagram.AimPage]);
                     break;
 
                 case AppProtocolStatus.EndPipeConnection:
