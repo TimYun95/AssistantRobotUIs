@@ -667,25 +667,25 @@
                     <local:IconButton x:Name="iconYPSettingGalactophore" Grid.Row="0"
 				                    Foreground="#FF3DD8AF" Style="{DynamicResource UpBoldIconBtn}"
 				                    MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
-				                    TextContent="Y+" Height="Auto" Width="Auto" IsEnabled="False"
+				                    TextContent="Y+" Height="Auto" Width="Auto"
 				                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     
                     <local:IconButton x:Name="iconYNSettingGalactophore" Grid.Row="1"
 				                    Foreground="#FF3DD8AF" Style="{DynamicResource DownBoldIconBtn}"
 				                    MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
-				                    TextContent="Y-" Height="Auto" Width="Auto" IsEnabled="False"
+				                    TextContent="Y-" Height="Auto" Width="Auto"
 				                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                     <local:IconButton x:Name="iconZPSettingGalactophore" Grid.Row="2"
 				                    Foreground="#FF41B1E1" Style="{DynamicResource UpBoldIconBtn}"
 				                    MouseOverForeground="#FF50C8FC" MouseDownForeground="#FF41B1E1"
-				                    TextContent="Z+" Height="Auto" Width="Auto" IsEnabled="False"
+				                    TextContent="Z+" Height="Auto" Width="Auto"
 				                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                     <local:IconButton x:Name="iconZNSettingGalactophore" Grid.Row="3"
 				                    Foreground="#FF41B1E1" Style="{DynamicResource DownBoldIconBtn}"
 				                    MouseOverForeground="#FF50C8FC" MouseDownForeground="#FF41B1E1"
-				                    TextContent="Z-" Height="Auto" Width="Auto" IsEnabled="False"
+				                    TextContent="Z-" Height="Auto" Width="Auto"
 				                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Grid>
 
