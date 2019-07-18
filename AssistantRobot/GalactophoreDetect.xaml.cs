@@ -234,5 +234,41 @@ namespace AssistantRobot
             
             e.Handled = true;
         }
+
+        private void gridSetting_MouseOnlyDown(object sender, RoutedEventArgs e)
+        {
+            string buttonName = (e.OriginalSource as IconButton).Name;
+            char axis = 'z'; bool ifPos = true;
+            switch (buttonName)
+            {
+                case "iconYPSettingGalactophore":
+                    axis = 'y'; ifPos = true;
+                    break;
+                case "iconYNSettingGalactophore":
+                    axis = 'y'; ifPos = false;
+                    break;
+                case "iconZPSettingGalactophore":
+                    axis = 'z'; ifPos = true;
+                    break;
+                case "iconZNSettingGalactophore":
+                    axis = 'z'; ifPos = false;
+                    break;
+                default:
+                    break;
+            }
+
+            urvm.BaseMovingTranslationBegin(axis, ifPos);
+
+            e.Handled = true;
+        }
+
+        private void gridSetting_MouseOnlyUp(object sender, RoutedEventArgs e)
+        {
+            urvm.BaseMovingEnd();
+
+            e.Handled = true;
+        }
+
+
     }
 }

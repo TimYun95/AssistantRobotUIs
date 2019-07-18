@@ -338,6 +338,9 @@ namespace AssistantRobot
             set
             {
                 baseMoveCordinate = value;
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                    new byte[] { Convert.ToByte(baseMoveCordinate ? 1 : 0) },
+                    CommunicationModel.AppProtocolCommand.MoveReference);
                 if (this.PropertyChanged != null)
                 {
                     this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BaseMoveCordinate"));
@@ -345,7 +348,7 @@ namespace AssistantRobot
             }
         }
 
-        private double baseMoveSpeedRatio = 100.0;
+        private double baseMoveSpeedRatio = 50.0;
         /// <summary>
         /// 基本移动速度系数
         /// </summary>
@@ -355,6 +358,13 @@ namespace AssistantRobot
             set
             {
                 baseMoveSpeedRatio = value;
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData,
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(baseMoveSpeedRatio)), 0))),
+                    CommunicationModel.AppProtocolCommand.MoveSpeed);
                 if (this.PropertyChanged != null)
                 {
                     this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BaseMoveSpeedRatio"));
