@@ -899,7 +899,7 @@ namespace AssistantRobot
                     OnSendBreastScanConfiguration(GetBreastScanConfFromBytes(content));
                     break;
                 case AppProtocolStatus.BreastScanWorkStatus:
-                    OnSendBreastScanWorkStatus(Math.Min(Math.Max(content[(byte)AppProtocolBreastScanWorkStatusDatagram.ModuleWorkingStatus] - 10, 0), 100));
+                    OnSendBreastScanWorkStatus(Math.Min(Math.Max(content[(byte)AppProtocolBreastScanWorkStatusDatagram.ModuleWorkingStatus] - 10, -1), 100));
                     break;
                 case AppProtocolStatus.BreastScanConfigurationConfirmStatus:
                     OnSendBreastScanConfigurationConfirmStatus(content[(byte)AppProtocolBreastScanConfigurationConfirmDatagram.HasConfirmConfiguration] == 1);
