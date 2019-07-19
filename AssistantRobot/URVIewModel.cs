@@ -2463,7 +2463,7 @@ namespace AssistantRobot
         /// <summary>
         /// 乳腺扫查模块找到乳头
         /// </summary>
-        public void NippleFoundGalactophoreDetectModule()
+        public void NippleFoundGalactophoreDetectModule(bool ifRemote = false)
         {
             Task.Run(new Action(() =>
             {
@@ -2471,6 +2471,8 @@ namespace AssistantRobot
                 Thread.Sleep(40);
                 double[] nippleNow = urdp.PositionsTcpActual;
                 NipplePositionGDR = new double[] { nippleNow[0], nippleNow[1], nippleNow[2] };
+
+                if (!ifRemote) urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanNipplePos);
                 //SaveCachePos(nippleNow);
             }));
         }
@@ -2499,6 +2501,8 @@ namespace AssistantRobot
                 double[] posNow = urdp.PositionsTcpActual;
                 double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
                 DetectingSafetyLiftDistanceGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2527,6 +2531,8 @@ namespace AssistantRobot
                 double[] posNow = urdp.PositionsTcpActual;
                 double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
                 NippleForbiddenRadiusGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2555,6 +2561,8 @@ namespace AssistantRobot
                 double[] posNow = urdp.PositionsTcpActual;
                 double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
                 DetectingStopDistanceGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2600,6 +2608,8 @@ namespace AssistantRobot
                 else if (Side == "out") MovingLeftEdgeDistanceGDR = distanceBias;
                 else if (Side == "in") MovingRightEdgeDistanceGDR = distanceBias;
                 else MovingUpEdgeDistanceGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }

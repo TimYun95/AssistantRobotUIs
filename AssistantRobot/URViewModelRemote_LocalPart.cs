@@ -48,6 +48,7 @@ namespace AssistantRobot
             URInitialPowerOnAskReply = 6,
             URAdditionalDeviceAbnormal = 7,
 
+            BreastScanNipplePos = 100,
             BreastScanConfiguration = 101,
             BreastScanWorkStatus = 102,
             BreastScanConfigurationConfirmStatus = 103,
@@ -405,7 +406,7 @@ namespace AssistantRobot
                     urvm.ConfParamsGalactophoreDetectModule();
                     break;
                 case AppProtocolCommand.BreastScanModeConfirmNipplePos:
-                    urvm.NippleFoundGalactophoreDetectModule();
+                    urvm.NippleFoundGalactophoreDetectModule(true);
                     break;
                 case AppProtocolCommand.BreastScanModeNextConfigurationItem:
                     urvm.ConfParamsNextParamsGalactophoreDetectModule();
