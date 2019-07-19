@@ -2151,6 +2151,8 @@ namespace AssistantRobot
                 Thread.Sleep(100);
                 double distanceBias = Math.Abs(ToolTCPCordinateZ - posCacheNow[2]);
                 DetectingSafetyLiftDistanceGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2178,6 +2180,8 @@ namespace AssistantRobot
                 Thread.Sleep(100);
                 double distanceBias = Math.Sqrt(Math.Pow(ToolTCPCordinateX - posCacheNow[0], 2) + Math.Pow(ToolTCPCordinateY - posCacheNow[1], 2));
                 NippleForbiddenRadiusGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2205,6 +2209,8 @@ namespace AssistantRobot
                 Thread.Sleep(100);
                 double distanceBias = Math.Abs(ToolTCPCordinateZ - posCacheNow[2]);
                 DetectingStopDistanceGDR = distanceBias;
+                
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
@@ -2249,6 +2255,8 @@ namespace AssistantRobot
                 else if (Side == "out") MovingLeftEdgeDistanceGDR = distanceBias;
                 else if (Side == "in") MovingRightEdgeDistanceGDR = distanceBias;
                 else MovingUpEdgeDistanceGDR = distanceBias;
+
+                SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
         }
