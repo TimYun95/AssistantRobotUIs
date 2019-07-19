@@ -2702,7 +2702,8 @@ namespace AssistantRobot
         /// <summary>
         /// 乳腺扫查模块转到下一个配置参数
         /// </summary>
-        public async void ConfParamsNextParamsGalactophoreDetectModule()
+        /// <param name="ifRemote">远程指令</param>
+        public async void ConfParamsNextParamsGalactophoreDetectModule(bool ifRemote = false)
         {
             switch (GalactophoreDetectorParameterConfirmState)
             {
@@ -2747,22 +2748,23 @@ namespace AssistantRobot
                     break;
             }
 
-            switch (GalactophoreDetectorParameterConfirmState)
+            if (!ifRemote)
             {
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                    SaveConfParameters(ConfPage.GalactophoreDetect);
-                    break;
-                default:
-                    break;
+                switch (GalactophoreDetectorParameterConfirmState)
+                {
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                        SaveConfParameters(ConfPage.GalactophoreDetect);
+                        break;
+                    default:
+                        break;
+                }
             }
-
-
 
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
                 new List<byte> { GalactophoreDetectorParameterConfirmState });

@@ -409,7 +409,7 @@ namespace AssistantRobot
                     urvm.NippleFoundGalactophoreDetectModule(true);
                     break;
                 case AppProtocolCommand.BreastScanModeNextConfigurationItem:
-                    urvm.ConfParamsNextParamsGalactophoreDetectModule();
+                    urvm.ConfParamsNextParamsGalactophoreDetectModule(true);
                     break;
                 case AppProtocolCommand.BreastScanModeConfirmConfigurationSet:
                     urvm.ConfirmConfParamsGalactophoreDetectModule(UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
