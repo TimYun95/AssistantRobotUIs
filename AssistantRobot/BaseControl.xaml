@@ -25,10 +25,10 @@
 
     <Grid Background="White">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition Width="4*"/>
             <ColumnDefinition Width="10*"/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="35*"/>
+            <ColumnDefinition Width="105*"/>
+            <ColumnDefinition Width="10*"/>
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
