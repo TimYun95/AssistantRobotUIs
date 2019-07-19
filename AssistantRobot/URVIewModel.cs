@@ -2502,6 +2502,7 @@ namespace AssistantRobot
                 double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
                 DetectingSafetyLiftDistanceGDR = distanceBias;
 
+                Thread.Sleep(100);
                 SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
@@ -2532,6 +2533,7 @@ namespace AssistantRobot
                 double distanceBias = Math.Sqrt(Math.Pow(posNow[0] - posCacheNow[0], 2) + Math.Pow(posNow[1] - posCacheNow[1], 2));
                 NippleForbiddenRadiusGDR = distanceBias;
 
+                Thread.Sleep(100);
                 SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
@@ -2562,6 +2564,8 @@ namespace AssistantRobot
                 double distanceBias = Math.Abs(posNow[2] - posCacheNow[2]);
                 DetectingStopDistanceGDR = distanceBias;
 
+
+                Thread.Sleep(100);
                 SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
@@ -2609,6 +2613,8 @@ namespace AssistantRobot
                 else if (Side == "in") MovingRightEdgeDistanceGDR = distanceBias;
                 else MovingUpEdgeDistanceGDR = distanceBias;
 
+
+                Thread.Sleep(100);
                 SaveConfParameters(ConfPage.GalactophoreDetect);
                 //SaveCachePos(posNow);
             }));
@@ -2737,8 +2743,26 @@ namespace AssistantRobot
                 case 7:
                 default:
                     GalactophoreDetectorParameterConfirmState += 1;
+
                     break;
             }
+
+            switch (GalactophoreDetectorParameterConfirmState)
+            {
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                    SaveConfParameters(ConfPage.GalactophoreDetect);
+                    break;
+                default:
+                    break;
+            }
+
+
 
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfigurationProcess,
                 new List<byte> { GalactophoreDetectorParameterConfirmState });
@@ -2757,8 +2781,19 @@ namespace AssistantRobot
             switch (modifyPage)
             {
                 case ConfPage.GalactophoreDetect:
-                    gdr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
-                    gdr.LoadParametersFromXmlAndOutput();
+                    if (mw.CheckAccess())
+                    {
+                        gdr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                        gdr.LoadParametersFromXmlAndOutput();
+                    }
+                    else
+                    {
+                        mw.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            gdr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                            gdr.LoadParametersFromXmlAndOutput();
+                        }));
+                    }
                     break;
 
                 default:
