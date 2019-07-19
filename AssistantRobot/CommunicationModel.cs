@@ -96,6 +96,7 @@ namespace AssistantRobot
             URInitialPowerOnAskReply = 6,
             URAdditionalDeviceAbnormal = 7,
 
+            BreastScanNipplePos = 100,
             BreastScanConfiguration = 101,
             BreastScanWorkStatus = 102,
             BreastScanConfigurationConfirmStatus = 103,
@@ -724,6 +725,7 @@ namespace AssistantRobot
         public event SendVoid OnSendURInitialPowerOnAskReply;
         public event SendIndex OnSendURAdditionalDeviceAbnormal;
 
+        public event SendVoid OnSendBreastScanNipplePos;
         public event SendStringArrayList OnSendBreastScanConfiguration;
         public event SendIndex OnSendBreastScanWorkStatus;
         public event SendBool OnSendBreastScanConfigurationConfirmStatus;
@@ -899,6 +901,9 @@ namespace AssistantRobot
                     OnSendURAdditionalDeviceAbnormal(content[(byte)AppProtocolAdditionalDeviceAbnormalDatagram.AbnormalClass]);
                     break;
 
+                case AppProtocolStatus.BreastScanNipplePos:
+                    OnSendBreastScanNipplePos();
+                    break;
                 case AppProtocolStatus.BreastScanConfiguration:
                     OnSendBreastScanConfiguration(GetBreastScanConfFromBytes(content));
                     break;

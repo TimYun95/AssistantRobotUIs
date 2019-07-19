@@ -3842,6 +3842,7 @@ namespace AssistantRobot
             cm.OnSendURInitialPowerOnAskReply += URInitialPowerOnQuestionReply;
             cm.OnSendURAdditionalDeviceAbnormal += URAdditionalDeviceAbnormalStatus;
 
+            cm.OnSendBreastScanNipplePos += new CommunicationModel.SendVoid(new Action(() => { NipplePositionGDR = new double[] { ToolTCPCordinateX, ToolTCPCordinateY, ToolTCPCordinateZ }; }));
             cm.OnSendBreastScanConfiguration += GDRConfParams;
             cm.OnSendBreastScanWorkStatus += GDRWorkStatus;
             cm.OnSendBreastScanConfigurationConfirmStatus += GDRParameterConfirmStatus;
