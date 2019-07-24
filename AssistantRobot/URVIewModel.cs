@@ -2422,7 +2422,7 @@ namespace AssistantRobot
             switch (galactophoreDetectorParameterConfirmState)
             {
                 case 1:
-                    if (nipplePositionGDR[0] * nipplePositionGDR[1] * nipplePositionGDR[2] > Double.Epsilon * 10.0) GalactophoreDetectorParameterConfirmState += 1;
+                    if (Math.Abs(nipplePositionGDR[0] * nipplePositionGDR[1] * nipplePositionGDR[2]) > Double.Epsilon * 10.0) GalactophoreDetectorParameterConfirmState += 1;
                     break;
                 case 5:
                     if (identifyEdgeModeGDR == GalactophoreDetector.IdentifyBoundary.OnlyUpBoundary)
