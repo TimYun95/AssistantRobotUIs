@@ -202,7 +202,7 @@ namespace AssistantRobot
             }
 
             await controller.CloseAsync();
-            return;
+
             // 监控打开
             controller.SetMessage("正在尝试打开监控器。。。");
             controller.SetIndeterminate();
