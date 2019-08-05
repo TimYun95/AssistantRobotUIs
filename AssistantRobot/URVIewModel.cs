@@ -124,9 +124,6 @@ namespace AssistantRobot
         private double[] currentToolTcpEndPointCordinates = null;
         private double currentToolGravityValue = 0;
         
-        // 乳腺扫描工具
-        private readonly ToolType breastToolType;
-
         // 模块工具
         private readonly ToolType breastToolType;
 
