@@ -36,8 +36,10 @@ namespace AssistantRobot
         /// </summary>
         public enum ToolType : short
         {
-            Probe = 1,
-            Needle = 2
+            Probe_LA523_UR3 = 1,
+            Needle_UR5 = 2, // 测试使用
+            Probe_UR5 = 3, // 测试使用
+            Probe_LA523_UR5 = 4
         }
 
         /// <summary>
@@ -113,13 +115,16 @@ namespace AssistantRobot
         private readonly double minAccelerationj = 0.002;
 
         // 当前工具信息
-        private ToolType currentToolType = ToolType.Probe;
+        private ToolType currentToolType = ToolType.Probe_LA523_UR3;
         private bool currentRobotHanged = false;
         private double[] currentRobotInitialPosJoints = null;
         private double[,] currentToolForceModifier = null;
         private URDataProcessor.ForceModifiedMode currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
         private double[] currentToolTcpEndPointCordinates = null;
         private double currentToolGravityValue = 0;
+
+        // 模块工具
+        private readonly ToolType breastToolType;
 
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
@@ -1342,6 +1347,14 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong.");
                 return;
             }
+            // 为模块选择合适的工具
+            if (currentRobotType == URDataProcessor.RobotType.CBUR3)
+                currentToolType = ToolType.Probe_LA523_UR3;
+            else if (currentRobotType == URDataProcessor.RobotType.CBUR5)
+                currentToolType = ToolType.Probe_LA523_UR5;
+            else
+                currentToolType = ToolType.Probe_LA523_UR3;
+            breastToolType = currentToolType;
 
             URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
             parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
@@ -2107,7 +2120,7 @@ namespace AssistantRobot
         /// </summary>
         public void EnterGalactophoreDetectModule()
         {
-            if (!CheckWhetherCurrentToolSuitable(ToolType.Probe)) return;
+            if (!CheckWhetherCurrentToolSuitable(breastToolType)) return;
 
             Task.Run(new Action(() =>
             {
@@ -3692,14 +3705,14 @@ namespace AssistantRobot
             sqlsc = new SQLServerConnector();
             sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
 
-            return ToolParameterRefresh();
+            return ToolParameterRefresh(currentToolType);
         }
 
         /// <summary>
         /// 工具参数根据数据库读取结果更新
         /// </summary>
         /// <returns>返回更新结果</returns>
-        private bool ToolParameterRefresh(ToolType NeededToolType = ToolType.Probe)
+        private bool ToolParameterRefresh(ToolType NeededToolType)
         {
             double[] searchBase = sqlsc.SearchToolBaseInformation((int)NeededToolType);
             var collectionWithAbnormalParameters =
@@ -3750,7 +3763,12 @@ namespace AssistantRobot
                     searchPosition[11], searchPosition[12], searchPosition[13] };
             }
             currentToolForceModifier = (double[,])searchForce.Clone();
-            currentToolForceModifyingMode = (UR30003Connector.ForceModifiedMode)((byte)currentToolType);
+
+            if (currentToolType == ToolType.Probe_LA523_UR3 || currentToolType == ToolType.Probe_LA523_UR5)
+            {
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
+            }
+
             currentToolTcpEndPointCordinates = new double[] {
                 searchBase[0], searchBase[1], searchBase[2],
                 searchBase[3], searchBase[4], searchBase[5] };
