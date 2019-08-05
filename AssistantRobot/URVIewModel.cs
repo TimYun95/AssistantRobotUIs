@@ -127,6 +127,9 @@ namespace AssistantRobot
         // 乳腺扫描工具
         private readonly ToolType breastToolType;
 
+        // 模块工具
+        private readonly ToolType breastToolType;
+
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
 
@@ -1635,6 +1638,7 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong.");
                 return;
             }
+            // 为模块选择合适的工具
             if (currentRobotType == URDataProcessor.RobotType.CBUR3)
                 currentToolType = ToolType.Probe_LA523_UR3;
             else if (currentRobotType == URDataProcessor.RobotType.CBUR5)
@@ -4142,7 +4146,12 @@ namespace AssistantRobot
                     searchPosition[11], searchPosition[12], searchPosition[13] };
             }
             currentToolForceModifier = (double[,])searchForce.Clone();
-            currentToolForceModifyingMode = (UR30003Connector.ForceModifiedMode)((byte)currentToolType);
+
+            if (currentToolType == ToolType.Probe_LA523_UR3 || currentToolType == ToolType.Probe_LA523_UR5)
+            {
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
+            }
+
             currentToolTcpEndPointCordinates = new double[] {
                 searchBase[0], searchBase[1], searchBase[2],
                 searchBase[3], searchBase[4], searchBase[5] };
