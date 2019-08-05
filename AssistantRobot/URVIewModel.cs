@@ -1675,7 +1675,6 @@ namespace AssistantRobot
             }
             catch (Exception ex)
             {
-
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Open supervising program error.", ex);
                 return false;
             }

@@ -192,7 +192,9 @@ namespace AssistantRobot
                 urvm.ConnectBtnIcon = PackIconMaterialKind.LanConnect;
                 urvm.ConnectBtnText = "建立连接";
 
+                await controller.CloseAsync();
                 await urvm.ShowDialog("网络自动连接失败，请手动尝试！", "问题", 21);
+                return;
             }
             else
             {
@@ -201,15 +203,13 @@ namespace AssistantRobot
                 urvm.ConnectBtnEnable = false;
             }
 
-            await controller.CloseAsync();
-
             // 监控打开
             controller.SetMessage("正在尝试打开监控器。。。");
             controller.SetIndeterminate();
 
             await Task.Delay(500);
             bool ifSuperviseOpen = urvm.OpenSuperViseProgram();
-
+           
             await controller.CloseAsync();
             if (!ifSuperviseOpen)
             {
