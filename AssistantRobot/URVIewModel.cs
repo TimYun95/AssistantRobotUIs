@@ -37,8 +37,10 @@ namespace AssistantRobot
         /// </summary>
         public enum ToolType : short
         {
-            Probe = 1,
-            Needle = 2
+            Probe_LA523_UR3 = 1,
+            Needle_UR5 = 2, // 测试使用
+            Probe_UR5 = 3, // 测试使用
+            Probe_LA523_UR5 = 4
         }
 
         /// <summary>
@@ -3837,6 +3839,7 @@ namespace AssistantRobot
             return 0;
         }
 
+        protected bool dataBaseInitialDone = false;
         /// <summary>
         /// 数据传输模型初始化
         /// </summary>
