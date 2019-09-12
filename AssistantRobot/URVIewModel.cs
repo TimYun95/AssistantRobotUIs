@@ -3696,6 +3696,7 @@ namespace AssistantRobot
             return 0;
         }
 
+        protected bool dataBaseInitialDone = false;
         /// <summary>
         /// 初始化数据库连接和数据
         /// </summary>
@@ -3705,7 +3706,12 @@ namespace AssistantRobot
             sqlsc = new SQLServerConnector();
             sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
 
-            return ToolParameterRefresh(currentToolType);
+            if (ToolParameterRefresh(currentToolType))
+            {
+                dataBaseInitialDone = true;
+                return true;
+            }
+            else return false;
         }
 
         /// <summary>
@@ -3842,7 +3848,7 @@ namespace AssistantRobot
         private void DataBaseCanNotBeAttached()
         {
             EnableAll = false;
-            ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
+            if (dataBaseInitialDone) ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
             Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
             return;
         }
