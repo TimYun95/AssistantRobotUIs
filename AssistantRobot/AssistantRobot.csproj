@@ -78,13 +78,13 @@
       <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
     </Reference>
     <Reference Include="DataBaseAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\DataBaseAgent\bin\x64\Release\DataBaseAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\DataBaseAgent.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\LogAgent\bin\x64\Release\log4net.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="LogAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\LogAgent\bin\x64\Release\LogAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\LogAgent.dll</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro">
       <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net45\MahApps.Metro.dll</HintPath>
@@ -93,16 +93,16 @@
       <HintPath>..\packages\MahApps.Metro.IconPacks.2.3.0\lib\net45\MahApps.Metro.IconPacks.dll</HintPath>
     </Reference>
     <Reference Include="MathAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\MathAgent\bin\x64\Release\MathAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MathAgent.dll</HintPath>
     </Reference>
     <Reference Include="MotionAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\MotionAgent\bin\x64\Release\MotionAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MotionAgent.dll</HintPath>
     </Reference>
     <Reference Include="ResourceAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\ResourceAgent\bin\x64\Release\ResourceAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\ResourceAgent.dll</HintPath>
     </Reference>
     <Reference Include="SerialAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\SerialAgent\bin\x64\Release\SerialAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\SerialAgent.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -122,7 +122,7 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="URAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\URAgent\bin\x64\Release\URAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\URAgent.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
