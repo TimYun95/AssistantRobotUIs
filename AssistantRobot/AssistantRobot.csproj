@@ -90,7 +90,7 @@
       <HintPath>..\packages\MahApps.Metro.IconPacks.2.3.0\lib\net45\MahApps.Metro.IconPacks.dll</HintPath>
     </Reference>
     <Reference Include="MotionAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\x64\Release\MotionAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MotionAgent.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -110,7 +110,7 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="URAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\x64\Release\URAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\URAgent.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
