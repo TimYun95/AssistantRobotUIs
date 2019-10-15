@@ -98,9 +98,8 @@
     <Reference Include="MotionAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MotionAgent.dll</HintPath>
     </Reference>
-    <Reference Include="PipeAgent, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\PipeAgent\bin\x64\Release\PipeAgent.dll</HintPath>
+    <Reference Include="PipeAgent">
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\PipeAgent.dll</HintPath>
     </Reference>
     <Reference Include="ResourceAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\ResourceAgent.dll</HintPath>
