@@ -78,10 +78,10 @@
       <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\LogAgent\bin\x64\Release\log4net.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="LogAgent">
-      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\LogAgent\bin\x64\Release\LogAgent.dll</HintPath>
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\LogAgent.dll</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro">
       <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net45\MahApps.Metro.dll</HintPath>
