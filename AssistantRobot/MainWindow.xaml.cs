@@ -60,7 +60,7 @@ namespace AssistantRobot
             PartialBindingsEstablish();
 
             // 加载默认页
-            urvm.NavigateToPage((URViewModel.ShowPage)(-1));
+            urvm.NavigateToPage((URViewModel.ShowPage)(2));
         }
 
         private void PartialBindingsEstablish()
