@@ -36,10 +36,8 @@ namespace AssistantRobot
         /// </summary>
         public enum ToolType : short
         {
-            Probe_LA523_UR3 = 1,
-            Needle_UR5 = 2, // 测试使用
-            Probe_UR5 = 3, // 测试使用
-            Probe_LA523_UR5 = 4
+            Probe_LA523 = 1,
+            Needle_Unknown = 2 // 测试使用
         }
 
         /// <summary>
@@ -50,7 +48,9 @@ namespace AssistantRobot
             MainNav = 0,
             BaseControl = 1,
 
-            GalactophoreDetect = 2
+            GalactophoreDetect = 2,
+
+            ThyroidScanning = 3
         }
 
         /// <summary>
@@ -60,7 +60,9 @@ namespace AssistantRobot
         {
             ElecCtrl = 0,
             ProbeCatch = 1,
-            GalactophoreDetect = 2
+            GalactophoreDetect = 2,
+            ThyroidPuncture = 3,
+            ThyroidScan = 4
         }
         #endregion
 
@@ -69,6 +71,8 @@ namespace AssistantRobot
         private SerialConnector sc;
         private URDataProcessor urdp;
         private GalactophoreDetector gdr;
+        private ThyroidScanner tsr;
+        private GetSensorDatas gsd;
 
         // COM连接
         private readonly bool ifUsingSerialPort = false;
@@ -115,7 +119,7 @@ namespace AssistantRobot
         private readonly double minAccelerationj = 0.002;
 
         // 当前工具信息
-        private ToolType currentToolType = ToolType.Probe_LA523_UR3;
+        private ToolType currentToolType = ToolType.Probe_LA523;
         private bool currentRobotHanged = false;
         private double[] currentRobotInitialPosJoints = null;
         private double[,] currentToolForceModifier = null;
@@ -125,6 +129,7 @@ namespace AssistantRobot
 
         // 模块工具
         private readonly ToolType breastToolType;
+        private readonly ToolType thyroidToolType;
 
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
@@ -141,6 +146,7 @@ namespace AssistantRobot
         private MainPage mp;
         private BaseControl bc;
         private GalactophoreDetect gd;
+        private ThyroidScan ts;
 
         private bool[] occupyArray = new bool[30] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
         private readonly double titleSize = 18;
@@ -1347,14 +1353,10 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong.");
                 return;
             }
-            // 为模块选择合适的工具
-            if (currentRobotType == URDataProcessor.RobotType.CBUR3)
-                currentToolType = ToolType.Probe_LA523_UR3;
-            else if (currentRobotType == URDataProcessor.RobotType.CBUR5)
-                currentToolType = ToolType.Probe_LA523_UR5;
-            else
-                currentToolType = ToolType.Probe_LA523_UR3;
-            breastToolType = currentToolType;
+            // 为模块选择合适的工具（以Probe为默认值）
+            currentToolType = ToolType.Probe_LA523;
+            breastToolType = ToolType.Probe_LA523;
+            thyroidToolType = ToolType.Probe_LA523;
 
             URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
             parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
@@ -1763,6 +1765,11 @@ namespace AssistantRobot
                 case ShowPage.GalactophoreDetect:
                     mw.frameNav.NavigationService.Navigate(gd);
                     break;
+
+                case ShowPage.ThyroidScanning:
+                    mw.frameNav.NavigationService.Navigate(ts);
+                    break;
+
                 default:
                     mw.frameNav.NavigationService.Navigate(mp);
                     break;
@@ -2087,18 +2094,27 @@ namespace AssistantRobot
             {
                 if (!ToolParameterRefresh(AimTool)) return;
 
+                // 安装方式
                 urdp.SetInstallation(currentRobotHanged);
                 gdr.InstallHanged = currentRobotHanged;
+                tsr.InstallHanged = currentRobotHanged;
 
+                // 初始角度
                 gdr.InitialJointAngles = currentRobotInitialPosJoints;
+                tsr.InitialJointAngles = currentRobotInitialPosJoints;
 
+                // 重力修正
                 urdp.SetToolGravityModify(currentToolForceModifier, currentToolForceModifyingMode);
 
+                // 工具坐标
                 urdp.SetToolTCP(currentToolTcpEndPointCordinates);
                 gdr.InstallTcpPosition = currentToolTcpEndPointCordinates;
+                tsr.InstallTcpPosition = currentToolTcpEndPointCordinates;
 
+                // 工具质量
                 urdp.SetToolGravity(currentToolGravityValue);
                 gdr.ToolMass = currentToolGravityValue;
+                tsr.ToolMass = currentToolGravityValue;
 
                 urdp.SendURCommanderBaseSetting();
             }));
@@ -2441,6 +2457,41 @@ namespace AssistantRobot
 
         #endregion
 
+        #region ThyroidScan
+        /// <summary>
+        /// 切换甲状腺扫查配置窗口
+        /// </summary>
+        public void SwitchThyroidOwnConf()
+        {
+            bool nowState = (mw.Flyouts.Items[(int)ConfPage.ThyroidScan] as Flyout).IsOpen;
+            (mw.Flyouts.Items[(int)ConfPage.ThyroidScan] as Flyout).IsOpen = !nowState;
+        }
+
+        /// <summary>
+        /// 进入甲状腺扫查模块
+        /// </summary>
+        public void EnterThyroidScanningModule()
+        {
+            if (!CheckWhetherCurrentToolSuitable(thyroidToolType)) return;
+
+            Task.Run(new Action(() =>
+            {
+                tsr.ActiveModule();
+            }));
+        }
+
+        /// <summary>
+        /// 退出甲状腺扫查模块
+        /// </summary>
+        public void ExitThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.FreezeModule();
+            }));
+        }
+        #endregion
+
         #region SaveModuleConfParams
 
         /// <summary>
@@ -2505,8 +2556,6 @@ namespace AssistantRobot
         }
 
         #endregion
-
-
 
         /// <summary>
         /// 缓存当前位置
@@ -3770,7 +3819,7 @@ namespace AssistantRobot
             }
             currentToolForceModifier = (double[,])searchForce.Clone();
 
-            if (currentToolType == ToolType.Probe_LA523_UR3 || currentToolType == ToolType.Probe_LA523_UR5)
+            if (currentToolType == ToolType.Probe_LA523)
             {
                 currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
             }

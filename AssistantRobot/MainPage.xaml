@@ -101,7 +101,7 @@
                            Click="galactophoreCheck_Click">
                 <iconPacks:PackIconMaterial Width="160" Height="160" Kind="AccountSearch" />
             </Controls:Tile>
-            <Controls:Tile x:Name="puncture" 
+            <Controls:Tile x:Name="thyroidPuncture" 
 						   Grid.Row="1" 
 						   Grid.Column="0"
 						   Title="甲状腺穿刺"
@@ -115,10 +115,10 @@
                            Cursor="Hand">
                 <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="SyringeSolid" />
             </Controls:Tile>
-            <Controls:Tile x:Name="globalSetting" 
+            <Controls:Tile x:Name="thyroidScanning" 
 						   Grid.Row="1" 
 						   Grid.Column="1"
-						   Title="未完待续..."
+						   Title="甲状腺扫描"
                            Margin="4"
                            Controls:ControlsHelper.MouseOverBorderBrush="White"
                            HorizontalTitleAlignment="Right" 
@@ -126,10 +126,11 @@
 						   Width="Auto" 
 						   Height="Auto" 
 						   TitleFontSize="24"
-                           Cursor="Hand">
-                <iconPacks:PackIconFontAwesome Width="160" Height="160" Kind="EllipsisHSolid" />
+                           Cursor="Hand"
+                           Click="thyroidScanning_Click">
+                <iconPacks:PackIconMaterial Width="160" Height="160" Kind="AccountMinus" />
             </Controls:Tile>
-            <Controls:Tile x:Name="wait1" 
+            <Controls:Tile x:Name="wait" 
 						   Grid.Row="1" 
 						   Grid.Column="2"
 						   Title="未完待续..."
