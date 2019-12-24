@@ -653,10 +653,6 @@
 				Height="Auto" Width="Auto" Margin="20"
 				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconStopGalactophore_Click"/>
 
-
-
-
-
             </Grid>
 
         </Grid>

@@ -26,12 +26,19 @@ namespace AssistantRobot
         private MainPage mainPage;
         private BaseControl baseContorlPage;
         private GalactophoreDetect galactophoreDetectPage;
+        private ThyroidScan thyroidScanPage;
 
         private readonly ConverterThatTransformDoubleToString convertD2S = new ConverterThatTransformDoubleToString();
         private readonly ValueProcesser valuePdot25D2 = new ValueProcesser(0.25, "0.00");
         private readonly ValueProcesser valuePdot5D1A1dot5 = new ValueProcesser(0.5, "0.0", 1.5);
+        private readonly ValueProcesser valuePdot1D1Adot2 = new ValueProcesser(0.1, "0.0", 0.2);
         private readonly ValueProcesser valuePdot1D1 = new ValueProcesser(0.1, "0.0");
         private readonly ValueProcesser valueP1D0A15 = new ValueProcesser(1.0, "0", 15);
+        private readonly ValueProcesser valueP1D1A3 = new ValueProcesser(1.0, "0.0", 3);
+        private readonly ValueProcesser valueP50D0A300 = new ValueProcesser(50.0, "0", 300);
+        private readonly ValueProcesser valueP50D0A400 = new ValueProcesser(50.0, "0", 400);
+        private readonly ValueProcesser valueP15D0A45 = new ValueProcesser(15.0, "0", 45);
+        private readonly ValueProcesser valuePdot02D2Adot03 = new ValueProcesser(0.02, "0.00", 0.03);
         private readonly ConverterThatTransformDoubleToWord convertD2W = new ConverterThatTransformDoubleToWord();
 
         private byte modelInitialResult = 0;
@@ -48,7 +55,13 @@ namespace AssistantRobot
             mainPage = new MainPage(urvm);
             baseContorlPage = new BaseControl(urvm);
             galactophoreDetectPage = new GalactophoreDetect(urvm);
-            urvm.DefineViews(this, mainPage, baseContorlPage, galactophoreDetectPage);
+            thyroidScanPage = new ThyroidScan(urvm);
+            urvm.DefineViews(
+                this, 
+                mainPage, 
+                baseContorlPage, 
+                galactophoreDetectPage, 
+                thyroidScanPage);
 
             // 绑定必要元素
             urvm.BindingItems();
@@ -60,11 +73,12 @@ namespace AssistantRobot
             PartialBindingsEstablish();
 
             // 加载默认页
-            urvm.NavigateToPage((URViewModel.ShowPage)(2));
+            urvm.NavigateToPage((URViewModel.ShowPage)(-1));
         }
 
         private void PartialBindingsEstablish()
         {
+            #region GalactophoreDetect
             // 绑定：minForceSlider.Value {属性} ==> minForceText.Content {Flyout控件}
             Binding bindingFromMinForceSliderToMinForceText = new Binding();
             bindingFromMinForceSliderToMinForceText.ElementName = "minForceSlider";
@@ -144,6 +158,110 @@ namespace AssistantRobot
             bindingFromRotateStepSliderToRotateStepText.Converter = convertD2S;
             bindingFromRotateStepSliderToRotateStepText.ConverterParameter = valueP1D0A15;
             BindingOperations.SetBinding(rotateStepText, Label.ContentProperty, bindingFromRotateStepSliderToRotateStepText);
+            #endregion
+
+            #region Thyroid Scan
+            // 绑定：minForceSliderThyroid.Value {属性} ==> minForceSliderThyroidText.Content {Flyout控件}
+            Binding bindingFromMinForceSliderThyroidToMinForceSliderThyroidText = new Binding();
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.ElementName = "minForceSliderThyroid";
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.Path = new PropertyPath("Value");
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.Converter = convertD2S;
+            bindingFromMinForceSliderThyroidToMinForceSliderThyroidText.ConverterParameter = valuePdot25D2;
+            BindingOperations.SetBinding(minForceSliderThyroidText, Label.ContentProperty, bindingFromMinForceSliderThyroidToMinForceSliderThyroidText);
+
+            // 绑定：maxForceSliderThyroid.Value {属性} ==> maxForceSliderThyroidText.Content {Flyout控件}
+            Binding bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText = new Binding();
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.ElementName = "maxForceSliderThyroid";
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.Converter = convertD2S;
+            bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText.ConverterParameter = valuePdot5D1A1dot5;
+            BindingOperations.SetBinding(maxForceSliderThyroidText, Label.ContentProperty, bindingFromMaxForceSliderThyroidToMaxForceSliderThyroidText);
+
+            // 绑定：minDetectSpeedSliderThyroid.Value {属性} ==> minDetectSpeedSliderThyroidText.Content {Flyout控件}
+            Binding bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText = new Binding();
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.ElementName = "minDetectSpeedSliderThyroid";
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.Path = new PropertyPath("Value");
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.Converter = convertD2S;
+            bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText.ConverterParameter = valuePdot1D1;
+            BindingOperations.SetBinding(minDetectSpeedSliderThyroidText, Label.ContentProperty, bindingFromMinDetectSpeedSliderThyroidToMinDetectSpeedSliderThyroidText);
+
+            // 绑定：maxDetectSpeedSliderThyroid.Value {属性} ==> maxDetectSpeedSliderThyroidText.Content {Flyout控件}
+            Binding bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText = new Binding();
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.ElementName = "maxDetectSpeedSliderThyroid";
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.Converter = convertD2S;
+            bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText.ConverterParameter = valuePdot1D1Adot2;
+            BindingOperations.SetBinding(maxDetectSpeedSliderThyroidText, Label.ContentProperty, bindingFromMaxDetectSpeedSliderThyroidToMaxDetectSpeedSliderThyroidText);
+
+            // 绑定：holdingPressureThyroid.Value {属性} ==> holdingPressureThyroidText.Content {Flyout控件}
+            Binding bindingFromHoldingPressureThyroidToHoldingPressureThyroidText = new Binding();
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.ElementName = "holdingPressureThyroid";
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.Path = new PropertyPath("Value");
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.Mode = BindingMode.OneWay;
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.Converter = convertD2S;
+            bindingFromHoldingPressureThyroidToHoldingPressureThyroidText.ConverterParameter = valueP1D1A3;
+            BindingOperations.SetBinding(holdingPressureThyroidText, Label.ContentProperty, bindingFromHoldingPressureThyroidToHoldingPressureThyroidText);
+
+            // 绑定：maxRadiusThyroid.Value {属性} ==> maxRadiusThyroidText.Content {Flyout控件}
+            Binding bindingFromMaxRadiusThyroidToMaxRadiusThyroidText = new Binding();
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.ElementName = "maxRadiusThyroid";
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.Converter = convertD2S;
+            bindingFromMaxRadiusThyroidToMaxRadiusThyroidText.ConverterParameter = valueP50D0A300;
+            BindingOperations.SetBinding(maxRadiusThyroidText, Label.ContentProperty, bindingFromMaxRadiusThyroidToMaxRadiusThyroidText);
+
+            // 绑定：maxAngleThyroid.Value {属性} ==> maxAngleThyroidText.Text {Flyout控件}
+            Binding bindingFromMaxAngleThyroidToMaxAngleThyroidText = new Binding();
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.ElementName = "maxAngleThyroid";
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.Converter = convertD2S;
+            bindingFromMaxAngleThyroidToMaxAngleThyroidText.ConverterParameter = valueP15D0A45;
+            BindingOperations.SetBinding(maxAngleThyroidText, Label.ContentProperty, bindingFromMaxAngleThyroidToMaxAngleThyroidText);
+
+            // 绑定：stopDistanceThyroid.Value {属性} ==> stopDistanceThyroidText.Content {Flyout控件}
+            Binding bindingFromStopDistanceThyroidToStopDistanceThyroidText = new Binding();
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.ElementName = "stopDistanceThyroid";
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.Path = new PropertyPath("Value");
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.Mode = BindingMode.OneWay;
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.Converter = convertD2S;
+            bindingFromStopDistanceThyroidToStopDistanceThyroidText.ConverterParameter = valueP50D0A400;
+            BindingOperations.SetBinding(stopDistanceThyroidText, Label.ContentProperty, bindingFromStopDistanceThyroidToStopDistanceThyroidText);
+
+
+            // 绑定：maxLoopDistThyroid.Value {属性} ==> maxLoopDistThyroidText.Content {Flyout控件}
+            Binding bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText = new Binding();
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.ElementName = "maxLoopDistThyroid";
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.Converter = convertD2S;
+            bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.ConverterParameter = valuePdot1D1Adot2;
+            BindingOperations.SetBinding(maxLoopDistThyroidText, Label.ContentProperty, bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText);
+
+            // 绑定：maxLoopAngleThyroid.Value {属性} ==> maxLoopAngleThyroidText.Text {Flyout控件}
+            Binding bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText = new Binding();
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.ElementName = "maxLoopAngleThyroid";
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.Path = new PropertyPath("Value");
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.Mode = BindingMode.OneWay;
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.Converter = convertD2S;
+            bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText.ConverterParameter = valuePdot02D2Adot03;
+            BindingOperations.SetBinding(maxLoopAngleThyroidText, Label.ContentProperty, bindingFromMaxLoopAngleThyroidToMaxLoopAngleThyroidText);
+            #endregion
         }
 
         // 加载界面
@@ -211,6 +329,14 @@ namespace AssistantRobot
             e.Handled = true;
         }
 
+        private void settingsFlyoutPuncture_IsOpenChanged(object sender, RoutedEventArgs e)
+        {
+            bool nowState = (e.OriginalSource as Flyout).IsOpen;
+            if (!nowState) urvm.SaveConfParameters(URViewModel.ConfPage.ThyroidScan);
+
+            e.Handled = true;
+        }
+
         private void powerOnBtn_Click(object sender, RoutedEventArgs e)
         {
             urvm.RobotPowerOn();
@@ -238,6 +364,7 @@ namespace AssistantRobot
 
             e.Handled = true;
         }
+
 
 
 

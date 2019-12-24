@@ -3,11 +3,688 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+      xmlns:local="clr-namespace:AssistantRobot"
       mc:Ignorable="d" 
-      d:DesignHeight="300" d:DesignWidth="300"
-	Title="ThyroidScan">
+      d:DesignHeight="910" d:DesignWidth="1920"
+	  Title="ThyroidScan">
 
-    <Grid>
-        
+    <Page.Triggers>
+        <EventTrigger RoutedEvent="Page.Loaded">
+            <EventTrigger.Actions>
+                <BeginStoryboard>
+                    <Storyboard>
+                        <ThicknessAnimation Duration="0:0:.5" Storyboard.TargetProperty="Margin" From="-50,0,50,0" To="0" AccelerationRatio="0.2" DecelerationRatio="0.2"/>
+                        <DoubleAnimation Duration="0:0:.5" Storyboard.TargetProperty="Opacity" From="0" To="1" AccelerationRatio="0.2" DecelerationRatio="0.2"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger.Actions>
+        </EventTrigger>
+    </Page.Triggers>
+
+    <Grid Background="White">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="14*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="6*"/>
+        </Grid.RowDefinitions>
+
+        <local:IconButton x:Name="iconBackThyroid" Grid.Row="0" Grid.Column="0"
+			Foreground="#FF0070BB" Style="{StaticResource BackIconBtn}"
+            MouseOverForeground="#FF41B1E1" MouseDownForeground="#FF0070BB"
+			Height="{Binding ActualHeight, ElementName=subTitleThyroid}"
+			Width="{Binding ActualHeight, ElementName=iconBackThyroid}"
+			HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconBackThyroid_Click"/>
+
+        <TextBlock x:Name="subTitleThyroid" Grid.Row="0" Grid.ColumnSpan="4"
+   				   Text="甲状腺扫查" 
+				   FontSize="48" 
+				   TextAlignment="Center" 
+				   HorizontalAlignment="Center" 
+				   VerticalAlignment="Center" 
+				   Foreground="#FF0071BB"/>
+
+        <local:IconButton x:Name="iconSetThyroid" Grid.Row="0" Grid.Column="3"
+			Foreground="#FF0070BB" Style="{StaticResource SetIconBtn}"
+            MouseOverForeground="#FF41B1E1" MouseDownForeground="#FF0070BB"
+			Height="{Binding ActualHeight, ElementName=iconBackThyroid}"
+			Width="{Binding ActualWidth, ElementName=iconBackThyroid}"
+            IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"
+            HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconSetThyroid_Click"/>
+
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="3*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0 4 0 4">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Grid.ColumnSpan="3" 
+					BorderBrush="#FFB4B4B4" BorderThickness="1"
+					CornerRadius="20" Margin="0 4 0 4"/>
+
+                <Grid Grid.Column="0" Margin="10 20 5 20">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
+						Content="末端工具位置坐标X:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpXThyroid" Grid.Row="0" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="0" Grid.Column="2" 
+						Content="mm" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="0"
+						Content="末端工具位置坐标Y:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpYThyroid" Grid.Row="1" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="2" 
+						Content="mm" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="0"
+						Content="末端工具位置坐标Z:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpZThyroid" Grid.Row="2" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="2" 
+						Content="mm" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                </Grid>
+
+                <Grid Grid.Column="1" Margin="5 20 5 20">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
+						Content="末端工具姿态坐标RX:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpRXThyroid" Grid.Row="0" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="0" Grid.Column="2" 
+						Content="rad" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="0"
+						Content="末端工具姿态坐标RY:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpRYThyroid" Grid.Row="1" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="2" 
+						Content="rad" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="0"
+						Content="末端工具姿态坐标RZ:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpRZThyroid" Grid.Row="2" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="2" 
+						Content="rad" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                </Grid>
+
+                <Grid Grid.Column="2" Margin="5 20 10 20">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0"
+						Content="末端工具单向力FX:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpFXThyroid" Grid.Row="0" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="0" Grid.Column="2" 
+						Content="N" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="0"
+						Content="末端工具单向力FY:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpFYThyroid" Grid.Row="1" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="2" 
+						Content="N" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="0"
+						Content="末端工具单向力FZ:" FontSize="16"
+						HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="tcpFZThyroid" Grid.Row="2" Grid.Column="1" 
+                             FontSize="16" MinWidth="70" IsReadOnly="True"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" 
+                             HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="2" 
+						Content="N" FontSize="16"
+						HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0 4 0 4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="4*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Grid.ColumnSpan="7" 
+					BorderBrush="#FFB4B4B4" BorderThickness="1" 
+					CornerRadius="20" Margin="0 4 0 4" Grid.RowSpan="3"/>
+
+                <local:IconButton x:Name="iconForceToZeroThyroid" Grid.Row="0" Grid.Column="0"
+				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
+				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
+				TextContent="力清零" Height="Auto" Width="Auto" Margin="20"
+				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconForceToZeroThyroid_Click"/>
+
+                <local:IconButton x:Name="iconFromZeroToConfThyroid" Grid.Row="0" Grid.Column="1"
+				Foreground="#FF50C8FC" Style="{DynamicResource DoubleRightIconBtn}"
+				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30" 
+				HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <local:IconButton x:Name="iconConfThyroid" Grid.Row="0" Grid.Column="2"
+				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
+				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
+				TextContent="参数配置" Height="Auto" Width="Auto" Margin="20"
+				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconConfThyroid_Click"/>
+
+                <local:IconButton x:Name="iconFromZeroToRunThyroid" Grid.Row="1" Grid.Column="0"
+				Foreground="#FF50C8FC" Style="{DynamicResource DoubleDownIconBtn}"
+				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
+				HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <local:IconButton x:Name="iconBeginThyroid" Grid.Row="2" Grid.Column="0"
+				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
+				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
+				TextContent="开始扫查" Height="Auto" Width="Auto" Margin="20"
+				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconBeginThyroid_Click"/>
+
+                <local:IconButton x:Name="iconFromConfToParaThyroid" Grid.Row="0" Grid.Column="3"
+				Foreground="#FF50C8FC" Style="{DynamicResource DoubleRightIconBtn}"
+				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
+				HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <Grid Grid.Row="0" Grid.Column="4" 
+				Grid.RowSpan="3" Margin="5 20 10 20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <local:IconButton x:Name="iconConfStartThyroid" Grid.Row="0" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfFactorPos" Grid.Row="1" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfFactorAtt" Grid.Row="2" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfFactorFos" Grid.Row="3" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfEnablePos" Grid.Row="4" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfEnableAtt" Grid.Row="5" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfEnableFKeep" Grid.Row="6" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <local:IconButton x:Name="iconConfEnableFTrack" Grid.Row="7" Grid.Column="0"
+					Foreground="#FF4BF8CB" Style="{DynamicResource MarkIconBtn}"
+					Cursor="Arrow" Height="Auto" Width="Auto" Margin="10"
+					HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="0" Grid.Column="1"
+					Content="起始位置:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center" 
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"/>
+
+                    <StackPanel x:Name="startThyroidCordinates" Grid.Row="0" 
+					Grid.Column="2" Orientation="Horizontal" 
+					VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                        <TextBox x:Name="startThyroidX" FontSize="16" MinWidth="70" IsReadOnly="True"
+						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0 0 4 0"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+						IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"/>
+
+                        <TextBox x:Name="startThyroidY" FontSize="16" MinWidth="70" IsReadOnly="True"
+						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4 0 4 0"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+						IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"/>
+
+                        <TextBox x:Name="startThyroidZ" FontSize="16" MinWidth="70" IsReadOnly="True"
+						HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4 0 0 0"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+						IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"/>
+
+                    </StackPanel>
+
+                    <Label Grid.Row="0" Grid.Column="3" 
+					Content="mm" FontSize="16"
+					HorizontalAlignment="Left" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfStartThyroid}"/>
+
+                    <Button x:Name="startThyroidBtn" Grid.Row="0" Grid.Column="4"
+                    Margin="5" Content="开始寻找" FontSize="16" BorderThickness="1"
+                    Cursor="Hand" Style="{DynamicResource AccentedSquareButtonStyle}" 
+					IsEnabled="{Binding IsEnabled, ElementName=startThyroidNextBtn}" Click="startThyroidBtn_Click"/>
+
+                    <local:IconButton x:Name="startThyroidNextBtn" Grid.Row="0" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="1" Grid.Column="1"
+					Content="位置倍率:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorPos}"/>
+
+                    <Slider x:Name="factorPosSlider" Grid.Row="1" Grid.Column="2" 
+                                    Maximum="4" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MaxWidth="300" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF50C8FC" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF50C8FC"
+									Controls:SliderHelper.TrackValueFillBrush="#FF50C8FC"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 5 0 5"
+                                    TickPlacement="Both"
+									Controls:SliderHelper.ThumbFillBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillPressedBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FF595959"
+                            IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorPos}"
+                            ValueChanged="parametersChangeWhenRunning"/>
+                    
+                    <StackPanel Grid.Row="1" Grid.Column="3" 
+                                Grid.ColumnSpan="2" Orientation="Horizontal" 
+                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBox x:Name="factorPos" FontSize="16" MinWidth="70"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorPos}"/>
+
+                        <Label Content="%" FontSize="16"
+					HorizontalAlignment="Left" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorPos}"/>
+
+                    </StackPanel>
+
+                    <local:IconButton x:Name="factorPosNextBtn" Grid.Row="1" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="2" Grid.Column="1"
+					Content="姿态倍率:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorAtt}"/>
+
+                    <Slider x:Name="factorAttSlider" Grid.Row="2" Grid.Column="2" 
+                                    Maximum="4" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MaxWidth="300" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF50C8FC" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF50C8FC"
+									Controls:SliderHelper.TrackValueFillBrush="#FF50C8FC"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 5 0 5"
+                                    TickPlacement="Both"
+									Controls:SliderHelper.ThumbFillBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillPressedBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FF595959"
+                            IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorAtt}"
+                            ValueChanged="parametersChangeWhenRunning"/>
+
+                    <StackPanel Grid.Row="2" Grid.Column="3" 
+                                Grid.ColumnSpan="2" Orientation="Horizontal" 
+                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBox x:Name="factorAtt" FontSize="16" MinWidth="70"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorAtt}"/>
+
+                        <Label Content="%" FontSize="16"
+					HorizontalAlignment="Left" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorAtt}"/>
+
+                    </StackPanel>
+
+                    <local:IconButton x:Name="factorAttNextBtn" Grid.Row="2" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="3" Grid.Column="1"
+					Content="压力倍率:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorFos}"/>
+
+                    <Slider x:Name="factorFosSlider" Grid.Row="3" Grid.Column="2" 
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MaxWidth="300" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF50C8FC" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF50C8FC"
+									Controls:SliderHelper.TrackValueFillBrush="#FF50C8FC"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 5 0 5"
+                                    TickPlacement="Both"
+									Controls:SliderHelper.ThumbFillBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillPressedBrush="#FF999999" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FF595959"
+                            IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorFos}"
+                            ValueChanged="parametersChangeWhenRunning"/>
+
+                    <StackPanel Grid.Row="3" Grid.Column="3" 
+                                Grid.ColumnSpan="2" Orientation="Horizontal" 
+                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBox x:Name="factorFos" FontSize="16" MinWidth="70"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorFos}"/>
+
+                        <Label Content="%" FontSize="16"
+					HorizontalAlignment="Left" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfFactorFos}"/>
+
+                    </StackPanel>
+
+                    <local:IconButton x:Name="factorFosNextBtn" Grid.Row="3" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="4" Grid.Column="1"
+					Content="位置跟踪:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfEnablePos}"/>
+
+                    <Grid x:Name="enablePosSwitchPanel" Grid.Row="4" Grid.Column="2" 
+                                Grid.ColumnSpan="3" Margin="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Controls:ToggleSwitch Grid.Column="1"
+                            x:Name="enablePosSwitch" Margin="0" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="开启" OnSwitchBrush="#FF50C8FC"
+								   FontSize="16"
+                                   IsEnabled="{Binding IsEnabled, ElementName=iconConfEnablePos}"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF50C8FC" 
+								   ContentDirection="LeftToRight"  OffSwitchBrush="#FF9D9D9D" VerticalAlignment="Center" 
+                                               HorizontalContentAlignment="Center" 
+                                               VerticalContentAlignment="Center"
+                                               Checked="parametersChangeWhenRunning" 
+                                               Unchecked="parametersChangeWhenRunning"/>
+                    </Grid>
+                    
+                    <local:IconButton x:Name="enablePosNextBtn" Grid.Row="4" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="5" Grid.Column="1"
+					Content="姿态跟踪:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableAtt}"/>
+
+                    <Grid x:Name="enableAttSwitchPanel" Grid.Row="5" Grid.Column="2" 
+                                Grid.ColumnSpan="3" Margin="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Controls:ToggleSwitch Grid.Column="1"
+                            x:Name="enableAttSwitch" Margin="0" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="开启" OnSwitchBrush="#FF50C8FC"
+								   FontSize="16"
+                                   IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableAtt}"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF50C8FC" 
+								   ContentDirection="LeftToRight"  OffSwitchBrush="#FF9D9D9D" VerticalAlignment="Center" 
+                                               HorizontalContentAlignment="Center" 
+                                               VerticalContentAlignment="Center"
+                                               Checked="parametersChangeWhenRunning" 
+                                               Unchecked="parametersChangeWhenRunning"/>
+                    </Grid>
+
+                    <local:IconButton x:Name="enableAttNextBtn" Grid.Row="5" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="6" Grid.Column="1"
+					Content="压力保持:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableFKeep}"/>
+
+                    <Grid x:Name="enableFosKeepSwitchPanel" Grid.Row="6" Grid.Column="2" 
+                                Grid.ColumnSpan="3" Margin="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Controls:ToggleSwitch Grid.Column="1"
+                            x:Name="enableFosKeepSwitch" Margin="0" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="开启" OnSwitchBrush="#FF50C8FC"
+								   FontSize="16"
+                                   IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableFKeep}"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF50C8FC" 
+								   ContentDirection="LeftToRight"  OffSwitchBrush="#FF9D9D9D" VerticalAlignment="Center" 
+                                               HorizontalContentAlignment="Center" 
+                                               VerticalContentAlignment="Center"
+                                               Checked="parametersChangeWhenRunning" 
+                                               Unchecked="parametersChangeWhenRunning"/>
+                    </Grid>
+
+                    <local:IconButton x:Name="enableFosKeepNextBtn" Grid.Row="6" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+
+                    <Label Grid.Row="7" Grid.Column="1"
+					Content="压力跟踪:" FontSize="16"
+					HorizontalAlignment="Right" VerticalAlignment="Center"
+					IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableFTrack}"/>
+
+                    <Grid x:Name="enableFosTrackSwitchPanel" Grid.Row="7" Grid.Column="2" 
+                                Grid.ColumnSpan="3" Margin="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Controls:ToggleSwitch Grid.Column="1"
+                            x:Name="enableFosTrackSwitch" Margin="0" Cursor="Hand"
+                                   OffLabel="关闭" OnLabel="开启" OnSwitchBrush="#FF50C8FC"
+								   FontSize="16"
+                                   IsEnabled="{Binding IsEnabled, ElementName=iconConfEnableFTrack}"
+                                   Style="{StaticResource MahApps.Metro.Styles.ToggleSwitch}"
+								   FontFamily="Microsoft YaHei UI" SwitchForeground="#FF50C8FC" 
+								   ContentDirection="LeftToRight"  OffSwitchBrush="#FF9D9D9D" VerticalAlignment="Center" 
+                                               HorizontalContentAlignment="Center" 
+                                               VerticalContentAlignment="Center"
+                                               Checked="parametersChangeWhenRunning" 
+                                               Unchecked="parametersChangeWhenRunning"/>
+                    </Grid>
+
+                    <local:IconButton x:Name="enableFosTrackNextBtn" Grid.Row="7" Grid.Column="5"
+					Foreground="#FFE1417F" Style="{DynamicResource NextIconBtn}"
+					MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+					Height="Auto" Width="Auto" Margin="5"
+					HorizontalAlignment="Center" VerticalAlignment="Center"
+					Click="nextBtn_Click"/>
+                </Grid>
+
+                <local:IconButton x:Name="iconFromParaToConfirmThyroid" Grid.Row="2" Grid.Column="3"
+				Foreground="#FF50C8FC" Style="{DynamicResource DoubleLeftIconBtn}"
+				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
+        		HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <local:IconButton x:Name="iconConfConfirmThyroid" Grid.Row="2" Grid.Column="2"
+				Foreground="#FF3DD8AF" Style="{DynamicResource CircleIconBtn}"
+				MouseOverForeground="#FF4BF8CB" MouseDownForeground="#FF3DD8AF"
+				TextContent="参数确认" Height="Auto" Width="Auto" Margin="20"
+				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconConfConfirmThyroid_Click"/>
+
+                <local:IconButton x:Name="iconFromConfirmToRunThyroid" Grid.Row="2" Grid.Column="1"
+				Foreground="#FF50C8FC" Style="{DynamicResource DoubleLeftIconBtn}"
+				Cursor="Arrow" Height="Auto" Width="Auto" Margin="30"
+				HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <local:IconButton x:Name="iconStopThyroid" Grid.Row="1" Grid.Column="2"
+				Foreground="#FFE1417F" Style="{DynamicResource AbandonIconBtn}"
+				MouseOverForeground="#FFFA4C8F" MouseDownForeground="#FFE1417F"
+				Height="Auto" Width="Auto" Margin="20"
+				HorizontalAlignment="Center" VerticalAlignment="Center" Click="iconStopThyroid_Click"/>
+            </Grid>
+        </Grid>
+
     </Grid>
 </Page>
