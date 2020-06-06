@@ -1749,6 +1749,10 @@ namespace AssistantRobot
                     gdr.SaveParametersFromStringToXml(conf);
                     gdr.LoadParametersFromXmlAndOutput();
                     break;
+                case ConfPage.ThyroidScan:
+                    tsr.SaveParametersFromStringToXml(conf);
+                    tsr.LoadParametersFromXmlAndOutput();
+                    break;
 
                 default:
                     break;
@@ -1772,14 +1776,14 @@ namespace AssistantRobot
                 gdr.EndModuleNow();
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Galactophore scanning module is stopped immediately.");
 
-                mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteShowingLogic));
+                mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteShowingLogicGalactophoreDetectModule));
             }));
         }
 
         /// <summary>
-        /// 远程急停本地显示逻辑
+        /// 远程急停乳腺扫查模块 本地显示逻辑
         /// </summary>
-        private async void StopMotionFromRemoteShowingLogic()
+        private async void StopMotionFromRemoteShowingLogicGalactophoreDetectModule()
         {
             var mySettings = new MetroDialogSettings()
             {
@@ -1801,17 +1805,17 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 从急停状态恢复，远程命令
+        /// 从急停状态恢复乳腺扫查模块，远程命令
         /// </summary>
-        public void RemoteRecoveryFromStopImmediately()
+        public void RemoteRecoveryFromStopImmediatelyGalactophoreDetectModule()
         {
-            mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteCloseShowingLogic));
+            mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteCloseShowingLogicGalactophoreDetectModule));
         }
 
         /// <summary>
         /// 远程急停本地关闭显示逻辑
         /// </summary>
-        private async void StopMotionFromRemoteCloseShowingLogic()
+        private async void StopMotionFromRemoteCloseShowingLogicGalactophoreDetectModule()
         {
             if (ifRecoveryFromImmediateStop) return;
 
@@ -1846,12 +1850,104 @@ namespace AssistantRobot
                     case ShowPage.GalactophoreDetect:
                         mw.frameNav.NavigationService.Navigate(gd);
                         break;
+                    case ShowPage.ThyroidScanning:
+                        mw.frameNav.NavigationService.Navigate(ts);
+                        break;
+
                     default:
                         mw.frameNav.NavigationService.Navigate(mp);
                         break;
                 }
             }));
         }
+
+
+        /// <summary>
+        /// 远程扫查模块确认配置参数 远程传参
+        /// </summary>
+        /// <param name="conf">远程参数</param>
+        public void ConfirmConfParamsThyroidScanModule(List<string> conf)
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.ConfirmConfigurationParameters(conf);
+                tsr.LoadParametersFromXmlAndOutput();
+                ConfParamsNextParamsThyroidScannerModule();
+            }));
+        }
+
+        /// <summary>
+        /// 立即停止所有远程扫查模块中的活动
+        /// </summary>
+        /// <param name="onlyFlag">函数指示</param>
+        public void StopMotionNowThyroidScanModule(bool onlyFlag)
+        {
+            ifRecoveryFromImmediateStop = false;
+
+            ThyroidScannerParameterConfirmState = 0;
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfigurationProcess,
+                new List<byte> { ThyroidScannerParameterConfirmState });
+
+            Task.Run(new Action(() =>
+            {
+                tsr.EndModuleNow();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately.");
+
+                mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteShowingLogicThyroidScanModule));
+            }));
+        }
+
+        /// <summary>
+        /// 远程急停远程扫查模块 本地显示逻辑
+        /// </summary>
+        private async void StopMotionFromRemoteShowingLogicThyroidScanModule()
+        {
+            var mySettings = new MetroDialogSettings()
+            {
+                AffirmativeButtonText = "确认",
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme,
+            };
+
+            await mw.ShowMessageAsync("紧急状态", "甲状腺扫查模块被紧急停止，可以按下确定或等待远程信号恢复控制权！", MessageDialogStyle.Affirmative, mySettings);
+            if (ifRecoveryFromImmediateStop) return;
+            ifRecoveryFromImmediateStop = true;
+
+            Task.Run(new Action(() =>
+            {
+                tsr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is recovered.");
+            }));
+        }
+
+        /// <summary>
+        /// 从急停状态恢复远程扫查模块，远程命令
+        /// </summary>
+        public void RemoteRecoveryFromStopImmediatelyThyroidScanModule()
+        {
+            mw.Dispatcher.BeginInvoke(new Action(StopMotionFromRemoteCloseShowingLogicThyroidScanModule));
+        }
+
+        /// <summary>
+        /// 远程急停本地关闭显示逻辑
+        /// </summary>
+        private async void StopMotionFromRemoteCloseShowingLogicThyroidScanModule()
+        {
+            if (ifRecoveryFromImmediateStop) return;
+
+            await mw.HideMetroDialogAsync(await mw.GetCurrentDialogAsync<BaseMetroDialog>());
+            if (ifRecoveryFromImmediateStop) return;
+            ifRecoveryFromImmediateStop = true;
+
+            Task.Run(new Action(() =>
+            {
+                tsr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is recovered.");
+            }));
+        }
+
+
         #endregion
 
         #region Pipe
@@ -1998,6 +2094,94 @@ namespace AssistantRobot
                     double.Parse(originalDatas[24][0]))), 0))));
 
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.BreastScanConfiguration, sendDatas);
+        }
+
+        /// <summary>
+        /// Pipe发送Remote扫描配置文件
+        /// </summary>
+        /// <param name="originalDatas"></param>
+        private void PipeSendRemoteScanConf(List<string[]> originalDatas)
+        {
+            List<byte> sendDatas = new List<byte>();
+
+            for (int i = 0; i < 3; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[3][0]) ? 1 : 0));
+
+            // {vibratingAttitudeMaxAtSmoothPart}
+            // {vibratingAttitudeMinAtSteepPart}
+            // {vibratingAttitudeMaxAtSteepPart}
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[7][0]))), 0))));
+
+            // {movingStopDistance}
+
+            for (int i = 9; i < 11; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[11][0]) ? 1 : 0));
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[12][0]))), 0))));
+
+            sendDatas.Add((byte)((GalactophoreDetector.VibratingMagnitude)Enum.Parse(typeof(GalactophoreDetector.VibratingMagnitude), originalDatas[13][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.MovingLevel)Enum.Parse(typeof(GalactophoreDetector.MovingLevel), originalDatas[14][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.DetectingIntensity)Enum.Parse(typeof(GalactophoreDetector.DetectingIntensity), originalDatas[15][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.AligningDegree)Enum.Parse(typeof(GalactophoreDetector.AligningDegree), originalDatas[16][0])));
+
+            for (int i = 17; i < 21; ++i)
+            {
+                sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[i][0]))), 0))));
+            }
+
+            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[21][0]) ? 1 : 0));
+
+            sendDatas.Add((byte)((GalactophoreDetector.ScanningRegion)Enum.Parse(typeof(GalactophoreDetector.ScanningRegion), originalDatas[22][0])));
+            sendDatas.Add((byte)((GalactophoreDetector.IdentifyBoundary)Enum.Parse(typeof(GalactophoreDetector.IdentifyBoundary), originalDatas[23][0])));
+
+            sendDatas.AddRange(
+                    BitConverter.GetBytes(
+                    IPAddress.HostToNetworkOrder(
+                    BitConverter.ToInt32(
+                    BitConverter.GetBytes(
+                    Convert.ToSingle(
+                    double.Parse(originalDatas[24][0]))), 0))));
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfiguration, sendDatas);
         }
         #endregion
 
@@ -3286,7 +3470,7 @@ namespace AssistantRobot
         /// <summary>
         /// 甲状腺扫查模块找到起始位置
         /// </summary>
-        public void StartPositionFoundThyroidScanningModule()
+        public void StartPositionFoundThyroidScanningModule(bool ifRemote = false)
         {
             Task.Run(new Action(() =>
             {
@@ -3294,6 +3478,9 @@ namespace AssistantRobot
                 Thread.Sleep(40);
                 double[] startPosNow = urdp.PositionsTcpActual;
                 StartPositionTSR = new double[] { startPosNow[0], startPosNow[1], startPosNow[2] };
+
+                if (!ifRemote) urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanStartPos);
+
             }));
         }
 
@@ -3330,10 +3517,14 @@ namespace AssistantRobot
         public async void StopMotionNowThyroidScanningModule()
         {
             ThyroidScannerParameterConfirmState = 0;
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfigurationProcess,
+                new List<byte> { ThyroidScannerParameterConfirmState });
 
             Task.Run(new Action(() =>
             {
                 tsr.EndModuleNow();
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanImmediateStop);
+
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately.");
             }));
 
@@ -3342,14 +3533,17 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 tsr.RecoverToNormal();
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanImmediateStopRecovery);
+
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is recovered.");
             }));
+
         }
 
         /// <summary>
         /// 甲状腺扫查模块转到下一个配置参数
         /// </summary>
-        public void ConfParamsNextParamsThyroidScannerModule()
+        public void ConfParamsNextParamsThyroidScannerModule(bool ifRemote = false)
         {
             switch (thyroidScannerParameterConfirmState)
             {
@@ -3376,6 +3570,28 @@ namespace AssistantRobot
                     ThyroidScannerParameterConfirmState += 1;
                     break;
             }
+
+            if (!ifRemote)
+            {
+                switch (ThyroidScannerParameterConfirmState)
+                {
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                        SaveConfParameters(ConfPage.ThyroidScan);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfigurationProcess,
+                new List<byte> { ThyroidScannerParameterConfirmState });
+
         }
 
         /// <summary>
@@ -3426,8 +3642,19 @@ namespace AssistantRobot
                     break;
 
                 case ConfPage.ThyroidScan:
-                    tsr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
-                    tsr.LoadParametersFromXmlAndOutput();
+                    if (mw.CheckAccess())
+                    {
+                        tsr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                        tsr.LoadParametersFromXmlAndOutput();
+                    }
+                    else
+                    {
+                        mw.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            tsr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                            tsr.LoadParametersFromXmlAndOutput();
+                        }));
+                    }
                     break;
 
                 default:
@@ -5894,6 +6121,8 @@ namespace AssistantRobot
 
             IfEnableAttitudeTrackingTSR = bool.Parse(Parameters[15][0]);
             IfEnableTranslationTrackingTSR = bool.Parse(Parameters[16][0]);
+
+            PipeSendRemoteScanConf(Parameters);
         }
 
         /// <summary>
@@ -5903,6 +6132,10 @@ namespace AssistantRobot
         private void TSRWorkStatus(short Status)
         {
             ThyroidScannerWorkStatus = Status;
+
+            // 偏置+10
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanWorkStatus,
+                new List<byte> { Convert.ToByte(Status + 10) });
         }
 
         /// <summary>
@@ -5912,6 +6145,9 @@ namespace AssistantRobot
         private void TSRParameterConfirmStatus(bool Status)
         {
             ThyroidScannerParameterConfirm = Status;
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfigurationConfirmStatus,
+                new List<byte> { Convert.ToByte(Status ? 1 : 0) });
         }
 
         /// <summary>
@@ -5921,6 +6157,9 @@ namespace AssistantRobot
         private void TSRForceClearedStatus(bool Status)
         {
             ThyroidScannerForceSensorCleared = Status;
+
+            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanForceZerodStatus,
+                new List<byte> { Convert.ToByte(Status ? 1 : 0) });
         }
 
         #region Null Event Callback Functions

@@ -53,9 +53,18 @@ namespace AssistantRobot
             BreastScanWorkStatus = 102,
             BreastScanConfigurationConfirmStatus = 103,
             BreastScanForceZerodStatus = 104,
-            BreastScanConfigurationProcess = 151,
-            BreastScanImmediateStop = 201,
-            BreastScanImmediateStopRecovery = 202,
+            BreastScanConfigurationProcess = 111,
+            BreastScanImmediateStop = 121,
+            BreastScanImmediateStopRecovery = 122,
+
+            RemoteScanStartPos = 150,
+            RemoteScanConfiguration = 151,
+            RemoteScanWorkStatus = 152,
+            RemoteScanConfigurationConfirmStatus = 153,
+            RemoteScanForceZerodStatus = 154,
+            RemoteScanConfigurationProcess = 161,
+            RemoteScanImmediateStop = 171,
+            RemoteScanImmediateStopRecovery = 172,
 
             ChangePage = 221,
 
@@ -190,6 +199,72 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 应用协议状态 远程扫描配置数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationDatagram : byte
+        {
+            DetectingErrorForceMinTSR = 0,
+            DetectingErrorForceMaxTSR = 4,
+            DetectingSpeedMinTSR = 8,
+            DetectingSpeedMaxTSR = 12,
+            IfEnableForceKeepingTSR = 16,
+            IfEnableForceTrackingTSR = 17,
+            DetectingBasicPreservedForceTSR = 18,
+            MaxAvailableRadiusTSR = 22,
+            MaxAvailableAngleTSR = 26,
+            StopRadiusTSR = 30,
+            MaxDistPeriodTSR = 34,
+            MaxAnglePeriodTSR = 38,
+            PositionOverrideTSR = 42,
+            AngleOverrideTSR = 46,
+            ForceOverrideTSR = 50,
+            IfEnableAttitudeTrackingTSR = 54,
+            IfEnableTranslationTrackingTSR = 55
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描工作状态数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanWorkStatusDatagram : byte
+        {
+            ModuleWorkingStatus = 0 // byte: OperateModuleBase.WorkStatus
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描配置确认数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationConfirmDatagram : byte
+        {
+            HasConfirmConfiguration = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描力清零数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanForceZerodDatagram : byte
+        {
+            HasForceZeroed = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描配置过程进度数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationProcessDatagram : byte
+        {
+            ConfProcess = 0 // byte: max-1--BeforeConfiguration
+            // 0--Initial
+            // 1--StartPos
+            // 2--TranslateRatio
+            // 3--PostureRatio
+            // 4--PressureRatio
+            // 5--PositionTrack
+            // 6--PostureTrack
+            // 7--PressureKeep
+            // 8--PressureTrack
+            // max--All
+        }
+
+        /// <summary>
         /// 应用协议指令
         /// </summary>
         public enum AppProtocolCommand : byte
@@ -219,6 +294,20 @@ namespace AssistantRobot
             StopBreastScanImmediately = 121,
             RecoveryFromStopBreastScanImmediately = 122,
             ExitBreastScanMode = 131,
+
+            EnterRemoteScanMode = 141,
+            RemoteScanModeBeginForceZeroed = 142,
+            RemoteScanModeBeginConfigurationSet = 143,
+            RemoteScanModeConfirmStartPos = 144,
+            RemoteScanModeNextConfigurationItem = 145,
+            RemoteScanModeConfirmConfigurationSet = 146,
+            RemoteScanModeReadyAndStartBreastScan = 147,
+            RemoteScanModeSaveConfigurationSet = 148,
+
+            StopRemoteScanImmediately = 151,
+            RecoveryFromStopRemoteScanImmediately = 152,
+            ExitRemoteScanMode = 161,
+
 
             NotifyRemoteConnected = 251
         }
@@ -424,10 +513,44 @@ namespace AssistantRobot
                     urvm.StopMotionNowGalactophoreDetectModule(true);
                     break;
                 case AppProtocolCommand.RecoveryFromStopBreastScanImmediately:
-                    urvm.RemoteRecoveryFromStopImmediately();
+                    urvm.RemoteRecoveryFromStopImmediatelyGalactophoreDetectModule();
                     break;
                 case AppProtocolCommand.ExitBreastScanMode:
                     urvm.ExitGalactophoreDetectModule();
+                    break;
+
+                case AppProtocolCommand.EnterRemoteScanMode:
+                    urvm.EnterThyroidScanningModule();
+                    break;
+                case AppProtocolCommand.RemoteScanModeBeginForceZeroed:
+                    urvm.ForceClearThyroidScanningModule();
+                    break;
+                case AppProtocolCommand.RemoteScanModeBeginConfigurationSet:
+                    urvm.ConfParamsThyroidScanningModule();
+                    break;
+                case AppProtocolCommand.RemoteScanModeConfirmStartPos:
+                    urvm.StartPositionFoundThyroidScanningModule(true);
+                    break;
+                case AppProtocolCommand.RemoteScanModeNextConfigurationItem:
+                    urvm.ConfParamsNextParamsThyroidScannerModule(true);
+                    break;
+                case AppProtocolCommand.RemoteScanModeConfirmConfigurationSet:
+                    urvm.ConfirmConfParamsThyroidScanModule(UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray(), URViewModel.ConfPage.ThyroidScan));
+                    break;
+                case AppProtocolCommand.RemoteScanModeReadyAndStartBreastScan:
+                    urvm.ReadyAndStartThyroidScanningModule();
+                    break;
+                case AppProtocolCommand.RemoteScanModeSaveConfigurationSet:
+                    urvm.SaveConfParameters(URViewModel.ConfPage.ThyroidScan, UnpackConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray(), URViewModel.ConfPage.ThyroidScan));
+                    break;
+                case AppProtocolCommand.StopRemoteScanImmediately:
+                    urvm.StopMotionNowThyroidScanModule(true);
+                    break;
+                case AppProtocolCommand.RecoveryFromStopRemoteScanImmediately:
+                    urvm.RemoteRecoveryFromStopImmediatelyThyroidScanModule();
+                    break;
+                case AppProtocolCommand.ExitRemoteScanMode:
+                    urvm.ExitThyroidScanningModule();
                     break;
 
                 case AppProtocolCommand.NotifyRemoteConnected:
@@ -477,91 +600,181 @@ namespace AssistantRobot
         /// </summary>
         /// <param name="bufferBytes">待解包配置参数</param>
         /// <returns>返回解包后的结果</returns>
-        protected List<string> UnpackConfigurationParameters(byte[] bufferBytes)
+        protected List<string> UnpackConfigurationParameters(byte[] bufferBytes, URViewModel.ConfPage confSource = URViewModel.ConfPage.GalactophoreDetect)
         {
             List<string> returnedString = new List<string>(25);
 
-            returnedString.Add(BitConverter.ToSingle(
-                BitConverter.GetBytes(
-                IPAddress.NetworkToHostOrder(
-                BitConverter.ToInt32(bufferBytes,
-                                                    (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMinGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
-                BitConverter.GetBytes(
-                IPAddress.NetworkToHostOrder(
-                BitConverter.ToInt32(bufferBytes,
-                                                    (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMaxGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
+            switch (confSource)
+            {
+                case URViewModel.ConfPage.GalactophoreDetect:
+                    {
+                        returnedString.Add(BitConverter.ToSingle(
                             BitConverter.GetBytes(
                             IPAddress.NetworkToHostOrder(
                             BitConverter.ToInt32(bufferBytes,
-                                                                (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSpeedMinGDR))), 0).ToString());
-
-            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableAngleCorrectedGDR] == 1).ToString());
-
-            returnedString.Add("-2.0");
-            returnedString.Add("-2.0");
-            returnedString.Add("-2.0");
-
-            returnedString.Add(BitConverter.ToSingle(
+                                                                (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMinGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
                             BitConverter.GetBytes(
                             IPAddress.NetworkToHostOrder(
                             BitConverter.ToInt32(bufferBytes,
-                                                                (byte)AppProtocolBreastScanConfigurationDatagram.NippleForbiddenRadiusGDR))), 0).ToString());
+                                                                (byte)AppProtocolBreastScanConfigurationDatagram.DetectingErrorForceMaxGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSpeedMinGDR))), 0).ToString());
 
-            returnedString.Add("-2.0");
+                        returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableAngleCorrectedGDR] == 1).ToString());
 
-            returnedString.Add(BitConverter.ToSingle(
-                           BitConverter.GetBytes(
-                           IPAddress.NetworkToHostOrder(
-                           BitConverter.ToInt32(bufferBytes,
-                                                               (byte)AppProtocolBreastScanConfigurationDatagram.DetectingStopDistanceGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
-                           BitConverter.GetBytes(
-                           IPAddress.NetworkToHostOrder(
-                           BitConverter.ToInt32(bufferBytes,
-                                                               (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSafetyLiftDistanceGDR))), 0).ToString());
+                        returnedString.Add("-2.0");
+                        returnedString.Add("-2.0");
+                        returnedString.Add("-2.0");
 
-            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableDetectingInitialForceGDR] == 1).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolBreastScanConfigurationDatagram.NippleForbiddenRadiusGDR))), 0).ToString());
 
-            returnedString.Add("-2.0"); // 实际占位的
+                        returnedString.Add("-2.0");
 
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.VibratingAngleDegreeGDR].ToString());
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.MovingSpeedDegreeGDR].ToString());
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingForceDegreeGDR].ToString());
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingAlignDegreeGDR].ToString());
-
-            returnedString.Add(BitConverter.ToSingle(
-                           BitConverter.GetBytes(
-                           IPAddress.NetworkToHostOrder(
-                           BitConverter.ToInt32(bufferBytes,
-                                                               (byte)AppProtocolBreastScanConfigurationDatagram.MovingUpEdgeDistanceGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
+                        returnedString.Add(BitConverter.ToSingle(
                                        BitConverter.GetBytes(
                                        IPAddress.NetworkToHostOrder(
                                        BitConverter.ToInt32(bufferBytes,
-                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingLeftEdgeDistanceGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.DetectingStopDistanceGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
                                        BitConverter.GetBytes(
                                        IPAddress.NetworkToHostOrder(
                                        BitConverter.ToInt32(bufferBytes,
-                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingDownEdgeDistanceGDR))), 0).ToString());
-            returnedString.Add(BitConverter.ToSingle(
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.DetectingSafetyLiftDistanceGDR))), 0).ToString());
+
+                        returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfEnableDetectingInitialForceGDR] == 1).ToString());
+
+                        returnedString.Add("-2.0"); // 实际占位的
+
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.VibratingAngleDegreeGDR].ToString());
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.MovingSpeedDegreeGDR].ToString());
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingForceDegreeGDR].ToString());
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.DetectingAlignDegreeGDR].ToString());
+
+                        returnedString.Add(BitConverter.ToSingle(
                                        BitConverter.GetBytes(
                                        IPAddress.NetworkToHostOrder(
                                        BitConverter.ToInt32(bufferBytes,
-                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingRightEdgeDistanceGDR))), 0).ToString());
+                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.MovingUpEdgeDistanceGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                                   BitConverter.GetBytes(
+                                                   IPAddress.NetworkToHostOrder(
+                                                   BitConverter.ToInt32(bufferBytes,
+                                                                                       (byte)AppProtocolBreastScanConfigurationDatagram.MovingLeftEdgeDistanceGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                                   BitConverter.GetBytes(
+                                                   IPAddress.NetworkToHostOrder(
+                                                   BitConverter.ToInt32(bufferBytes,
+                                                                                       (byte)AppProtocolBreastScanConfigurationDatagram.MovingDownEdgeDistanceGDR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                                   BitConverter.GetBytes(
+                                                   IPAddress.NetworkToHostOrder(
+                                                   BitConverter.ToInt32(bufferBytes,
+                                                                                       (byte)AppProtocolBreastScanConfigurationDatagram.MovingRightEdgeDistanceGDR))), 0).ToString());
 
-            returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfAutoReplaceConfigurationGDR] == 1).ToString());
+                        returnedString.Add((bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfAutoReplaceConfigurationGDR] == 1).ToString());
 
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfCheckRightGalactophoreGDR].ToString());
-            returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IdentifyEdgeModeGDR].ToString());
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IfCheckRightGalactophoreGDR].ToString());
+                        returnedString.Add(bufferBytes[(byte)AppProtocolBreastScanConfigurationDatagram.IdentifyEdgeModeGDR].ToString());
 
-            returnedString.Add(BitConverter.ToSingle(
+                        returnedString.Add(BitConverter.ToSingle(
+                                                   BitConverter.GetBytes(
+                                                   IPAddress.NetworkToHostOrder(
+                                                   BitConverter.ToInt32(bufferBytes,
+                                                                                       (byte)AppProtocolBreastScanConfigurationDatagram.CheckingStepGDR))), 0).ToString());
+                    }
+                    break;
+                case URViewModel.ConfPage.ThyroidScan:
+                    {
+                        returnedString.Add(BitConverter.ToSingle(
+                            BitConverter.GetBytes(
+                            IPAddress.NetworkToHostOrder(
+                            BitConverter.ToInt32(bufferBytes,
+                                                                (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingErrorForceMinTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                            BitConverter.GetBytes(
+                            IPAddress.NetworkToHostOrder(
+                            BitConverter.ToInt32(bufferBytes,
+                                                                (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingErrorForceMaxTSR))), 0).ToString());
+                        
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingSpeedMinTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingSpeedMaxTSR))), 0).ToString());
+
+                        returnedString.Add((bufferBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableForceKeepingTSR] == 1).ToString());
+                        returnedString.Add((bufferBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableForceTrackingTSR] == 1).ToString());
+
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingBasicPreservedForceTSR))), 0).ToString());
+                       
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAvailableRadiusTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAvailableAngleTSR))), 0).ToString());
+
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.StopRadiusTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.MaxDistPeriodTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                         BitConverter.GetBytes(
+                                         IPAddress.NetworkToHostOrder(
+                                         BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAnglePeriodTSR))), 0).ToString());
+
+                        returnedString.Add(BitConverter.ToSingle(
                                        BitConverter.GetBytes(
                                        IPAddress.NetworkToHostOrder(
                                        BitConverter.ToInt32(bufferBytes,
-                                                                           (byte)AppProtocolBreastScanConfigurationDatagram.CheckingStepGDR))), 0).ToString());
+                                                                           (byte)AppProtocolRemoteScanConfigurationDatagram.PositionOverrideTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                        BitConverter.GetBytes(
+                                        IPAddress.NetworkToHostOrder(
+                                        BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.AngleOverrideTSR))), 0).ToString());
+                        returnedString.Add(BitConverter.ToSingle(
+                                         BitConverter.GetBytes(
+                                         IPAddress.NetworkToHostOrder(
+                                         BitConverter.ToInt32(bufferBytes,
+                                                                            (byte)AppProtocolRemoteScanConfigurationDatagram.ForceOverrideTSR))), 0).ToString());
+
+                        returnedString.Add((bufferBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableAttitudeTrackingTSR] == 1).ToString());
+                        returnedString.Add((bufferBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableTranslationTrackingTSR] == 1).ToString());
+                    }
+                    break;
+                default:
+                    break;
+            }
+
 
             return returnedString;
         }
