@@ -37,10 +37,8 @@ namespace AssistantRobot
         /// </summary>
         public enum ToolType : short
         {
-            Probe_LA523_UR3 = 1,
-            Needle_UR5 = 2, // 测试使用
-            Probe_UR5 = 3, // 测试使用
-            Probe_LA523_UR5 = 4
+            Probe_LA523 = 1,
+            Needle = 2
         }
 
         /// <summary>
@@ -51,7 +49,9 @@ namespace AssistantRobot
             MainNav = 0,
             BaseControl = 1,
 
-            GalactophoreDetect = 2
+            GalactophoreDetect = 2,
+
+            ThyroidScanning = 3
         }
 
         /// <summary>
@@ -61,7 +61,9 @@ namespace AssistantRobot
         {
             ElecCtrl = 0,
             ProbeCatch = 1,
-            GalactophoreDetect = 2
+            GalactophoreDetect = 2,
+            ThyroidPuncture = 3,
+            ThyroidScan = 4
         }
         #endregion
 
@@ -70,6 +72,7 @@ namespace AssistantRobot
         private SerialConnector sc;
         private URDataProcessor urdp;
         private GalactophoreDetector gdr;
+        private ThyroidScanner tsr;
 
         // COM连接
         private readonly bool ifUsingSerialPort = false;
@@ -116,16 +119,20 @@ namespace AssistantRobot
         private readonly double minAccelerationj = 0.002;
 
         // 当前工具信息
-        private ToolType currentToolType = ToolType.Probe_LA523_UR3;
+        private ToolType currentToolType = ToolType.Probe_LA523;
+        private bool currentToolWhole = false;
         private bool currentRobotHanged = false;
         private double[] currentRobotInitialPosJoints = null;
         private double[,] currentToolForceModifier = null;
         private URDataProcessor.ForceModifiedMode currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
         private double[] currentToolTcpEndPointCordinates = null;
         private double currentToolGravityValue = 0;
-        
+
         // 模块工具
         private readonly ToolType breastToolType;
+        private readonly bool breastToolWhole;
+        private readonly ToolType thyroidToolType;
+        private readonly bool thyroidToolWhole;
 
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
@@ -142,11 +149,13 @@ namespace AssistantRobot
         private MainPage mp;
         private BaseControl bc;
         private GalactophoreDetect gd;
+        private ThyroidScan ts;
 
-        private bool[] occupyArray = new bool[30] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+        private bool[] occupyArray = new bool[100];
         private readonly double titleSize = 18;
         private readonly double messageSize = 22;
 
+        private ShowPage currentPage = ShowPage.MainNav;
         #endregion
 
         #region ViewModel
@@ -1308,6 +1317,401 @@ namespace AssistantRobot
         }
         #endregion
 
+        #region Start Position At Thyroid Scanning
+        private double[] startPositionTSR = new double[3];
+        /// <summary>
+        /// 甲状腺扫查中的起始位置
+        /// </summary>
+        public double[] StartPositionTSR
+        {
+            get { return (double[])startPositionTSR.Clone(); }
+            set
+            {
+                startPositionTSR = (double[])value.Clone();
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StartPositionTSR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Configuration Parameters Of ThyroidScanner
+
+        #region Press Direction Parameters
+        private double detectingErrorForceMinTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中探测方向误差力最小值
+        /// </summary>
+        public double DetectingErrorForceMinTSR
+        {
+            get { return detectingErrorForceMinTSR; }
+            set
+            {
+                detectingErrorForceMinTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingErrorForceMinTSR"));
+                }
+            }
+        }
+
+        private double detectingErrorForceMaxTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中探测方向误差力最大值
+        /// </summary>
+        public double DetectingErrorForceMaxTSR
+        {
+            get { return detectingErrorForceMaxTSR; }
+            set
+            {
+                detectingErrorForceMaxTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingErrorForceMaxTSR"));
+                }
+            }
+        }
+
+        private double detectingSpeedMinTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中探测方向速度最小值
+        /// </summary>
+        public double DetectingSpeedMinTSR
+        {
+            get { return detectingSpeedMinTSR; }
+            set
+            {
+                detectingSpeedMinTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingSpeedMinTSR"));
+                }
+            }
+        }
+
+        private double detectingSpeedMaxTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中探测方向速度最大值
+        /// </summary>
+        public double DetectingSpeedMaxTSR
+        {
+            get { return detectingSpeedMaxTSR; }
+            set
+            {
+                detectingSpeedMaxTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingSpeedMaxTSR"));
+                }
+            }
+        }
+
+        private bool ifEnableForceKeepingTSR = false;
+        /// <summary>
+        /// 甲状腺扫查中力保持开关
+        /// </summary>
+        public bool IfEnableForceKeepingTSR
+        {
+            get { return ifEnableForceKeepingTSR; }
+            set
+            {
+                ifEnableForceKeepingTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableForceKeepingTSR"));
+                }
+            }
+        }
+
+        private bool ifEnableForceTrackingTSR = false;
+        /// <summary>
+        /// 甲状腺扫查中力跟踪开关
+        /// </summary>
+        public bool IfEnableForceTrackingTSR
+        {
+            get { return ifEnableForceTrackingTSR; }
+            set
+            {
+                ifEnableForceTrackingTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableForceTrackingTSR"));
+                }
+            }
+        }
+
+        private double detectingBasicPreservedForceTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中基本保持力大小
+        /// </summary>
+        public double DetectingBasicPreservedForceTSR
+        {
+            get { return detectingBasicPreservedForceTSR; }
+            set
+            {
+                detectingBasicPreservedForceTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("DetectingBasicPreservedForceTSR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Limit Parameters
+        private double maxAvailableRadiusTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中最大可达半径
+        /// </summary>
+        public double MaxAvailableRadiusTSR
+        {
+            get { return maxAvailableRadiusTSR; }
+            set
+            {
+                maxAvailableRadiusTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MaxAvailableRadiusTSR"));
+                }
+            }
+        }
+
+        private double maxAvailableAngleTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中最大可达角度
+        /// </summary>
+        public double MaxAvailableAngleTSR
+        {
+            get { return maxAvailableAngleTSR; }
+            set
+            {
+                maxAvailableAngleTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MaxAvailableAngleTSR"));
+                }
+            }
+        }
+
+        private double stopRadiusTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中终止距离
+        /// </summary>
+        public double StopRadiusTSR
+        {
+            get { return stopRadiusTSR; }
+            set
+            {
+                stopRadiusTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StopRadiusTSR"));
+                }
+            }
+        }
+
+        private double maxDistPeriodTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中单周期最大距离
+        /// </summary>
+        public double MaxDistPeriodTSR
+        {
+            get { return maxDistPeriodTSR; }
+            set
+            {
+                maxDistPeriodTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MaxDistPeriodTSR"));
+                }
+            }
+        }
+
+        private double maxAnglePeriodTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中单周期最大角度
+        /// </summary>
+        public double MaxAnglePeriodTSR
+        {
+            get { return maxAnglePeriodTSR; }
+            set
+            {
+                maxAnglePeriodTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("MaxAnglePeriodTSR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Factor
+        private double positionOverrideTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中传输位置倍率
+        /// </summary>
+        public double PositionOverrideTSR
+        {
+            get { return positionOverrideTSR; }
+            set
+            {
+                positionOverrideTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("PositionOverrideTSR"));
+                }
+            }
+        }
+
+        private double angleOverrideTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中传输角度倍率
+        /// </summary>
+        public double AngleOverrideTSR
+        {
+            get { return angleOverrideTSR; }
+            set
+            {
+                angleOverrideTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("AngleOverrideTSR"));
+                }
+            }
+        }
+
+        private double forceOverrideTSR = 0.0;
+        /// <summary>
+        /// 甲状腺扫查中传输力倍率
+        /// </summary>
+        public double ForceOverrideTSR
+        {
+            get { return forceOverrideTSR; }
+            set
+            {
+                forceOverrideTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ForceOverrideTSR"));
+                }
+            }
+        }
+        #endregion
+
+        #region Other Switch
+        private bool ifEnableAttitudeTrackingTSR = false;
+        /// <summary>
+        /// 甲状腺扫查中姿态跟踪开关
+        /// </summary>
+        public bool IfEnableAttitudeTrackingTSR
+        {
+            get { return ifEnableAttitudeTrackingTSR; }
+            set
+            {
+                ifEnableAttitudeTrackingTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableAttitudeTrackingTSR"));
+                }
+            }
+        }
+
+        private bool ifEnableTranslationTrackingTSR = false;
+        /// <summary>
+        /// 甲状腺扫查中位置跟踪开关
+        /// </summary>
+        public bool IfEnableTranslationTrackingTSR
+        {
+            get { return ifEnableTranslationTrackingTSR; }
+            set
+            {
+                ifEnableTranslationTrackingTSR = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IfEnableTranslationTrackingTSR"));
+                }
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region ThyroidScanner Working Status
+        private short thyroidScannerWorkStatus = -1;
+        /// <summary>
+        /// 甲状腺扫查者工作状态
+        /// </summary>
+        public short ThyroidScannerWorkStatus
+        {
+            get { return thyroidScannerWorkStatus; }
+            set
+            {
+                thyroidScannerWorkStatus = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ThyroidScannerWorkStatus"));
+                }
+            }
+        }
+        #endregion
+
+        #region ThyroidScanner Parameter Confirm
+        private bool thyroidScannerParameterConfirm = false;
+        /// <summary>
+        /// 甲状腺扫查者配置参数确认情况
+        /// </summary>
+        public bool ThyroidScannerParameterConfirm
+        {
+            get { return thyroidScannerParameterConfirm; }
+            set
+            {
+                thyroidScannerParameterConfirm = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ThyroidScannerParameterConfirm"));
+                }
+            }
+        }
+        #endregion
+
+        #region ThyroidScanner ForceSenor Cleared
+        private bool thyroidScannerForceSensorCleared = false;
+        /// <summary>
+        /// 甲状腺扫查者力传感器清零状况
+        /// </summary>
+        public bool ThyroidScannerForceSensorCleared
+        {
+            get { return thyroidScannerForceSensorCleared; }
+            set
+            {
+                thyroidScannerForceSensorCleared = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ThyroidScannerForceSensorCleared"));
+                }
+            }
+        }
+        #endregion
+
+        #region ThyroidScanner Parameter Confirm State
+        private byte thyroidScannerParameterConfirmState = 0;
+        /// <summary>
+        ///  甲状腺扫查者配置参数更新状态
+        /// </summary>
+        public byte ThyroidScannerParameterConfirmState
+        {
+            get { return thyroidScannerParameterConfirmState; }
+            set
+            {
+                thyroidScannerParameterConfirmState = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("ThyroidScannerParameterConfirmState"));
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region ViewModelRemote_LocalPart
@@ -1604,6 +2008,8 @@ namespace AssistantRobot
         /// <param name="ifSuccess">是否配置成功</param>
         public URViewModel(out bool ifSuccess)
         {
+            for (int pnum = 0; pnum < occupyArray.Length; pnum++) occupyArray[pnum] = false;
+
             ifSuccess = true;
             bool parseResult = true;
 
@@ -1635,14 +2041,15 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "App configuration parameter(" + "currentRobotType" + ") is wrong.");
                 return;
             }
-            // 为模块选择合适的工具
-            if (currentRobotType == URDataProcessor.RobotType.CBUR3)
-                currentToolType = ToolType.Probe_LA523_UR3;
-            else if (currentRobotType == URDataProcessor.RobotType.CBUR5)
-                currentToolType = ToolType.Probe_LA523_UR5;
-            else
-                currentToolType = ToolType.Probe_LA523_UR3;
-            breastToolType = currentToolType;
+            // 为模块选择合适的工具（以Probe为默认值）
+            currentToolType = ToolType.Probe_LA523;
+            currentToolWhole = false;
+
+            breastToolType = ToolType.Probe_LA523;
+            breastToolWhole = false;
+
+            thyroidToolType = ToolType.Probe_LA523;
+            thyroidToolWhole = true;
 
             URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
             parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
@@ -2043,16 +2450,27 @@ namespace AssistantRobot
             {
                 case ShowPage.MainNav:
                     if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                    else mw.frameNav.NavigationService.Navigate(mp);
+                    currentPage = ShowPage.MainNav;
                     break;
                 case ShowPage.BaseControl:
                     mw.frameNav.NavigationService.Navigate(bc);
+                    currentPage = ShowPage.BaseControl;
                     break;
 
                 case ShowPage.GalactophoreDetect:
                     mw.frameNav.NavigationService.Navigate(gd);
+                    currentPage = ShowPage.GalactophoreDetect;
                     break;
+
+                case ShowPage.ThyroidScanning:
+                    mw.frameNav.NavigationService.Navigate(ts);
+                    currentPage = ShowPage.ThyroidScanning;
+                    break;
+
                 default:
                     mw.frameNav.NavigationService.Navigate(mp);
+                    currentPage = ShowPage.MainNav;
                     break;
             }
 
@@ -2360,36 +2778,47 @@ namespace AssistantRobot
         /// 检查当前工具是否合适
         /// </summary>
         /// <param name="AimTool">目标工具</param>
+        /// <param name="AimToolWhole">目标工具完整标定</param>
         /// <returns>返回是否已经调整到合适状态</returns>
-        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool)
+        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool, bool AimToolWhole)
         {
-            if (currentToolType == AimTool) return true;
-            SetToolParameter(AimTool);
+            if (currentToolType == AimTool && currentToolWhole == AimToolWhole) return true;
+            SetToolParameter(AimTool, AimToolWhole);
             return true;
         }
 
         /// <summary>
         /// 设置工具参数到模块
         /// <param name="AimTool">目标工具</param>
+        /// <param name="AimToolWhole">目标工具完整标定</param>
         /// </summary>
-        private async void SetToolParameter(ToolType AimTool)
+        private async void SetToolParameter(ToolType AimTool, bool AimToolWhole)
         {
             await Task.Run(new Action(() =>
             {
-                if (!ToolParameterRefresh(AimTool)) return;
+                if (!ToolParameterRefresh(AimTool, AimToolWhole)) return;
 
+                // 安装方式
                 urdp.SetInstallation(currentRobotHanged);
                 gdr.InstallHanged = currentRobotHanged;
+                tsr.InstallHanged = currentRobotHanged;
 
+                // 初始角度
                 gdr.InitialJointAngles = currentRobotInitialPosJoints;
+                tsr.InitialJointAngles = currentRobotInitialPosJoints;
 
+                // 重力修正
                 urdp.SetToolGravityModify(currentToolForceModifier, currentToolForceModifyingMode);
 
+                // 工具坐标
                 urdp.SetToolTCP(currentToolTcpEndPointCordinates);
                 gdr.InstallTcpPosition = currentToolTcpEndPointCordinates;
+                tsr.InstallTcpPosition = currentToolTcpEndPointCordinates;
 
+                // 工具质量
                 urdp.SetToolGravity(currentToolGravityValue);
                 gdr.ToolMass = currentToolGravityValue;
+                tsr.ToolMass = currentToolGravityValue;
 
                 urdp.SendURCommanderBaseSetting();
             }));
@@ -2411,7 +2840,7 @@ namespace AssistantRobot
         /// </summary>
         public void EnterGalactophoreDetectModule()
         {
-            if (!CheckWhetherCurrentToolSuitable(breastToolType)) return;
+            if (!CheckWhetherCurrentToolSuitable(breastToolType, breastToolWhole)) return;
 
             Task.Run(new Action(() =>
             {
@@ -2785,6 +3214,191 @@ namespace AssistantRobot
 
         #endregion
 
+        #region ThyroidScan
+        /// <summary>
+        /// 切换甲状腺扫查配置窗口
+        /// </summary>
+        public void SwitchThyroidOwnConf()
+        {
+            bool nowState = (mw.Flyouts.Items[(int)ConfPage.ThyroidScan] as Flyout).IsOpen;
+            (mw.Flyouts.Items[(int)ConfPage.ThyroidScan] as Flyout).IsOpen = !nowState;
+        }
+
+        /// <summary>
+        /// 进入甲状腺扫查模块
+        /// </summary>
+        public void EnterThyroidScanningModule()
+        {
+            if (!CheckWhetherCurrentToolSuitable(thyroidToolType, thyroidToolWhole)) return;
+
+            Task.Run(new Action(() =>
+            {
+                tsr.ActiveModule();
+            }));
+        }
+
+        /// <summary>
+        /// 退出甲状腺扫查模块
+        /// </summary>
+        public void ExitThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.FreezeModule();
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块清零力传感器
+        /// </summary>
+        public void ForceClearThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.InitialForceSensor();
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块配置参数
+        /// </summary>
+        public void ConfParamsThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.EnterParameterConfiguration();
+                ConfParamsNextParamsThyroidScannerModule();
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块寻找起始位置
+        /// </summary>
+        public void StartPositionFindThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                SaveCachePos();
+                tsr.FindScanningStartTcpPosition();
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块找到起始位置
+        /// </summary>
+        public void StartPositionFoundThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.ConfirmScanningStartTcpPositionFound();
+                Thread.Sleep(40);
+                double[] startPosNow = urdp.PositionsTcpActual;
+                StartPositionTSR = new double[] { startPosNow[0], startPosNow[1], startPosNow[2] };
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块确认配置参数
+        /// </summary>
+        public void ConfirmConfParamsThyroidScanningModule()
+        {
+            List<string> conf = PickParametersFormView(ConfPage.ThyroidScan);
+
+            Task.Run(new Action(() =>
+            {
+                tsr.ConfirmConfigurationParameters(conf);
+                tsr.LoadParametersFromXmlAndOutput();
+                ConfParamsNextParamsThyroidScannerModule();
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块准备并开始
+        /// </summary>
+        public void ReadyAndStartThyroidScanningModule()
+        {
+            Task.Run(new Action(() =>
+            {
+                tsr.BeReadyToWork();
+                tsr.StartModuleNow();
+            }));
+        }
+
+        /// <summary>
+        /// 立即停止所有甲状腺扫查模块中的活动
+        /// </summary>
+        public async void StopMotionNowThyroidScanningModule()
+        {
+            ThyroidScannerParameterConfirmState = 0;
+
+            Task.Run(new Action(() =>
+            {
+                tsr.EndModuleNow();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately.");
+            }));
+
+            await ShowDialog("甲状腺扫查模块被紧急停止，请按下确定恢复控制权！", "紧急状态", 7);
+
+            Task.Run(new Action(() =>
+            {
+                tsr.RecoverToNormal();
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is recovered.");
+            }));
+        }
+
+        /// <summary>
+        /// 甲状腺扫查模块转到下一个配置参数
+        /// </summary>
+        public void ConfParamsNextParamsThyroidScannerModule()
+        {
+            switch (thyroidScannerParameterConfirmState)
+            {
+                case 1:
+                    if (Math.Abs(startPositionTSR[0] * startPositionTSR[1] * startPositionTSR[2]) > Double.Epsilon * 10.0) ThyroidScannerParameterConfirmState += 1;
+                    break;
+                case 8:
+                    ThyroidScannerParameterConfirmState = Byte.MaxValue;
+                    break;
+                case Byte.MaxValue:
+                    ThyroidScannerParameterConfirmState = Byte.MaxValue - 1;
+                    break;
+                case Byte.MaxValue - 1:
+                    ThyroidScannerParameterConfirmState = 1;
+                    break;
+                case 0:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                default:
+                    ThyroidScannerParameterConfirmState += 1;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 在模块工作中更改部分控制变量
+        /// </summary>
+        public void ModifyControlParametersInRunWorkThyroidScannerModule()
+        {
+            List<string> modifyList = new List<string>(7);
+            modifyList.Add((ts.factorPosSlider.Value / 4.0 + 0.25).ToString("0.00"));
+            modifyList.Add((ts.factorAttSlider.Value / 4.0 + 0.25).ToString("0.00"));
+            modifyList.Add((ts.factorFosSlider.Value / 2.0 + 0.5).ToString("0.0"));
+            modifyList.Add(ts.enablePosSwitch.IsChecked.ToString());
+            modifyList.Add(ts.enableAttSwitch.IsChecked.ToString());
+            modifyList.Add(ts.enableFosKeepSwitch.IsChecked.ToString());
+            modifyList.Add(ts.enableFosTrackSwitch.IsChecked.ToString());
+
+            Task.Run(new Action(() =>
+            {
+                tsr.RefreshPartParameters(modifyList);
+            }));
+        }
+        #endregion
+
         #region SaveModuleConfParams
 
         /// <summary>
@@ -2809,6 +3423,11 @@ namespace AssistantRobot
                             gdr.LoadParametersFromXmlAndOutput();
                         }));
                     }
+                    break;
+
+                case ConfPage.ThyroidScan:
+                    tsr.SaveParametersFromStringToXml(PickParametersFormView(modifyPage));
+                    tsr.LoadParametersFromXmlAndOutput();
                     break;
 
                 default:
@@ -2854,6 +3473,28 @@ namespace AssistantRobot
                     returnConf.Add((Math.PI / 180.0 * double.Parse((string)mw.rotateStepText.Content)).ToString("0.0000"));
 
                     return returnConf;
+
+                case ConfPage.ThyroidScan:
+                    returnConf.Add((string)mw.minForceSliderThyroidText.Content);
+                    returnConf.Add((string)mw.maxForceSliderThyroidText.Content);
+                    returnConf.Add((double.Parse((string)mw.minDetectSpeedSliderThyroidText.Content) / 1000.0).ToString("0.0000"));
+                    returnConf.Add((double.Parse((string)mw.maxDetectSpeedSliderThyroidText.Content) / 1000.0).ToString("0.0000"));
+                    returnConf.Add(ts.enableFosKeepSwitch.IsChecked.ToString());
+                    returnConf.Add(ts.enableFosTrackSwitch.IsChecked.ToString());
+                    returnConf.Add((string)mw.holdingPressureThyroidText.Content);
+                    returnConf.Add((double.Parse((string)mw.maxRadiusThyroidText.Content) / 1000.0).ToString("0.00"));
+                    returnConf.Add((double.Parse((string)mw.maxAngleThyroidText.Content) / 180.0 * Math.PI).ToString("0.0000"));
+                    returnConf.Add((double.Parse((string)mw.stopDistanceThyroidText.Content) / 1000.0).ToString("0.00"));
+                    returnConf.Add((double.Parse((string)mw.maxLoopDistThyroidText.Content) / 1000.0).ToString("0.0000"));
+                    returnConf.Add((double.Parse((string)mw.maxLoopAngleThyroidText.Content) / 180.0 * Math.PI).ToString("0.0000"));
+                    returnConf.Add((double.Parse(ts.factorPos.Text) / 100.0).ToString("0.00"));
+                    returnConf.Add((double.Parse(ts.factorAtt.Text) / 100.0).ToString("0.00"));
+                    returnConf.Add((double.Parse(ts.factorFos.Text) / 100.0).ToString("0.00"));
+                    returnConf.Add(ts.enableAttSwitch.IsChecked.ToString());
+                    returnConf.Add(ts.enablePosSwitch.IsChecked.ToString());
+
+                    return returnConf;
+
                 default:
                     return null;
             }
@@ -3003,7 +3644,6 @@ namespace AssistantRobot
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Error on disconnect events of object with type \'" + objectHasEvents.GetType().ToString() + "\'.");
             }
         }
-
         #endregion
 
         #region Preparation
@@ -3016,6 +3656,7 @@ namespace AssistantRobot
         private readonly ValueProcesser valueP1D4 = new ValueProcesser(1.0, "0.0000");
         private readonly ConverterThatTransformDoubleToDoubleSlider convertD2DSlider = new ConverterThatTransformDoubleToDoubleSlider();
         private const double radToDegRatio = 180.0 / Math.PI;
+        private const double degToRadRatio = Math.PI / 180.0;
         private readonly ConverterThatTransformDoubleArrayToString convertDA2S = new ConverterThatTransformDoubleArrayToString();
         private readonly ConverterThatTransformDoubleToDoubleInteger convertD2DI = new ConverterThatTransformDoubleToDoubleInteger();
         private readonly ConverterThatTransformEnumToDouble convertE2D = new ConverterThatTransformEnumToDouble();
@@ -3034,15 +3675,21 @@ namespace AssistantRobot
             BindingItemsParametersNeededToShowOnWindowToolForceAndTorque();
             BindingItemsParametersNeededToShowOnWindowRobotJointsCurrents();
             BindingItemsParametersNeededToShowOnWindowRobotJointsAngles();
+
             BindingItemsNipplePositionAtGalactophoreDetecting();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingDirectionForceLimitsAndSpeedLimits();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingMotionLimits();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDegreeControlParameters();
             BindingItemsConfigurationParametersOfGalactophoreDetectorDetectingEdge();
             BindingItemsConfigurationParametersOfGalactophoreDetectorOther();
-
-
             BindingItemsGalactophoreDetectorWorkingStatus();
+
+            BindingItemsStartPositionAtThyroidScanning();
+            BindingItemsConfigurationParametersOfThyroidScannerPressDirectionParameters();
+            BindingItemsConfigurationParametersOfThyroidScannerLimitParameters();
+            BindingItemsConfigurationParametersOfThyroidScannerFactor();
+            BindingItemsConfigurationParametersOfThyroidScannerOtherSwitch();
+            BindingItemsThyroidScannerWorkingStatus();
 
         }
 
@@ -3112,126 +3759,188 @@ namespace AssistantRobot
         {
             #region BaseControl
             // 绑定：ToolTCPCordinateX {属性} ==> tcpXMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateXToTcpXMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Path = new PropertyPath("ToolTCPCordinateX");
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateXToTcpXMotionOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(bc.tcpXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXMotionOfBC);
+            Binding bindingFromToolTCPCordinateXToTcpXMotion = new Binding();
+            bindingFromToolTCPCordinateXToTcpXMotion.Source = this;
+            bindingFromToolTCPCordinateXToTcpXMotion.Path = new PropertyPath("ToolTCPCordinateX");
+            bindingFromToolTCPCordinateXToTcpXMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateXToTcpXMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateXToTcpXMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateXToTcpXMotion.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXMotion);
 
             // 绑定：ToolTCPCordinateY {属性} ==> tcpYMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateYToTcpYMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Path = new PropertyPath("ToolTCPCordinateY");
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateYToTcpYMotionOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(bc.tcpYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYMotionOfBC);
+            Binding bindingFromToolTCPCordinateYToTcpYMotion = new Binding();
+            bindingFromToolTCPCordinateYToTcpYMotion.Source = this;
+            bindingFromToolTCPCordinateYToTcpYMotion.Path = new PropertyPath("ToolTCPCordinateY");
+            bindingFromToolTCPCordinateYToTcpYMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateYToTcpYMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateYToTcpYMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateYToTcpYMotion.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYMotion);
 
             // 绑定：ToolTCPCordinateZ {属性} ==> tcpZMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateZToTcpZMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Path = new PropertyPath("ToolTCPCordinateZ");
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateZToTcpZMotionOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(bc.tcpZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZMotionOfBC);
+            Binding bindingFromToolTCPCordinateZToTcpZMotion = new Binding();
+            bindingFromToolTCPCordinateZToTcpZMotion.Source = this;
+            bindingFromToolTCPCordinateZToTcpZMotion.Path = new PropertyPath("ToolTCPCordinateZ");
+            bindingFromToolTCPCordinateZToTcpZMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateZToTcpZMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateZToTcpZMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateZToTcpZMotion.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(bc.tcpZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZMotion);
 
             // 绑定：ToolTCPCordinateRX {属性} ==> tcpRXMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateRXToTcpRXMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRX");
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRXToTcpRXMotionOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(bc.tcpRXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXMotionOfBC);
+            Binding bindingFromToolTCPCordinateRXToTcpRXMotion = new Binding();
+            bindingFromToolTCPCordinateRXToTcpRXMotion.Source = this;
+            bindingFromToolTCPCordinateRXToTcpRXMotion.Path = new PropertyPath("ToolTCPCordinateRX");
+            bindingFromToolTCPCordinateRXToTcpRXMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRXToTcpRXMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRXToTcpRXMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateRXToTcpRXMotion.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRXMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXMotion);
 
             // 绑定：ToolTCPCordinateRY {属性} ==> tcpRYMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateRYToTcpRYMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRY");
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRYToTcpRYMotionOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(bc.tcpRYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYMotionOfBC);
+            Binding bindingFromToolTCPCordinateRYToTcpRYMotion = new Binding();
+            bindingFromToolTCPCordinateRYToTcpRYMotion.Source = this;
+            bindingFromToolTCPCordinateRYToTcpRYMotion.Path = new PropertyPath("ToolTCPCordinateRY");
+            bindingFromToolTCPCordinateRYToTcpRYMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRYToTcpRYMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRYToTcpRYMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateRYToTcpRYMotion.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRYMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYMotion);
 
             // 绑定：ToolTCPCordinateRZ {属性} ==> tcpRZMotion {BaseControl控件}
-            Binding bindingFromToolTCPCordinateRZToTcpRZMotionOfBC = new Binding();
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Source = this;
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Path = new PropertyPath("ToolTCPCordinateRZ");
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRZToTcpRZMotionOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(bc.tcpRZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZMotionOfBC);
+            Binding bindingFromToolTCPCordinateRZToTcpRZMotion = new Binding();
+            bindingFromToolTCPCordinateRZToTcpRZMotion.Source = this;
+            bindingFromToolTCPCordinateRZToTcpRZMotion.Path = new PropertyPath("ToolTCPCordinateRZ");
+            bindingFromToolTCPCordinateRZToTcpRZMotion.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRZToTcpRZMotion.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRZToTcpRZMotion.Converter = convertD2S;
+            bindingFromToolTCPCordinateRZToTcpRZMotion.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(bc.tcpRZMotion, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZMotion);
             #endregion
 
             #region GalactophoreDetect
             // 绑定：ToolTCPCordinateX {属性} ==> tcpXGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateX");
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(gd.tcpXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateXToTcpXGalactophore = new Binding();
+            bindingFromToolTCPCordinateXToTcpXGalactophore.Source = this;
+            bindingFromToolTCPCordinateXToTcpXGalactophore.Path = new PropertyPath("ToolTCPCordinateX");
+            bindingFromToolTCPCordinateXToTcpXGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateXToTcpXGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateXToTcpXGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateXToTcpXGalactophore.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXGalactophore);
 
             // 绑定：ToolTCPCordinateY {属性} ==> tcpYGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateY");
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(gd.tcpYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateYToTcpYGalactophore = new Binding();
+            bindingFromToolTCPCordinateYToTcpYGalactophore.Source = this;
+            bindingFromToolTCPCordinateYToTcpYGalactophore.Path = new PropertyPath("ToolTCPCordinateY");
+            bindingFromToolTCPCordinateYToTcpYGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateYToTcpYGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateYToTcpYGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateYToTcpYGalactophore.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYGalactophore);
 
             // 绑定：ToolTCPCordinateZ {属性} ==> tcpZGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateZ");
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC.ConverterParameter = valueP1000D2;
-            BindingOperations.SetBinding(gd.tcpZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateZToTcpZGalactophore = new Binding();
+            bindingFromToolTCPCordinateZToTcpZGalactophore.Source = this;
+            bindingFromToolTCPCordinateZToTcpZGalactophore.Path = new PropertyPath("ToolTCPCordinateZ");
+            bindingFromToolTCPCordinateZToTcpZGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateZToTcpZGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateZToTcpZGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateZToTcpZGalactophore.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(gd.tcpZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZGalactophore);
 
             // 绑定：ToolTCPCordinateRX {属性} ==> tcpRXGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRX");
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(gd.tcpRXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateRXToTcpRXGalactophore = new Binding();
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.Source = this;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.Path = new PropertyPath("ToolTCPCordinateRX");
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateRXToTcpRXGalactophore.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRXGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXGalactophore);
 
             // 绑定：ToolTCPCordinateRY {属性} ==> tcpRYGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRY");
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(gd.tcpRYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateRYToTcpRYGalactophore = new Binding();
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.Source = this;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.Path = new PropertyPath("ToolTCPCordinateRY");
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateRYToTcpRYGalactophore.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRYGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYGalactophore);
 
             // 绑定：ToolTCPCordinateRZ {属性} ==> tcpRZGalactophore {GalactophoreDetect控件}
-            Binding bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC = new Binding();
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Source = this;
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Path = new PropertyPath("ToolTCPCordinateRZ");
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Mode = BindingMode.OneWay;
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.Converter = convertD2S;
-            bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC.ConverterParameter = valueP1D4;
-            BindingOperations.SetBinding(gd.tcpRZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZGalactophoreOfBC);
+            Binding bindingFromToolTCPCordinateRZToTcpRZGalactophore = new Binding();
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.Source = this;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.Path = new PropertyPath("ToolTCPCordinateRZ");
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.Converter = convertD2S;
+            bindingFromToolTCPCordinateRZToTcpRZGalactophore.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(gd.tcpRZGalactophore, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZGalactophore);
+            #endregion
+
+            #region ThyroidScan
+            // 绑定：ToolTCPCordinateX {属性} ==> tcpXThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateXToTcpXThyroid = new Binding();
+            bindingFromToolTCPCordinateXToTcpXThyroid.Source = this;
+            bindingFromToolTCPCordinateXToTcpXThyroid.Path = new PropertyPath("ToolTCPCordinateX");
+            bindingFromToolTCPCordinateXToTcpXThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateXToTcpXThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateXToTcpXThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateXToTcpXThyroid.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(ts.tcpXThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateXToTcpXThyroid);
+
+            // 绑定：ToolTCPCordinateY {属性} ==> tcpYThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateYToTcpYThyroid = new Binding();
+            bindingFromToolTCPCordinateYToTcpYThyroid.Source = this;
+            bindingFromToolTCPCordinateYToTcpYThyroid.Path = new PropertyPath("ToolTCPCordinateY");
+            bindingFromToolTCPCordinateYToTcpYThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateYToTcpYThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateYToTcpYThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateYToTcpYThyroid.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(ts.tcpYThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateYToTcpYThyroid);
+
+            // 绑定：ToolTCPCordinateZ {属性} ==> tcpZThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateZToTcpZThyroid = new Binding();
+            bindingFromToolTCPCordinateZToTcpZThyroid.Source = this;
+            bindingFromToolTCPCordinateZToTcpZThyroid.Path = new PropertyPath("ToolTCPCordinateZ");
+            bindingFromToolTCPCordinateZToTcpZThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateZToTcpZThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateZToTcpZThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateZToTcpZThyroid.ConverterParameter = valueP1000D2;
+            BindingOperations.SetBinding(ts.tcpZThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateZToTcpZThyroid);
+
+            // 绑定：ToolTCPCordinateRX {属性} ==> tcpRXThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateRXToTcpRXThyroid = new Binding();
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.Source = this;
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.Path = new PropertyPath("ToolTCPCordinateRX");
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateRXToTcpRXThyroid.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(ts.tcpRXThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateRXToTcpRXThyroid);
+
+            // 绑定：ToolTCPCordinateRY {属性} ==> tcpRYThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateRYToTcpRYThyroid = new Binding();
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.Source = this;
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.Path = new PropertyPath("ToolTCPCordinateRY");
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateRYToTcpRYThyroid.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(ts.tcpRYThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateRYToTcpRYThyroid);
+
+            // 绑定：ToolTCPCordinateRZ {属性} ==> tcpRZThyroid {ThyroidScan控件}
+            Binding bindingFromToolTCPCordinateRZToTcpRZThyroid = new Binding();
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.Source = this;
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.Path = new PropertyPath("ToolTCPCordinateRZ");
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.Converter = convertD2S;
+            bindingFromToolTCPCordinateRZToTcpRZThyroid.ConverterParameter = valueP1D4;
+            BindingOperations.SetBinding(ts.tcpRZThyroid, TextBox.TextProperty, bindingFromToolTCPCordinateRZToTcpRZThyroid);
             #endregion
         }
 
@@ -3332,6 +4041,38 @@ namespace AssistantRobot
             bindingFromToolForceZToTcpFZGalactophore.Converter = convertD2S;
             bindingFromToolForceZToTcpFZGalactophore.ConverterParameter = valueP1D2;
             BindingOperations.SetBinding(gd.tcpFZGalactophore, TextBox.TextProperty, bindingFromToolForceZToTcpFZGalactophore);
+            #endregion
+
+            #region ThyroidScan
+            // 绑定：ToolForceX {属性} ==> tcpFXThyroid {ThyroidScan控件}
+            Binding bindingFromToolForceXToTcpFXThyroid = new Binding();
+            bindingFromToolForceXToTcpFXThyroid.Source = this;
+            bindingFromToolForceXToTcpFXThyroid.Path = new PropertyPath("ToolForceX");
+            bindingFromToolForceXToTcpFXThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolForceXToTcpFXThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceXToTcpFXThyroid.Converter = convertD2S;
+            bindingFromToolForceXToTcpFXThyroid.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(ts.tcpFXThyroid, TextBox.TextProperty, bindingFromToolForceXToTcpFXThyroid);
+
+            // 绑定：ToolForceY {属性} ==> tcpFYThyroid {ThyroidScan控件}
+            Binding bindingFromToolForceYToTcpFYThyroid = new Binding();
+            bindingFromToolForceYToTcpFYThyroid.Source = this;
+            bindingFromToolForceYToTcpFYThyroid.Path = new PropertyPath("ToolForceY");
+            bindingFromToolForceYToTcpFYThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolForceYToTcpFYThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceYToTcpFYThyroid.Converter = convertD2S;
+            bindingFromToolForceYToTcpFYThyroid.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(ts.tcpFYThyroid, TextBox.TextProperty, bindingFromToolForceYToTcpFYThyroid);
+
+            // 绑定：ToolForceZ {属性} ==> tcpFZThyroid {ThyroidScan控件}
+            Binding bindingFromToolForceZToTcpFZThyroid = new Binding();
+            bindingFromToolForceZToTcpFZThyroid.Source = this;
+            bindingFromToolForceZToTcpFZThyroid.Path = new PropertyPath("ToolForceZ");
+            bindingFromToolForceZToTcpFZThyroid.Mode = BindingMode.OneWay;
+            bindingFromToolForceZToTcpFZThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromToolForceZToTcpFZThyroid.Converter = convertD2S;
+            bindingFromToolForceZToTcpFZThyroid.ConverterParameter = valueP1D2;
+            BindingOperations.SetBinding(ts.tcpFZThyroid, TextBox.TextProperty, bindingFromToolForceZToTcpFZThyroid);
             #endregion
         }
 
@@ -4028,6 +4769,500 @@ namespace AssistantRobot
             //BindingOperations.SetBinding(gd.sinkDistanceNextBtn, IconButton.IsEnabledProperty, mbindingToSinkDistanceNextBtn);
         }
 
+        /// <summary>
+        /// 绑定域 --| Start Position At Thyroid Scanning |-- 内元素
+        /// </summary>
+        private void BindingItemsStartPositionAtThyroidScanning()
+        {
+            // 绑定：StartPositionTSR {属性} ==> startThyroidX {ThyroidScan控件}
+            Binding bindingFromStartPositionTSRToStartThyroidX = new Binding();
+            bindingFromStartPositionTSRToStartThyroidX.Source = this;
+            bindingFromStartPositionTSRToStartThyroidX.Path = new PropertyPath("StartPositionTSR");
+            bindingFromStartPositionTSRToStartThyroidX.Mode = BindingMode.OneWay;
+            bindingFromStartPositionTSRToStartThyroidX.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromStartPositionTSRToStartThyroidX.Converter = convertDA2S;
+            bindingFromStartPositionTSRToStartThyroidX.ConverterParameter = new int[] { 0, 1000, 2 };
+            BindingOperations.SetBinding(ts.startThyroidX, TextBox.TextProperty, bindingFromStartPositionTSRToStartThyroidX);
+
+            // 绑定：StartPositionTSR {属性} ==> startThyroidY {ThyroidScan控件}
+            Binding bindingFromStartPositionTSRToStartThyroidY = new Binding();
+            bindingFromStartPositionTSRToStartThyroidY.Source = this;
+            bindingFromStartPositionTSRToStartThyroidY.Path = new PropertyPath("StartPositionTSR");
+            bindingFromStartPositionTSRToStartThyroidY.Mode = BindingMode.OneWay;
+            bindingFromStartPositionTSRToStartThyroidY.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromStartPositionTSRToStartThyroidY.Converter = convertDA2S;
+            bindingFromStartPositionTSRToStartThyroidY.ConverterParameter = new int[] { 1, 1000, 2 };
+            BindingOperations.SetBinding(ts.startThyroidY, TextBox.TextProperty, bindingFromStartPositionTSRToStartThyroidY);
+
+            // 绑定：StartPositionTSR {属性} ==> startThyroidZ {ThyroidScan控件}
+            Binding bindingFromStartPositionTSRToStartThyroidZ = new Binding();
+            bindingFromStartPositionTSRToStartThyroidZ.Source = this;
+            bindingFromStartPositionTSRToStartThyroidZ.Path = new PropertyPath("StartPositionTSR");
+            bindingFromStartPositionTSRToStartThyroidZ.Mode = BindingMode.OneWay;
+            bindingFromStartPositionTSRToStartThyroidZ.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromStartPositionTSRToStartThyroidZ.Converter = convertDA2S;
+            bindingFromStartPositionTSRToStartThyroidZ.ConverterParameter = new int[] { 2, 1000, 2 };
+            BindingOperations.SetBinding(ts.startThyroidZ, TextBox.TextProperty, bindingFromStartPositionTSRToStartThyroidZ);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of ThyroidScanner --> Press Direction Parameters |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfThyroidScannerPressDirectionParameters()
+        {
+            // 绑定：DetectingErrorForceMinTSR {属性} ==> minForceSliderThyroid {Flyout控件}
+            Binding bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid = new Binding();
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.Source = this;
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.Path = new PropertyPath("DetectingErrorForceMinTSR");
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.Mode = BindingMode.OneWay;
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.Converter = convertD2DI;
+            bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid.ConverterParameter = new double[] { 0.0, 4.0 };
+            BindingOperations.SetBinding(mw.minForceSliderThyroid, Slider.ValueProperty, bindingFromDetectingErrorForceMinTSRToMinForceSliderThyroid);
+
+            // 绑定：DetectingErrorForceMaxTSR {属性} ==> maxForceSliderThyroid {Flyout控件}
+            Binding bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid = new Binding();
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.Source = this;
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.Path = new PropertyPath("DetectingErrorForceMaxTSR");
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.Mode = BindingMode.OneWay;
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.Converter = convertD2DI;
+            bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid.ConverterParameter = new double[] { -1.5, 2.0 };
+            BindingOperations.SetBinding(mw.maxForceSliderThyroid, Slider.ValueProperty, bindingFromDetectingErrorForceMaxTSRToMaxForceSliderThyroid);
+
+            // 绑定：DetectingSpeedMinTSR {属性} ==> minDetectSpeedSliderThyroid {Flyout控件}
+            Binding bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid = new Binding();
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.Source = this;
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.Path = new PropertyPath("DetectingSpeedMinTSR");
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.Mode = BindingMode.OneWay;
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.Converter = convertD2DI;
+            bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid.ConverterParameter = new double[] { 0.0, 10000.0 };
+            BindingOperations.SetBinding(mw.minDetectSpeedSliderThyroid, Slider.ValueProperty, bindingFromDetectingSpeedMinTSRToMinDetectSpeedSliderThyroid);
+
+            // 绑定：DetectingSpeedMaxTSR {属性} ==> maxDetectSpeedSliderThyroid {Flyout控件}
+            Binding bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid = new Binding();
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.Source = this;
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.Path = new PropertyPath("DetectingSpeedMaxTSR");
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.Mode = BindingMode.OneWay;
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.Converter = convertD2DI;
+            bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid.ConverterParameter = new double[] { -0.0002, 10000.0 };
+            BindingOperations.SetBinding(mw.maxDetectSpeedSliderThyroid, Slider.ValueProperty, bindingFromDetectingSpeedMaxTSRToMaxDetectSpeedSliderThyroid);
+
+            // 绑定：IfEnableForceKeepingTSR {属性} ==> enableFosKeepSwitch {ThyroidScan控件}
+            Binding bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch = new Binding();
+            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Source = this;
+            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Path = new PropertyPath("IfEnableForceKeepingTSR");
+            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(ts.enableFosKeepSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch);
+
+            // 绑定：IfEnableForceTrackingTSR {属性} ==> enableFosTrackSwitch {ThyroidScan控件}
+            Binding bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch = new Binding();
+            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Source = this;
+            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Path = new PropertyPath("IfEnableForceTrackingTSR");
+            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(ts.enableFosTrackSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch);
+
+            // 绑定：DetectingBasicPreservedForceTSR {属性} ==> holdingPressureThyroid {Flyout控件}
+            Binding bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid = new Binding();
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.Source = this;
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.Path = new PropertyPath("DetectingBasicPreservedForceTSR");
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.Mode = BindingMode.OneWay;
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.Converter = convertD2DI;
+            bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid.ConverterParameter = new double[] { -3.0, 1.0 };
+            BindingOperations.SetBinding(mw.holdingPressureThyroid, Slider.ValueProperty, bindingFromDetectingBasicPreservedForceTSRToHoldingPressureThyroid);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of ThyroidScanner --> Limit Parameters |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfThyroidScannerLimitParameters()
+        {
+            // 绑定：MaxAvailableRadiusTSR {属性} ==> maxRadiusThyroid {Flyout控件}
+            Binding bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid = new Binding();
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.Source = this;
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.Path = new PropertyPath("MaxAvailableRadiusTSR");
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.Mode = BindingMode.OneWay;
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.Converter = convertD2DI;
+            bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid.ConverterParameter = new double[] { -0.3, 20.0 };
+            BindingOperations.SetBinding(mw.maxRadiusThyroid, Slider.ValueProperty, bindingFromMaxAvailableRadiusTSRToMaxRadiusThyroid);
+
+            // 绑定：MaxAvailableAngleTSR {属性} ==> maxAngleThyroid {Flyout控件}
+            Binding bindingFromMaxAvailableAngleTSRToMaxAngleThyroid = new Binding();
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.Source = this;
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.Path = new PropertyPath("MaxAvailableAngleTSR");
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.Mode = BindingMode.OneWay;
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.Converter = convertD2DI;
+            bindingFromMaxAvailableAngleTSRToMaxAngleThyroid.ConverterParameter = new double[] { -45 * degToRadRatio, 1 / (15 * degToRadRatio) };
+            BindingOperations.SetBinding(mw.maxAngleThyroid, Slider.ValueProperty, bindingFromMaxAvailableAngleTSRToMaxAngleThyroid);
+
+            // 绑定：StopRadiusTSR {属性} ==> stopDistanceThyroid {Flyout控件}
+            Binding bindingFromStopRadiusTSRToStopDistanceThyroid = new Binding();
+            bindingFromStopRadiusTSRToStopDistanceThyroid.Source = this;
+            bindingFromStopRadiusTSRToStopDistanceThyroid.Path = new PropertyPath("StopRadiusTSR");
+            bindingFromStopRadiusTSRToStopDistanceThyroid.Mode = BindingMode.OneWay;
+            bindingFromStopRadiusTSRToStopDistanceThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromStopRadiusTSRToStopDistanceThyroid.Converter = convertD2DI;
+            bindingFromStopRadiusTSRToStopDistanceThyroid.ConverterParameter = new double[] { -0.4, 20.0 };
+            BindingOperations.SetBinding(mw.stopDistanceThyroid, Slider.ValueProperty, bindingFromStopRadiusTSRToStopDistanceThyroid);
+
+            // 绑定：MaxDistPeriodTSR {属性} ==> maxLoopDistThyroid {Flyout控件}
+            Binding bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid = new Binding();
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.Source = this;
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.Path = new PropertyPath("MaxDistPeriodTSR");
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.Mode = BindingMode.OneWay;
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.Converter = convertD2DI;
+            bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid.ConverterParameter = new double[] { -0.0002, 10000.0 };
+            BindingOperations.SetBinding(mw.maxLoopDistThyroid, Slider.ValueProperty, bindingFromMaxDistPeriodTSRToMaxLoopDistThyroid);
+
+            // 绑定：MaxAnglePeriodTSR {属性} ==> maxLoopAngleThyroid {Flyout控件}
+            Binding bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid = new Binding();
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.Source = this;
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.Path = new PropertyPath("MaxAnglePeriodTSR");
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.Mode = BindingMode.OneWay;
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.Converter = convertD2DI;
+            bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid.ConverterParameter = new double[] { -0.03 * degToRadRatio, 1 / (0.02 * degToRadRatio) };
+            BindingOperations.SetBinding(mw.maxLoopAngleThyroid, Slider.ValueProperty, bindingFromMaxAnglePeriodTSRToMaxLoopAngleThyroid);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of ThyroidScanner --> Factor |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfThyroidScannerFactor()
+        {
+            // 绑定：PositionOverrideTSR {属性} ==> factorPosSlider {ThyroidScan控件}
+            Binding bindingFromPositionOverrideTSRToFactorPosSlider = new Binding();
+            bindingFromPositionOverrideTSRToFactorPosSlider.Source = this;
+            bindingFromPositionOverrideTSRToFactorPosSlider.Path = new PropertyPath("PositionOverrideTSR");
+            bindingFromPositionOverrideTSRToFactorPosSlider.Mode = BindingMode.OneWay;
+            bindingFromPositionOverrideTSRToFactorPosSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromPositionOverrideTSRToFactorPosSlider.Converter = convertD2DI;
+            bindingFromPositionOverrideTSRToFactorPosSlider.ConverterParameter = new double[] { -0.25, 4.0 };
+            BindingOperations.SetBinding(ts.factorPosSlider, Slider.ValueProperty, bindingFromPositionOverrideTSRToFactorPosSlider);
+
+            // 绑定：AngleOverrideTSR {属性} ==> factorAttSlider {ThyroidScan控件}
+            Binding bindingFromAngleOverrideTSRToFactorAttSliderd = new Binding();
+            bindingFromAngleOverrideTSRToFactorAttSliderd.Source = this;
+            bindingFromAngleOverrideTSRToFactorAttSliderd.Path = new PropertyPath("AngleOverrideTSR");
+            bindingFromAngleOverrideTSRToFactorAttSliderd.Mode = BindingMode.OneWay;
+            bindingFromAngleOverrideTSRToFactorAttSliderd.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromAngleOverrideTSRToFactorAttSliderd.Converter = convertD2DI;
+            bindingFromAngleOverrideTSRToFactorAttSliderd.ConverterParameter = new double[] { -0.25, 4.0 };
+            BindingOperations.SetBinding(ts.factorAttSlider, Slider.ValueProperty, bindingFromAngleOverrideTSRToFactorAttSliderd);
+
+            // 绑定：ForceOverrideTSR {属性} ==> factorFosSlider {ThyroidScan控件}
+            Binding bindingFromForceOverrideTSRToFactorFosSlider = new Binding();
+            bindingFromForceOverrideTSRToFactorFosSlider.Source = this;
+            bindingFromForceOverrideTSRToFactorFosSlider.Path = new PropertyPath("ForceOverrideTSR");
+            bindingFromForceOverrideTSRToFactorFosSlider.Mode = BindingMode.OneWay;
+            bindingFromForceOverrideTSRToFactorFosSlider.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            bindingFromForceOverrideTSRToFactorFosSlider.Converter = convertD2DI;
+            bindingFromForceOverrideTSRToFactorFosSlider.ConverterParameter = new double[] { -0.5, 2.0 };
+            BindingOperations.SetBinding(ts.factorFosSlider, Slider.ValueProperty, bindingFromForceOverrideTSRToFactorFosSlider);
+        }
+
+        /// <summary>
+        /// 绑定域 --| Configuration Parameters Of ThyroidScanner --> Other Switch |-- 内元素
+        /// </summary>
+        private void BindingItemsConfigurationParametersOfThyroidScannerOtherSwitch()
+        {
+            // 绑定：IfEnableAttitudeTrackingTSR {属性} ==> enableAttSwitch {ThyroidScan控件}
+            Binding bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch = new Binding();
+            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Source = this;
+            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Path = new PropertyPath("IfEnableAttitudeTrackingTSR");
+            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(ts.enableAttSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch);
+
+            // 绑定：IfEnableTranslationTrackingTSR {属性} ==> enablePosSwitch {ThyroidScan控件}
+            Binding bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch = new Binding();
+            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Source = this;
+            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Path = new PropertyPath("IfEnableTranslationTrackingTSR");
+            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Mode = BindingMode.OneWay;
+            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(ts.enablePosSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch);
+        }
+
+        /// <summary>
+        /// 联合绑定
+        /// 绑定域 --| ThyroidScanner Working Status |-- 内元素
+        /// 绑定域 --| ThyroidScanner Paramete Confirm |-- 内元素
+        /// 绑定域 --| ThyroidScanner ForceSenor Cleared |-- 内元素
+        /// 绑定域 --| ThyroidScanner Parameter Confirm State |-- 内元素
+        /// </summary>
+        private void BindingItemsThyroidScannerWorkingStatus()
+        {
+            // 绑定：ThyroidScannerWorkStatus {属性} ==> {i} {ThyroidScan控件}
+            Binding bindingFromThyroidScannerWorkStatus = new Binding();
+            bindingFromThyroidScannerWorkStatus.Source = this;
+            bindingFromThyroidScannerWorkStatus.Path = new PropertyPath("ThyroidScannerWorkStatus");
+            bindingFromThyroidScannerWorkStatus.Mode = BindingMode.OneWay;
+            bindingFromThyroidScannerWorkStatus.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：ThyroidScannerParameterConfirm {属性} ==> {i} {ThyroidScan控件}
+            Binding bindingFromThyroidScannerParameterConfirm = new Binding();
+            bindingFromThyroidScannerParameterConfirm.Source = this;
+            bindingFromThyroidScannerParameterConfirm.Path = new PropertyPath("ThyroidScannerParameterConfirm");
+            bindingFromThyroidScannerParameterConfirm.Mode = BindingMode.OneWay;
+            bindingFromThyroidScannerParameterConfirm.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：ThyroidScannerForceSensorCleared {属性} ==> {i} {ThyroidScan控件}
+            Binding bindingFromThyroidScannerForceSensorCleared = new Binding();
+            bindingFromThyroidScannerForceSensorCleared.Source = this;
+            bindingFromThyroidScannerForceSensorCleared.Path = new PropertyPath("ThyroidScannerForceSensorCleared");
+            bindingFromThyroidScannerForceSensorCleared.Mode = BindingMode.OneWay;
+            bindingFromThyroidScannerForceSensorCleared.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 绑定：ThyroidScannerParameterConfirmState {属性} ==> {i} {ThyroidScan控件}
+            Binding bindingFromThyroidScannerParameterConfirmState = new Binding();
+            bindingFromThyroidScannerParameterConfirmState.Source = this;
+            bindingFromThyroidScannerParameterConfirmState.Path = new PropertyPath("ThyroidScannerParameterConfirmState");
+            bindingFromThyroidScannerParameterConfirmState.Mode = BindingMode.OneWay;
+            bindingFromThyroidScannerParameterConfirmState.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+
+            // 1. iconBackThyroid
+            MultiBinding mbindingToIconBackThyroid = new MultiBinding();
+            mbindingToIconBackThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconBackThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconBackThyroid.Converter = convertMS2EB;
+            mbindingToIconBackThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.CanDoWork } };
+            BindingOperations.SetBinding(ts.iconBackThyroid, IconButton.IsEnabledProperty, mbindingToIconBackThyroid);
+
+            // 2. iconForceToZeroThyroid
+            MultiBinding mbindingToIconForceToZeroThyroid = new MultiBinding();
+            mbindingToIconForceToZeroThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconForceToZeroThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconForceToZeroThyroid.Converter = convertMS2EB;
+            mbindingToIconForceToZeroThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.CanDoWork } };
+            BindingOperations.SetBinding(ts.iconForceToZeroThyroid, IconButton.IsEnabledProperty, mbindingToIconForceToZeroThyroid);
+
+            // 3. iconFromZeroToConfThyroid
+            MultiBinding mbindingToIconFromZeroToConfThyroid = new MultiBinding();
+            mbindingToIconFromZeroToConfThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconFromZeroToConfThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconFromZeroToConfThyroid.Bindings.Add(bindingFromThyroidScannerForceSensorCleared);
+            mbindingToIconFromZeroToConfThyroid.Converter = convertMS2EB;
+            mbindingToIconFromZeroToConfThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(ts.iconFromZeroToConfThyroid, IconButton.IsEnabledProperty, mbindingToIconFromZeroToConfThyroid);
+
+            // 4. iconConfThyroid
+            MultiBinding mbindingToIconConfThyroid = new MultiBinding();
+            mbindingToIconConfThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconConfThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfThyroid.Bindings.Add(bindingFromThyroidScannerForceSensorCleared);
+            mbindingToIconConfThyroid.Converter = convertMS2EB;
+            mbindingToIconConfThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(ts.iconConfThyroid, IconButton.IsEnabledProperty, mbindingToIconConfThyroid);
+
+            // 5. iconFromConfToParaThyroid
+            MultiBinding mbindingToIconFromConfToParaThyroid = new MultiBinding();
+            mbindingToIconFromConfToParaThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconFromConfToParaThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconFromConfToParaThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconFromConfToParaThyroid.Converter = convertMS2EB;
+            mbindingToIconFromConfToParaThyroid.ConverterParameter = new object[] { new byte[] { 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconFromConfToParaThyroid, IconButton.IsEnabledProperty, mbindingToIconFromConfToParaThyroid);
+
+            // 6. iconConfStartThyroid
+            MultiBinding mbindingToIconConfStartThyroid = new MultiBinding();
+            mbindingToIconConfStartThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconConfStartThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfStartThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfStartThyroid.Converter = convertMS2EB;
+            mbindingToIconConfStartThyroid.ConverterParameter = new object[] { new byte[] { 1, Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconConfStartThyroid, IconButton.IsEnabledProperty, mbindingToIconConfStartThyroid);
+
+            // 7. iconConfFactorPos
+            MultiBinding mbindingToIconConfFactorPos = new MultiBinding();
+            mbindingToIconConfFactorPos.Mode = BindingMode.OneWay;
+            mbindingToIconConfFactorPos.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfFactorPos.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfFactorPos.Converter = convertMS2EB;
+            mbindingToIconConfFactorPos.ConverterParameter = new object[] { new byte[] { 2, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfFactorPos, IconButton.IsEnabledProperty, mbindingToIconConfFactorPos);
+
+            // 8. iconConfFactorAtt
+            MultiBinding mbindingToIconConfFactorAtt = new MultiBinding();
+            mbindingToIconConfFactorAtt.Mode = BindingMode.OneWay;
+            mbindingToIconConfFactorAtt.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfFactorAtt.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfFactorAtt.Converter = convertMS2EB;
+            mbindingToIconConfFactorAtt.ConverterParameter = new object[] { new byte[] { 3, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfFactorAtt, IconButton.IsEnabledProperty, mbindingToIconConfFactorAtt);
+
+            // 9. iconConfFactorFos
+            MultiBinding mbindingToIconConfFactorFos = new MultiBinding();
+            mbindingToIconConfFactorFos.Mode = BindingMode.OneWay;
+            mbindingToIconConfFactorFos.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfFactorFos.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfFactorFos.Converter = convertMS2EB;
+            mbindingToIconConfFactorFos.ConverterParameter = new object[] { new byte[] { 4, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfFactorFos, IconButton.IsEnabledProperty, mbindingToIconConfFactorFos);
+
+            // 10. iconConfEnablePos
+            MultiBinding mbindingToIconConfEnablePos = new MultiBinding();
+            mbindingToIconConfEnablePos.Mode = BindingMode.OneWay;
+            mbindingToIconConfEnablePos.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfEnablePos.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfEnablePos.Converter = convertMS2EB;
+            mbindingToIconConfEnablePos.ConverterParameter = new object[] { new byte[] { 5, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfEnablePos, IconButton.IsEnabledProperty, mbindingToIconConfEnablePos);
+
+            // 11. iconConfEnableAtt
+            MultiBinding mbindingToIconConfEnableAtt = new MultiBinding();
+            mbindingToIconConfEnableAtt.Mode = BindingMode.OneWay;
+            mbindingToIconConfEnableAtt.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfEnableAtt.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfEnableAtt.Converter = convertMS2EB;
+            mbindingToIconConfEnableAtt.ConverterParameter = new object[] { new byte[] { 6, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfEnableAtt, IconButton.IsEnabledProperty, mbindingToIconConfEnableAtt);
+
+            // 12. iconConfEnableFKeep
+            MultiBinding mbindingToIconConfEnableFKeep = new MultiBinding();
+            mbindingToIconConfEnableFKeep.Mode = BindingMode.OneWay;
+            mbindingToIconConfEnableFKeep.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfEnableFKeep.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfEnableFKeep.Converter = convertMS2EB;
+            mbindingToIconConfEnableFKeep.ConverterParameter = new object[] { new byte[] { 7, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfEnableFKeep, IconButton.IsEnabledProperty, mbindingToIconConfEnableFKeep);
+
+            // 13. iconConfEnableFTrack
+            MultiBinding mbindingToIconConfEnableFTrack = new MultiBinding();
+            mbindingToIconConfEnableFTrack.Mode = BindingMode.OneWay;
+            mbindingToIconConfEnableFTrack.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfEnableFTrack.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfEnableFTrack.Converter = convertMS2EB;
+            mbindingToIconConfEnableFTrack.ConverterParameter = new object[] { new byte[] { 8, Byte.MaxValue, Byte.MaxValue - 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration, OperateModuleBase.WorkStatus.WorkRunning } };
+            BindingOperations.SetBinding(ts.iconConfEnableFTrack, IconButton.IsEnabledProperty, mbindingToIconConfEnableFTrack);
+
+            // 14. iconFromParaToConfirmThyroid
+            MultiBinding mbindingToIconFromParaToConfirmThyroid = new MultiBinding();
+            mbindingToIconFromParaToConfirmThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconFromParaToConfirmThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconFromParaToConfirmThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconFromParaToConfirmThyroid.Converter = convertMS2EB;
+            mbindingToIconFromParaToConfirmThyroid.ConverterParameter = new object[] { new byte[] { Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconFromParaToConfirmThyroid, IconButton.IsEnabledProperty, mbindingToIconFromParaToConfirmThyroid);
+
+            // 15. iconConfConfirmThyroid
+            MultiBinding mbindingToIconConfConfirmThyroid = new MultiBinding();
+            mbindingToIconConfConfirmThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconConfConfirmThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconConfConfirmThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToIconConfConfirmThyroid.Converter = convertMS2EB;
+            mbindingToIconConfConfirmThyroid.ConverterParameter = new object[] { new byte[] { Byte.MaxValue }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconConfConfirmThyroid, IconButton.IsEnabledProperty, mbindingToIconConfConfirmThyroid);
+
+            // 16. iconFromConfirmToRunThyroid
+            MultiBinding mbindingToIconFromConfirmToRunThyroid = new MultiBinding();
+            mbindingToIconFromConfirmToRunThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconFromConfirmToRunThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconFromConfirmToRunThyroid.Bindings.Add(bindingFromThyroidScannerForceSensorCleared);
+            mbindingToIconFromConfirmToRunThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirm);
+            mbindingToIconFromConfirmToRunThyroid.Converter = convertMS2EB;
+            mbindingToIconFromConfirmToRunThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconFromConfirmToRunThyroid, IconButton.IsEnabledProperty, mbindingToIconFromConfirmToRunThyroid);
+
+            // 17.iconFromZeroToRunThyroid
+            MultiBinding mbindingToIconFromZeroToRunThyroid = new MultiBinding();
+            mbindingToIconFromZeroToRunThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconFromZeroToRunThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconFromZeroToRunThyroid.Bindings.Add(bindingFromThyroidScannerForceSensorCleared);
+            mbindingToIconFromZeroToRunThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirm);
+            mbindingToIconFromZeroToRunThyroid.Converter = convertMS2EB;
+            mbindingToIconFromZeroToRunThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice } };
+            BindingOperations.SetBinding(ts.iconFromZeroToRunThyroid, IconButton.IsEnabledProperty, mbindingToIconFromZeroToRunThyroid);
+
+            // 18. iconBeginThyroid
+            MultiBinding mbindingToIconBeginThyroid = new MultiBinding();
+            mbindingToIconBeginThyroid.Mode = BindingMode.OneWay;
+            mbindingToIconBeginThyroid.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToIconBeginThyroid.Bindings.Add(bindingFromThyroidScannerForceSensorCleared);
+            mbindingToIconBeginThyroid.Bindings.Add(bindingFromThyroidScannerParameterConfirm);
+            mbindingToIconBeginThyroid.Converter = convertMS2EB;
+            mbindingToIconBeginThyroid.ConverterParameter = new object[] { new byte[] { 0 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.InitialForceDevice, OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.iconBeginThyroid, IconButton.IsEnabledProperty, mbindingToIconBeginThyroid);
+
+            // 19. startThyroidNextBtn
+            MultiBinding mbindingToStartThyroidNextBtn = new MultiBinding();
+            mbindingToStartThyroidNextBtn.Mode = BindingMode.OneWay;
+            mbindingToStartThyroidNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToStartThyroidNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToStartThyroidNextBtn.Converter = convertMS2EB;
+            mbindingToStartThyroidNextBtn.ConverterParameter = new object[] { new byte[] { 1 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.startThyroidNextBtn, IconButton.IsEnabledProperty, mbindingToStartThyroidNextBtn);
+
+            // 20. factorPosNextBtn
+            MultiBinding mbindingToFactorPosNextBtn = new MultiBinding();
+            mbindingToFactorPosNextBtn.Mode = BindingMode.OneWay;
+            mbindingToFactorPosNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToFactorPosNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToFactorPosNextBtn.Converter = convertMS2EB;
+            mbindingToFactorPosNextBtn.ConverterParameter = new object[] { new byte[] { 2 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.factorPosNextBtn, IconButton.IsEnabledProperty, mbindingToFactorPosNextBtn);
+
+            // 21. factorAttNextBtn
+            MultiBinding mbindingToFactorAttNextBtn = new MultiBinding();
+            mbindingToFactorAttNextBtn.Mode = BindingMode.OneWay;
+            mbindingToFactorAttNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToFactorAttNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToFactorAttNextBtn.Converter = convertMS2EB;
+            mbindingToFactorAttNextBtn.ConverterParameter = new object[] { new byte[] { 3 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.factorAttNextBtn, IconButton.IsEnabledProperty, mbindingToFactorAttNextBtn);
+
+            // 22. factorFosNextBtn
+            MultiBinding mbindingToFactorFosNextBtn = new MultiBinding();
+            mbindingToFactorFosNextBtn.Mode = BindingMode.OneWay;
+            mbindingToFactorFosNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToFactorFosNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToFactorFosNextBtn.Converter = convertMS2EB;
+            mbindingToFactorFosNextBtn.ConverterParameter = new object[] { new byte[] { 4 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.factorFosNextBtn, IconButton.IsEnabledProperty, mbindingToFactorFosNextBtn);
+
+            // 23. enablePosNextBtn
+            MultiBinding mbindingToEnablePosNextBtn = new MultiBinding();
+            mbindingToEnablePosNextBtn.Mode = BindingMode.OneWay;
+            mbindingToEnablePosNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToEnablePosNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToEnablePosNextBtn.Converter = convertMS2EB;
+            mbindingToEnablePosNextBtn.ConverterParameter = new object[] { new byte[] { 5 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.enablePosNextBtn, IconButton.IsEnabledProperty, mbindingToEnablePosNextBtn);
+
+            // 24. enableAttNextBtn
+            MultiBinding mbindingToEnableAttNextBtn = new MultiBinding();
+            mbindingToEnableAttNextBtn.Mode = BindingMode.OneWay;
+            mbindingToEnableAttNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToEnableAttNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToEnableAttNextBtn.Converter = convertMS2EB;
+            mbindingToEnableAttNextBtn.ConverterParameter = new object[] { new byte[] { 6 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.enableAttNextBtn, IconButton.IsEnabledProperty, mbindingToEnableAttNextBtn);
+
+            // 25. enableFosKeepNextBtn
+            MultiBinding mbindingToEnableFosKeepNextBtnn = new MultiBinding();
+            mbindingToEnableFosKeepNextBtnn.Mode = BindingMode.OneWay;
+            mbindingToEnableFosKeepNextBtnn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToEnableFosKeepNextBtnn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToEnableFosKeepNextBtnn.Converter = convertMS2EB;
+            mbindingToEnableFosKeepNextBtnn.ConverterParameter = new object[] { new byte[] { 7 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.enableFosKeepNextBtn, IconButton.IsEnabledProperty, mbindingToEnableFosKeepNextBtnn);
+
+            // 26. enableFosTrackNextBtn
+            MultiBinding mbindingToEnableFosTrackNextBtn = new MultiBinding();
+            mbindingToEnableFosTrackNextBtn.Mode = BindingMode.OneWay;
+            mbindingToEnableFosTrackNextBtn.Bindings.Add(bindingFromThyroidScannerWorkStatus);
+            mbindingToEnableFosTrackNextBtn.Bindings.Add(bindingFromThyroidScannerParameterConfirmState);
+            mbindingToEnableFosTrackNextBtn.Converter = convertMS2EB;
+            mbindingToEnableFosTrackNextBtn.ConverterParameter = new object[] { new byte[] { 8 }, new OperateModuleBase.WorkStatus[] { OperateModuleBase.WorkStatus.ParametersConfiguration } };
+            BindingOperations.SetBinding(ts.enableFosTrackNextBtn, IconButton.IsEnabledProperty, mbindingToEnableFosTrackNextBtn);
+        }
         #endregion
 
         /// <summary>
@@ -4046,12 +5281,19 @@ namespace AssistantRobot
         /// <param name="MP">主导航页</param>
         /// <param name="BC">基本控制页</param>
         /// <param name="GD">乳腺扫描页</param>
-        public void DefineViews(MainWindow MW, MainPage MP, BaseControl BC, GalactophoreDetect GD)
+        /// <param name="TS">甲状腺扫描页</param>
+        public void DefineViews(
+            MainWindow MW,
+            MainPage MP,
+            BaseControl BC,
+            GalactophoreDetect GD,
+            ThyroidScan TS)
         {
             mw = MW;
             mp = MP;
             bc = BC;
             gd = GD;
+            ts = TS;
         }
 
         /// <summary>
@@ -4072,10 +5314,12 @@ namespace AssistantRobot
             URExecutorInitialization();
 
             GalactophoreDetectorInitialization();
+            ThyroidScannerInitialization();
 
             return 0;
         }
 
+        protected bool dataBaseInitialDone = false;
         /// <summary>
         /// 初始化数据库连接和数据
         /// </summary>
@@ -4085,14 +5329,21 @@ namespace AssistantRobot
             sqlsc = new SQLServerConnector();
             sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
 
-            return ToolParameterRefresh(currentToolType);
+            if (ToolParameterRefresh(currentToolType, currentToolWhole))
+            {
+                dataBaseInitialDone = true;
+                return true;
+            }
+            else return false;
         }
 
         /// <summary>
         /// 工具参数根据数据库读取结果更新
         /// </summary>
+        /// <param name="NeededToolType">所需工具类型</param>
+        /// <param name="NeededToolWhole">所需工具完整标定</param>
         /// <returns>返回更新结果</returns>
-        private bool ToolParameterRefresh(ToolType NeededToolType)
+        private bool ToolParameterRefresh(ToolType NeededToolType, bool NeededToolWhole)
         {
             double[] searchBase = sqlsc.SearchToolBaseInformation((int)NeededToolType);
             var collectionWithAbnormalParameters =
@@ -4114,7 +5365,7 @@ namespace AssistantRobot
                 return false;
             }
 
-            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType);
+            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType, NeededToolWhole);
             collectionWithAbnormalParameters =
                 from element in searchForce.Cast<double>()
                 where element < -0.5
@@ -4125,6 +5376,8 @@ namespace AssistantRobot
             }
 
             currentToolType = NeededToolType;
+            currentToolWhole = NeededToolWhole;
+
             if (currentRobotHanged =
                 (
                 Math.Abs(searchPosition[1]) + Math.Abs(searchPosition[2]) +
@@ -4144,10 +5397,17 @@ namespace AssistantRobot
             }
             currentToolForceModifier = (double[,])searchForce.Clone();
 
-            if (currentToolType == ToolType.Probe_LA523_UR3 || currentToolType == ToolType.Probe_LA523_UR5)
+            if (currentToolType == ToolType.Probe_LA523)
             {
-                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
+                if (currentToolWhole)
+                    currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbeWhole;
+                else
+                    currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
             }
+            else if (currentToolType == ToolType.Needle)
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.PuncturePrecise;
+            else
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.NoModified;
 
             currentToolTcpEndPointCordinates = new double[] {
                 searchBase[0], searchBase[1], searchBase[2],
@@ -4210,8 +5470,22 @@ namespace AssistantRobot
             gdr.LoadParametersFromXmlAndOutput();
         }
 
+        /// <summary>
+        /// 初始化甲状腺扫查类
+        /// </summary>
+        private void ThyroidScannerInitialization()
+        {
+            tsr = new ThyroidScanner(urdp,
+                currentRobotInitialPosJoints, currentToolTcpEndPointCordinates,
+                currentRobotHanged, currentToolGravityValue);
 
+            tsr.OnSendModuleParameters += new ThyroidScanner.SendStringList(TSRConfParams);
+            tsr.OnSendWorkingStatus += new OperateModuleBase.SendShort(TSRWorkStatus);
+            tsr.OnSendConfirmParametersStatus += new OperateModuleBase.SendBool(TSRParameterConfirmStatus);
+            tsr.OnSendForceClearedStatus += new OperateModuleBase.SendBool(TSRForceClearedStatus);
 
+            tsr.LoadParametersFromXmlAndOutput();
+        }
 
         #endregion
 
@@ -4223,8 +5497,9 @@ namespace AssistantRobot
         {
             EnableAll = false;
             //ShowDialogAtUIThread("无法连接到数据库！", "错误", 2);
-            urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
-                new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.DataBaseAttachFailed });
+            if (dataBaseInitialDone)
+                urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.URAdditionalDeviceAbnormal,
+                    new List<byte> { (byte)URViewModelRemote_LocalPart.AppProtocolAdditionalDeviceAbnormalDatagramClass.DataBaseAttachFailed });
 
             Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "DataBase can not be attached.");
             return;
@@ -4593,6 +5868,60 @@ namespace AssistantRobot
                 new List<byte> { Convert.ToByte(Status ? 1 : 0) });
         }
 
+        /// <summary>
+        /// TSR相关配置参数反馈
+        /// </summary>
+        /// <param name="Parameters">反馈的配置参数</param>
+        private void TSRConfParams(List<string[]> Parameters)
+        {
+            DetectingErrorForceMinTSR = double.Parse(Parameters[0][0]);
+            DetectingErrorForceMaxTSR = double.Parse(Parameters[1][0]);
+            DetectingSpeedMinTSR = double.Parse(Parameters[2][0]);
+            DetectingSpeedMaxTSR = double.Parse(Parameters[3][0]);
+            IfEnableForceKeepingTSR = bool.Parse(Parameters[4][0]);
+            IfEnableForceTrackingTSR = bool.Parse(Parameters[5][0]);
+            DetectingBasicPreservedForceTSR = double.Parse(Parameters[6][0]);
+
+            MaxAvailableRadiusTSR = double.Parse(Parameters[7][0]);
+            MaxAvailableAngleTSR = double.Parse(Parameters[8][0]);
+            StopRadiusTSR = double.Parse(Parameters[9][0]);
+            MaxDistPeriodTSR = double.Parse(Parameters[10][0]);
+            MaxAnglePeriodTSR = double.Parse(Parameters[11][0]);
+
+            PositionOverrideTSR = double.Parse(Parameters[12][0]);
+            AngleOverrideTSR = double.Parse(Parameters[13][0]);
+            ForceOverrideTSR = double.Parse(Parameters[14][0]);
+
+            IfEnableAttitudeTrackingTSR = bool.Parse(Parameters[15][0]);
+            IfEnableTranslationTrackingTSR = bool.Parse(Parameters[16][0]);
+        }
+
+        /// <summary>
+        /// TSR工作状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的工作状态</param>
+        private void TSRWorkStatus(short Status)
+        {
+            ThyroidScannerWorkStatus = Status;
+        }
+
+        /// <summary>
+        /// TSR参数确认状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的参数确认状态</param>
+        private void TSRParameterConfirmStatus(bool Status)
+        {
+            ThyroidScannerParameterConfirm = Status;
+        }
+
+        /// <summary>
+        /// TSR力清零状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的力清零状态</param>
+        private void TSRForceClearedStatus(bool Status)
+        {
+            ThyroidScannerForceSensorCleared = Status;
+        }
 
         #region Null Event Callback Functions
         private void URNullEventHandler()
@@ -4602,7 +5931,6 @@ namespace AssistantRobot
         private void URNullEventHandler(object nullObject)
         { return; }
         #endregion
-
         #endregion
 
     }

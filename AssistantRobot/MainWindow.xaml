@@ -50,7 +50,7 @@
 	<Controls:MetroWindow.Flyouts>
         <Controls:FlyoutsControl x:Name="flyoutsControl">
 			
-            <Controls:Flyout x:Name="settingsFlyoutGlobal" Position="Top"
+            <Controls:Flyout x:Name="settingsFlyoutElectric" Position="Top"
                              Header="电气控制" Controls:ControlsHelper.HeaderFontSize="24"
 							 IsModal="True" IsPinned="False">
                 <Grid Margin="20">
@@ -395,9 +395,263 @@
                 </Grid>
             </Controls:Flyout>
 
-			<Controls:Flyout x:Name="settingsFlyoutPuncture" Position="Right"
+            <Controls:Flyout x:Name="settingsFlyoutPuncture" Position="Right"
                              Header="甲状腺穿刺模块设置" Controls:ControlsHelper.HeaderFontSize="24"
 							 IsModal="True" IsPinned="False">
+            </Controls:Flyout>
+            
+            <Controls:Flyout x:Name="settingsFlyoutThyroid" Position="Right"
+                             Header="甲状腺扫描模块设置" Controls:ControlsHelper.HeaderFontSize="24"
+							 IsModal="True" IsPinned="False" IsOpenChanged="settingsFlyoutPuncture_IsOpenChanged">
+                <Grid Margin="60 10 40 10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0"
+						Text="最小探测力(N):" FontSize="18" Margin="0 0 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="5 0 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="minForceSliderThyroid"
+                                    Maximum="4" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="minForceSliderThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+						Text="最大探测力(N):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxForceSliderThyroid"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxForceSliderThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0"
+						Text="最小探测速度(mm/r):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="minDetectSpeedSliderThyroid"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="minDetectSpeedSliderThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0"
+						Text="最大探测速度(mm/r):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="3" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxDetectSpeedSliderThyroid"
+                                    Maximum="6" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxDetectSpeedSliderThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0"
+						Text="保持压力(N):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="4" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="holdingPressureThyroid"
+                                    Maximum="3" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="holdingPressureThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="5" Grid.Column="0"
+						Text="最大半径(mm):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="5" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxRadiusThyroid"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxRadiusThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="6" Grid.Column="0"
+						Text="最大偏角(°):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="6" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxAngleThyroid"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxAngleThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="7" Grid.Column="0"
+						Text="终止距离(mm):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="7" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="stopDistanceThyroid"
+                                    Maximum="2" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="stopDistanceThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="8" Grid.Column="0"
+						Text="最大周期位移(mm):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="8" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxLoopDistThyroid"
+                                    Maximum="7" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxLoopDistThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="9" Grid.Column="0"
+						Text="最大周期角移(°):" FontSize="18" Margin="0 5 5 5"
+						VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel Grid.Row="9" Grid.Column="1" Margin="5 5 0 5" Orientation="Horizontal"
+						VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Slider x:Name="maxLoopAngleThyroid"
+                                    Maximum="7" Minimum="0"
+                                    Orientation="Horizontal"
+                                    SmallChange="1" LargeChange="1"
+									MinWidth="100" Cursor="Hand" 
+									Controls:SliderHelper.TrackValueFillPressedBrush="#FF4BF8CB" 
+									Controls:SliderHelper.TrackValueFillHoverBrush="#FF4BF8CB"
+									Controls:SliderHelper.TrackValueFillBrush="#FF4BF8CB"
+									IsSnapToTickEnabled="True"
+									TickFrequency="1" Margin="0 0 2 0"
+                                    TickPlacement="TopLeft"
+									Controls:SliderHelper.ThumbFillBrush="White" 
+									Controls:SliderHelper.ThumbFillPressedBrush="White" 
+									Controls:SliderHelper.ThumbFillHoverBrush="#FFD9D9D9"/>
+                        <Label x:Name="maxLoopAngleThyroidText" FontSize="18" 
+							Margin="2 0 0 0" MinWidth="60" />
+                    </StackPanel>
+                </Grid>
             </Controls:Flyout>
 
         </Controls:FlyoutsControl>

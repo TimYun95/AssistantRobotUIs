@@ -46,6 +46,16 @@ namespace AssistantRobot
             e.Handled = true;
         }
 
+        private void thyroidScanning_Click(object sender, RoutedEventArgs e)
+        {
+            urvm.NavigateToPage(URViewModel.ShowPage.ThyroidScanning);
+
+            // 进入甲状腺扫查模块
+            urvm.EnterThyroidScanningModule();
+
+            e.Handled = true;
+        }
+
 
     }
 }
