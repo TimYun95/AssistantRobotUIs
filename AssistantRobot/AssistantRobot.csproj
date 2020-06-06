@@ -123,7 +123,11 @@
     </ApplicationDefinition>
     <Compile Include="CommunicationModel.cs" />
     <Compile Include="Functions.cs" />
+    <Compile Include="GetSensorDatas.cs" />
     <Compile Include="SelfDefinedConverter.cs" />
+    <Compile Include="ThyroidScan.xaml.cs">
+      <DependentUpon>ThyroidScan.xaml</DependentUpon>
+    </Compile>
     <Compile Include="URViewModel.cs" />
     <Page Include="BaseControl.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -170,6 +174,10 @@
     <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ThyroidScan.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
