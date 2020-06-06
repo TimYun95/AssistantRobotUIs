@@ -101,9 +101,18 @@ namespace AssistantRobot
             BreastScanWorkStatus = 102,
             BreastScanConfigurationConfirmStatus = 103,
             BreastScanForceZerodStatus = 104,
-            BreastScanConfigurationProcess = 151,
-            BreastScanImmediateStop = 201,
-            BreastScanImmediateStopRecovery = 202,
+            BreastScanConfigurationProcess = 111,
+            BreastScanImmediateStop = 121,
+            BreastScanImmediateStopRecovery = 122,
+
+            RemoteScanStartPos = 150,
+            RemoteScanConfiguration = 151,
+            RemoteScanWorkStatus = 152,
+            RemoteScanConfigurationConfirmStatus = 153,
+            RemoteScanForceZerodStatus = 154,
+            RemoteScanConfigurationProcess = 161,
+            RemoteScanImmediateStop = 171,
+            RemoteScanImmediateStopRecovery = 172,
 
             ChangePage = 221,
 
@@ -238,6 +247,72 @@ namespace AssistantRobot
         }
 
         /// <summary>
+        /// 应用协议状态 远程扫描配置数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationDatagram : byte
+        {
+            DetectingErrorForceMinTSR = 0,
+            DetectingErrorForceMaxTSR = 4,
+            DetectingSpeedMinTSR = 8,
+            DetectingSpeedMaxTSR = 12,
+            IfEnableForceKeepingTSR = 16,
+            IfEnableForceTrackingTSR = 17,
+            DetectingBasicPreservedForceTSR = 18,
+            MaxAvailableRadiusTSR = 22,
+            MaxAvailableAngleTSR = 26,
+            StopRadiusTSR = 30,
+            MaxDistPeriodTSR = 34,
+            MaxAnglePeriodTSR = 38,
+            PositionOverrideTSR = 42,
+            AngleOverrideTSR = 46,
+            ForceOverrideTSR = 50,
+            IfEnableAttitudeTrackingTSR = 54,
+            IfEnableTranslationTrackingTSR = 55
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描工作状态数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanWorkStatusDatagram : byte
+        {
+            ModuleWorkingStatus = 0 // byte: OperateModuleBase.WorkStatus
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描配置确认数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationConfirmDatagram : byte
+        {
+            HasConfirmConfiguration = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描力清零数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanForceZerodDatagram : byte
+        {
+            HasForceZeroed = 0 // byte: 0--no 1--yes
+        }
+
+        /// <summary>
+        /// 应用协议状态 远程扫描配置过程进度数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanConfigurationProcessDatagram : byte
+        {
+            ConfProcess = 0 // byte: max-1--BeforeConfiguration
+            // 0--Initial
+            // 1--StartPos
+            // 2--TranslateRatio
+            // 3--PostureRatio
+            // 4--PressureRatio
+            // 5--PositionTrack
+            // 6--PostureTrack
+            // 7--PressureKeep
+            // 8--PressureTrack
+            // max--All
+        }
+
+        /// <summary>
         /// 应用协议指令
         /// </summary>
         public enum AppProtocolCommand : byte
@@ -266,7 +341,23 @@ namespace AssistantRobot
 
             StopBreastScanImmediately = 121,
             RecoveryFromStopBreastScanImmediately = 122,
-            ExitBreastScanMode = 131
+            ExitBreastScanMode = 131,
+
+            EnterRemoteScanMode = 141,
+            RemoteScanModeBeginForceZeroed = 142,
+            RemoteScanModeBeginConfigurationSet = 143,
+            RemoteScanModeConfirmStartPos = 144,
+            RemoteScanModeNextConfigurationItem = 145,
+            RemoteScanModeConfirmConfigurationSet = 146,
+            RemoteScanModeReadyAndStartBreastScan = 147,
+            RemoteScanModeSaveConfigurationSet = 148,
+
+            StopRemoteScanImmediately = 151,
+            RecoveryFromStopRemoteScanImmediately = 152,
+            ExitRemoteScanMode = 161,
+
+
+            NotifyRemoteConnected = 251
         }
 
         /// <summary>
@@ -319,7 +410,6 @@ namespace AssistantRobot
         {
             AimPage = 0, // URViewModel.ShowPage
         }
-
         #endregion
 
         #region 字段 TCP
@@ -734,6 +824,15 @@ namespace AssistantRobot
         public event SendVoid OnSendBreastScanImmediateStop;
         public event SendVoid OnSendBreastScanImmediateStopRecovery;
 
+        public event SendVoid OnSendRemoteScanStartPos;
+        public event SendStringArrayList OnSendRemoteScanConfiguration;
+        public event SendIndex OnSendRemoteScanWorkStatus;
+        public event SendBool OnSendRemoteScanConfigurationConfirmStatus;
+        public event SendBool OnSendRemoteScanForceZerodStatus;
+        public event SendIndex OnSendRemoteScanConfigurationProcess;
+        public event SendVoid OnSendRemoteScanImmediateStop;
+        public event SendVoid OnSendRemoteScanImmediateStopRecovery;
+
         public event SendBool OnSendTcpDisconnected;
 
         public event SendIndex OnSendChangePage;
@@ -924,6 +1023,31 @@ namespace AssistantRobot
                     break;
                 case AppProtocolStatus.BreastScanImmediateStopRecovery:
                     OnSendBreastScanImmediateStopRecovery();
+                    break;
+
+                case AppProtocolStatus.RemoteScanStartPos:
+                    OnSendRemoteScanStartPos();
+                    break;
+                case AppProtocolStatus.RemoteScanConfiguration:
+                    OnSendRemoteScanConfiguration(GetRemoteScanConfFromBytes(content));
+                    break;
+                case AppProtocolStatus.RemoteScanWorkStatus:
+                    OnSendRemoteScanWorkStatus(Math.Min(Math.Max(content[(byte)AppProtocolRemoteScanWorkStatusDatagram.ModuleWorkingStatus] - 10, -1), 100));
+                    break;
+                case AppProtocolStatus.RemoteScanConfigurationConfirmStatus:
+                    OnSendRemoteScanConfigurationConfirmStatus(content[(byte)AppProtocolRemoteScanConfigurationConfirmDatagram.HasConfirmConfiguration] == 1);
+                    break;
+                case AppProtocolStatus.RemoteScanForceZerodStatus:
+                    OnSendRemoteScanForceZerodStatus(content[(byte)AppProtocolRemoteScanForceZerodDatagram.HasForceZeroed] == 1);
+                    break;
+                case AppProtocolStatus.RemoteScanConfigurationProcess:
+                    OnSendRemoteScanConfigurationProcess(content[(byte)AppProtocolRemoteScanConfigurationProcessDatagram.ConfProcess]);
+                    break;
+                case AppProtocolStatus.RemoteScanImmediateStop:
+                    OnSendRemoteScanImmediateStop();
+                    break;
+                case AppProtocolStatus.RemoteScanImmediateStopRecovery:
+                    OnSendRemoteScanImmediateStopRecovery();
                     break;
 
                 case AppProtocolStatus.ChangePage:
@@ -1128,6 +1252,129 @@ namespace AssistantRobot
                 BitConverter.GetBytes(
                 IPAddress.NetworkToHostOrder(
                 BitConverter.ToInt32(inputBytes, (byte)AppProtocolBreastScanConfigurationDatagram.CheckingStepGDR))), 0)).ToString()
+            });
+
+            return returnArray;
+        }
+
+        /// <summary>
+        /// 获得甲状腺扫描配置
+        /// </summary>
+        /// <param name="inputBytes">字节流</param>
+        /// <returns>返回数据列表</returns>
+        List<string[]> GetRemoteScanConfFromBytes(byte[] inputBytes)
+        {
+            List<string[]> returnArray = new List<string[]>(17);
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingErrorForceMinTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingErrorForceMaxTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingSpeedMinTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingSpeedMaxTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableForceKeepingTSR] == 1 ? "True" : "False"
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableForceTrackingTSR] == 1 ? "True" : "False"
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.DetectingBasicPreservedForceTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAvailableRadiusTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAvailableAngleTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.StopRadiusTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.MaxDistPeriodTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.MaxAnglePeriodTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.PositionOverrideTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.AngleOverrideTSR))), 0)).ToString()
+            });
+            returnArray.Add(new string[] {
+                Convert.ToDouble(
+                BitConverter.ToSingle(
+                BitConverter.GetBytes(
+                IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(inputBytes, (byte)AppProtocolRemoteScanConfigurationDatagram.ForceOverrideTSR))), 0)).ToString()
+            });
+
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableAttitudeTrackingTSR] == 1 ? "True" : "False"
+            });
+            returnArray.Add(new string[] {
+                inputBytes[(byte)AppProtocolRemoteScanConfigurationDatagram.IfEnableTranslationTrackingTSR] == 1 ? "True" : "False"
             });
 
             return returnArray;

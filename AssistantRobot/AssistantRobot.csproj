@@ -89,6 +89,9 @@
     <Reference Include="MahApps.Metro.IconPacks">
       <HintPath>..\packages\MahApps.Metro.IconPacks.2.3.0\lib\net45\MahApps.Metro.IconPacks.dll</HintPath>
     </Reference>
+    <Reference Include="MathAgent">
+      <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MathAgent.dll</HintPath>
+    </Reference>
     <Reference Include="MotionAgent">
       <HintPath>..\..\AssistantRobot_Dlls\AssistantRobotDlls\AssistantRobotDlls\bin\Release\MotionAgent.dll</HintPath>
     </Reference>

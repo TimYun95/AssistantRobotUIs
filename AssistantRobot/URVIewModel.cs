@@ -25,6 +25,7 @@ using System.IO;
 using LogPrinter;
 using URCommunication;
 using URModule;
+using MathFunction;
 
 
 namespace AssistantRobot
@@ -69,7 +70,7 @@ namespace AssistantRobot
 
         #region Model
         private CommunicationModel cm;
-        //private GetSensorDatas gsd;
+        private GetSensorDatas gsd;
 
         // 移动最高最低速度和加速度
         private readonly double fastSpeedL = 0.2;
@@ -94,7 +95,7 @@ namespace AssistantRobot
         // 是否正在等待恢复GDR控制权
         private bool ifWaitForGDR = false;
 
-                // 是否正在等待恢复TSR控制权
+        // 是否正在等待恢复TSR控制权
         private bool ifWaitForTSR = false;
 
         // 动作捕捉数据获取是否成功
@@ -2265,8 +2266,8 @@ namespace AssistantRobot
                     case ShowPage.GalactophoreDetect:
                         CloseWinEnable = false;
                         mw.frameNav.NavigationService.Navigate(gd);
-                         break;
-                     case ShowPage.ThyroidScanning:
+                        break;
+                    case ShowPage.ThyroidScanning:
                         CloseWinEnable = false;
                         mw.frameNav.NavigationService.Navigate(ts);
                         break;
@@ -2813,7 +2814,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.EnterBreastScanMode);
+                    CommunicationModel.AppProtocolCommand.EnterRemoteScanMode);
             }));
         }
 
@@ -2825,7 +2826,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.ExitBreastScanMode);
+                    CommunicationModel.AppProtocolCommand.ExitRemoteScanMode);
             }));
         }
 
@@ -2836,8 +2837,8 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-               cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                                    CommunicationModel.AppProtocolCommand.BreastScanModeBeginForceZeroed);
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                                     CommunicationModel.AppProtocolCommand.RemoteScanModeBeginForceZeroed);
             }));
         }
 
@@ -2849,7 +2850,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                                    CommunicationModel.AppProtocolCommand.BreastScanModeBeginConfigurationSet);
+                                    CommunicationModel.AppProtocolCommand.RemoteScanModeBeginConfigurationSet);
             }));
         }
 
@@ -2872,9 +2873,9 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                 ThyroidScanConfMovingEnable = false;
+                ThyroidScanConfMovingEnable = false;
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.BreastScanModeConfirmNipplePos);
+                    CommunicationModel.AppProtocolCommand.RemoteScanModeConfirmStartPos);
 
                 Thread.Sleep(100);
                 StartPositionTSR = new double[] { ToolTCPCordinateX, ToolTCPCordinateY, ToolTCPCordinateZ };
@@ -2889,7 +2890,7 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(ConfPage.ThyroidScan).ToArray(), CommunicationModel.AppProtocolCommand.BreastScanModeConfirmConfigurationSet);
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(ConfPage.ThyroidScan).ToArray(), CommunicationModel.AppProtocolCommand.RemoteScanModeConfirmConfigurationSet);
             }));
         }
 
@@ -2901,7 +2902,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.BreastScanModeReadyAndStartBreastScan);
+                    CommunicationModel.AppProtocolCommand.RemoteScanModeReadyAndStartBreastScan);
             }));
         }
 
@@ -2913,7 +2914,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.StopBreastScanImmediately);
+                    CommunicationModel.AppProtocolCommand.StopRemoteScanImmediately);
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately.");
             }));
 
@@ -2922,7 +2923,7 @@ namespace AssistantRobot
             Task.Run(new Action(() =>
             {
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.RecoveryFromStopBreastScanImmediately);
+                    CommunicationModel.AppProtocolCommand.RecoveryFromStopRemoteScanImmediately);
                 Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is recoveried from stopping immediately.");
             }));
         }
@@ -2937,7 +2938,7 @@ namespace AssistantRobot
                 SaveConfParameters(ConfPage.ThyroidScan);
 
                 cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.BreastScanModeNextConfigurationItem);
+                    CommunicationModel.AppProtocolCommand.RemoteScanModeNextConfigurationItem);
             }));
         }
 
@@ -2948,10 +2949,10 @@ namespace AssistantRobot
         {
             Task.Run(new Action(() =>
             {
+                ////////
+                ///////
+                ///////
 
-            
-            
-            
             }));
         }
         #endregion
@@ -2971,7 +2972,7 @@ namespace AssistantRobot
                     break;
 
                 case ConfPage.ThyroidScan:
-                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(modifyPage).ToArray(), CommunicationModel.AppProtocolCommand.BreastScanModeSaveConfigurationSet);
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, PickParametersFormView(modifyPage).ToArray(), CommunicationModel.AppProtocolCommand.RemoteScanModeSaveConfigurationSet);
                     break;
 
                 default:
@@ -3123,7 +3124,7 @@ namespace AssistantRobot
 
             return returnConf;
         }
-        
+
         /// <summary>
         /// 从甲状腺扫描界面获取数据
         /// </summary>
@@ -5158,7 +5159,7 @@ namespace AssistantRobot
         /// </summary>
         private void BindingItemsThyroidScannerMoveEnable()
         {
-            // 绑定：BreastScanConfMovingEnable {属性} ==> iconMoveSettingGalactophore {GalactophorDetect控件}
+            // 绑定：ThyroidScanConfMovingEnable {属性} ==> iconMoveSettingThyroid {ThyroidScanner控件}
             Binding bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore = new Binding();
             bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Source = this;
             bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Path = new PropertyPath("BreastScanConfMovingEnable");
@@ -5237,6 +5238,15 @@ namespace AssistantRobot
             cm.OnSendBreastScanConfigurationProcess += GDRConfigurationProcess;
             cm.OnSendBreastScanImmediateStop += GDRStopNow;
             cm.OnSendBreastScanImmediateStopRecovery += GDRStopRecovery;
+
+            cm.OnSendRemoteScanStartPos += new CommunicationModel.SendVoid(new Action(() => { StartPositionTSR = new double[] { ToolTCPCordinateX, ToolTCPCordinateY, ToolTCPCordinateZ }; }));
+            cm.OnSendRemoteScanConfiguration += TSRConfParams;
+            cm.OnSendRemoteScanWorkStatus += TSRWorkStatus;
+            cm.OnSendRemoteScanConfigurationConfirmStatus += TSRParameterConfirmStatus;
+            cm.OnSendRemoteScanForceZerodStatus += TSRForceClearedStatus;
+            cm.OnSendRemoteScanConfigurationProcess += TSRConfigurationProcess;
+            cm.OnSendRemoteScanImmediateStop += TSRStopNow;
+            cm.OnSendRemoteScanImmediateStopRecovery += TSRStopRecovery;
 
             cm.OnSendTcpDisconnected += RemoteConnectionBroken;
 
@@ -5591,6 +5601,113 @@ namespace AssistantRobot
             ifWaitForGDR = false;
         }
 
+        /// TSR相关配置参数反馈
+        /// </summary>
+        /// <param name="Parameters">反馈的配置参数</param>
+        private void TSRConfParams(List<string[]> Parameters)
+        {
+            DetectingErrorForceMinTSR = double.Parse(Parameters[0][0]);
+            DetectingErrorForceMaxTSR = double.Parse(Parameters[1][0]);
+
+            DetectingSpeedMinTSR = double.Parse(Parameters[2][0]);
+            DetectingSpeedMaxTSR = double.Parse(Parameters[3][0]);
+
+            IfEnableForceKeepingTSR = bool.Parse(Parameters[4][0]);
+            IfEnableForceTrackingTSR = bool.Parse(Parameters[5][0]);
+
+            DetectingBasicPreservedForceTSR = double.Parse(Parameters[6][0]);
+
+            MaxAvailableRadiusTSR = double.Parse(Parameters[7][0]);
+            MaxAvailableAngleTSR = double.Parse(Parameters[8][0]);
+
+            StopRadiusTSR = double.Parse(Parameters[9][0]);
+            MaxDistPeriodTSR = double.Parse(Parameters[10][0]);
+            MaxAnglePeriodTSR = double.Parse(Parameters[11][0]);
+
+            PositionOverrideTSR = double.Parse(Parameters[12][0]);
+            AngleOverrideTSR = double.Parse(Parameters[13][0]);
+            ForceOverrideTSR = double.Parse(Parameters[14][0]);
+
+            IfEnableAttitudeTrackingTSR = bool.Parse(Parameters[15][0]);
+            IfEnableTranslationTrackingTSR = bool.Parse(Parameters[16][0]);
+        }
+
+        /// <summary>
+        /// TSR工作状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的工作状态</param>
+        private void TSRWorkStatus(int Status)
+        {
+            ThyroidScannerWorkStatus = Convert.ToInt16(Status);
+        }
+
+        /// <summary>
+        /// TSR参数确认状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的参数确认状态</param>
+        private void TSRParameterConfirmStatus(bool Status)
+        {
+            ThyroidScannerParameterConfirm = Status;
+        }
+
+        /// <summary>
+        /// TSR力清零状态反馈
+        /// </summary>
+        /// <param name="Status">反馈的力清零状态</param>
+        private void TSRForceClearedStatus(bool Status)
+        {
+            ThyroidScannerForceSensorCleared = Status;
+        }
+
+        /// <summary>
+        /// TSR配置过程状态
+        /// </summary>
+        /// <param name="process">过程状态</param>
+        private void TSRConfigurationProcess(int process)
+        {
+            ThyroidScannerParameterConfirmState = Convert.ToByte(process);
+        }
+
+        /// <summary>
+        /// TSR立即停止
+        /// </summary>
+        private void TSRStopNow()
+        {
+            ifWaitForTSR = true;
+            mw.Dispatcher.BeginInvoke(new Action(TSRStopLogic));
+        }
+
+        /// <summary>
+        /// TSR急停逻辑
+        /// </summary>
+        private async void TSRStopLogic()
+        {
+            var controller = await mw.ShowProgressAsync("请稍后", "当地急停甲状腺扫查，请等待当地恢复控制权。。。", settings: new MetroDialogSettings()
+            {
+                AnimateShow = false,
+                AnimateHide = false,
+                DialogTitleFontSize = titleSize,
+                DialogMessageFontSize = messageSize,
+                ColorScheme = MetroDialogColorScheme.Theme
+            });
+
+            controller.SetIndeterminate();
+
+            while (ifWaitForTSR) await Task.Delay(500);
+
+            await controller.CloseAsync();
+
+            await ShowDialog("当地已经恢复甲状腺扫查控制权！", "完成", 18);
+        }
+
+        /// <summary>
+        /// TSR立即停止恢复
+        /// </summary>
+        private void TSRStopRecovery()
+        {
+            ifWaitForTSR = false;
+        }
+
         /// <summary>
         /// 远程连接断开
         /// </summary>
@@ -5625,60 +5742,6 @@ namespace AssistantRobot
             mw.Close();
         }
 
-        /// TSR相关配置参数反馈
-        /// </summary>
-        /// <param name="Parameters">反馈的配置参数</param>
-        private void TSRConfParams(List<string[]> Parameters)
-        {
-            DetectingErrorForceMinTSR = double.Parse(Parameters[0][0]);
-            DetectingErrorForceMaxTSR = double.Parse(Parameters[1][0]);
-            DetectingSpeedMinTSR = double.Parse(Parameters[2][0]);
-            DetectingSpeedMaxTSR = double.Parse(Parameters[3][0]);
-            IfEnableForceKeepingTSR = bool.Parse(Parameters[4][0]);
-            IfEnableForceTrackingTSR = bool.Parse(Parameters[5][0]);
-            DetectingBasicPreservedForceTSR = double.Parse(Parameters[6][0]);
-
-            MaxAvailableRadiusTSR = double.Parse(Parameters[7][0]);
-            MaxAvailableAngleTSR = double.Parse(Parameters[8][0]);
-            StopRadiusTSR = double.Parse(Parameters[9][0]);
-            MaxDistPeriodTSR = double.Parse(Parameters[10][0]);
-            MaxAnglePeriodTSR = double.Parse(Parameters[11][0]);
-
-            PositionOverrideTSR = double.Parse(Parameters[12][0]);
-            AngleOverrideTSR = double.Parse(Parameters[13][0]);
-            ForceOverrideTSR = double.Parse(Parameters[14][0]);
-
-            IfEnableAttitudeTrackingTSR = bool.Parse(Parameters[15][0]);
-            IfEnableTranslationTrackingTSR = bool.Parse(Parameters[16][0]);
-        }
-
-        /// <summary>
-        /// TSR工作状态反馈
-        /// </summary>
-        /// <param name="Status">反馈的工作状态</param>
-        private void TSRWorkStatus(short Status)
-        {
-            ThyroidScannerWorkStatus = Status;
-        }
-
-        /// <summary>
-        /// TSR参数确认状态反馈
-        /// </summary>
-        /// <param name="Status">反馈的参数确认状态</param>
-        private void TSRParameterConfirmStatus(bool Status)
-        {
-            ThyroidScannerParameterConfirm = Status;
-        }
-
-        /// <summary>
-        /// TSR力清零状态反馈
-        /// </summary>
-        /// <param name="Status">反馈的力清零状态</param>
-        private void TSRForceClearedStatus(bool Status)
-        {
-            ThyroidScannerForceSensorCleared = Status;
-        }
-
         /// <summary>
         /// GSD连接断开反馈
         /// </summary>
@@ -5688,12 +5751,14 @@ namespace AssistantRobot
             ifActionSensorDataCatched = false;
             if (!BrokenState)
             {
-                if (ifUsingSerialPort) sc.SendOpenRelay(); // 急停按钮按下
-                EnableAll = false;
-                if (currentPage == ShowPage.ThyroidScanning)
-                    mw.Dispatcher.BeginInvoke(new Action(StopMotionNowThyroidScanningModule));
-                else
-                    ShowDialogAtUIThread("动作捕捉传感器连接由于未知原因发生中断，机械臂急停！", "错误", 35);
+                Task.Run(new Action(() =>
+                {
+                    cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                        CommunicationModel.AppProtocolCommand.StopRemoteScanImmediately);
+                    Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately if necessary.");
+                }));
+
+                ShowDialogAtUIThread("动作捕捉传感器连接由于未知原因发生中断！", "错误", 35);
 
                 Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Action sensor connection is unexpectly broken.");
             }
@@ -5759,11 +5824,18 @@ namespace AssistantRobot
             if (pressure > 6.0) pressure = 6.0;
             sendCommand[5] = -pressure;
 
-            tsr.RefreshAimPostion(actionCatchedNum, sendCommand);
+            //tsr.RefreshAimPostion(actionCatchedNum, sendCommand);
+            Task.Run(new Action(() =>
+            {
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
+                    CommunicationModel.AppProtocolCommand.StopRemoteScanImmediately);
+                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately if necessary.");
+            }));
+
             actionCatchedNum++;
             if (actionCatchedNum > int.MaxValue - 100) actionCatchedNum = 1;
         }
         #endregion
-         
+
     }
 }
