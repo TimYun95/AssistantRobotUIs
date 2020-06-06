@@ -37,7 +37,7 @@ namespace AssistantRobot
         public enum ToolType : short
         {
             Probe_LA523 = 1,
-            Needle_Unknown = 2 // 测试使用
+            Needle = 2
         }
 
         /// <summary>
@@ -120,6 +120,7 @@ namespace AssistantRobot
 
         // 当前工具信息
         private ToolType currentToolType = ToolType.Probe_LA523;
+        private bool currentToolWhole = false;
         private bool currentRobotHanged = false;
         private double[] currentRobotInitialPosJoints = null;
         private double[,] currentToolForceModifier = null;
@@ -129,7 +130,9 @@ namespace AssistantRobot
 
         // 模块工具
         private readonly ToolType breastToolType;
+        private readonly bool breastToolWhole;
         private readonly ToolType thyroidToolType;
+        private readonly bool thyroidToolWhole;
 
         // 当前位置缓存
         private double[] posCacheNow = new double[6];
@@ -139,6 +142,18 @@ namespace AssistantRobot
 
         // 指示是否首次运行本程序
         private bool ifFirstOpenTheProg = true;
+
+        // 动作捕捉数据获取是否成功
+        private bool ifActionSensorDataCatched = false;
+
+        // 动作捕捉是否开始
+        private bool ifActionCatchStart = false;
+
+        // 首个动作是否记录
+        private int actionCatchedNum = 0;
+
+        // 首个动作的记录
+        private double[] firstActionCatched = new double[10];
         #endregion
 
         #region View
@@ -148,10 +163,11 @@ namespace AssistantRobot
         private GalactophoreDetect gd;
         private ThyroidScan ts;
 
-        private bool[] occupyArray = new bool[30] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false };
+        private bool[] occupyArray = new bool[100];
         private readonly double titleSize = 18;
         private readonly double messageSize = 22;
 
+        private ShowPage currentPage = ShowPage.MainNav;
         #endregion
 
         #region ViewModel
@@ -1717,6 +1733,8 @@ namespace AssistantRobot
         /// <param name="ifSuccess">是否配置成功</param>
         public URViewModel(out bool ifSuccess)
         {
+            for (int pnum = 0; pnum < occupyArray.Length; pnum++) occupyArray[pnum] = false;
+
             ifSuccess = true;
             bool parseResult = true;
 
@@ -1750,8 +1768,13 @@ namespace AssistantRobot
             }
             // 为模块选择合适的工具（以Probe为默认值）
             currentToolType = ToolType.Probe_LA523;
+            currentToolWhole = false;
+
             breastToolType = ToolType.Probe_LA523;
+            breastToolWhole = false;
+
             thyroidToolType = ToolType.Probe_LA523;
+            thyroidToolWhole = true;
 
             URDataProcessor.RobotProgramType currentRobotProgramTypeTemp;
             parseResult = Enum.TryParse<URDataProcessor.RobotProgramType>(ConfigurationManager.AppSettings["currentRobotProgramType"], out currentRobotProgramTypeTemp);
@@ -2152,21 +2175,27 @@ namespace AssistantRobot
             {
                 case ShowPage.MainNav:
                     if (mw.frameNav.NavigationService.CanGoBack) mw.frameNav.NavigationService.GoBack();
+                    else mw.frameNav.NavigationService.Navigate(mp);
+                    currentPage = ShowPage.MainNav;
                     break;
                 case ShowPage.BaseControl:
                     mw.frameNav.NavigationService.Navigate(bc);
+                    currentPage = ShowPage.BaseControl;
                     break;
 
                 case ShowPage.GalactophoreDetect:
                     mw.frameNav.NavigationService.Navigate(gd);
+                    currentPage = ShowPage.GalactophoreDetect;
                     break;
 
                 case ShowPage.ThyroidScanning:
                     mw.frameNav.NavigationService.Navigate(ts);
+                    currentPage = ShowPage.ThyroidScanning;
                     break;
 
                 default:
                     mw.frameNav.NavigationService.Navigate(mp);
+                    currentPage = ShowPage.MainNav;
                     break;
             }
         }
@@ -2471,23 +2500,25 @@ namespace AssistantRobot
         /// 检查当前工具是否合适
         /// </summary>
         /// <param name="AimTool">目标工具</param>
+        /// <param name="AimToolWhole">目标工具完整标定</param>
         /// <returns>返回是否已经调整到合适状态</returns>
-        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool)
+        private bool CheckWhetherCurrentToolSuitable(ToolType AimTool, bool AimToolWhole)
         {
-            if (currentToolType == AimTool) return true;
-            SetToolParameter(AimTool);
+            if (currentToolType == AimTool && currentToolWhole == AimToolWhole) return true;
+            SetToolParameter(AimTool, AimToolWhole);
             return true;
         }
 
         /// <summary>
         /// 设置工具参数到模块
         /// <param name="AimTool">目标工具</param>
+        /// <param name="AimToolWhole">目标工具完整标定</param>
         /// </summary>
-        private async void SetToolParameter(ToolType AimTool)
+        private async void SetToolParameter(ToolType AimTool, bool AimToolWhole)
         {
             await Task.Run(new Action(() =>
             {
-                if (!ToolParameterRefresh(AimTool)) return;
+                if (!ToolParameterRefresh(AimTool, AimToolWhole)) return;
 
                 // 安装方式
                 urdp.SetInstallation(currentRobotHanged);
@@ -2531,7 +2562,7 @@ namespace AssistantRobot
         /// </summary>
         public void EnterGalactophoreDetectModule()
         {
-            if (!CheckWhetherCurrentToolSuitable(breastToolType)) return;
+            if (!CheckWhetherCurrentToolSuitable(breastToolType, breastToolWhole)) return;
 
             Task.Run(new Action(() =>
             {
@@ -2867,7 +2898,7 @@ namespace AssistantRobot
         /// </summary>
         public void EnterThyroidScanningModule()
         {
-            if (!CheckWhetherCurrentToolSuitable(thyroidToolType)) return;
+            if (!CheckWhetherCurrentToolSuitable(thyroidToolType, thyroidToolWhole)) return;
 
             Task.Run(new Action(() =>
             {
@@ -2959,6 +2990,8 @@ namespace AssistantRobot
             {
                 tsr.BeReadyToWork();
                 tsr.StartModuleNow();
+                actionCatchedNum = 0;
+                ifActionCatchStart = true;
             }));
         }
 
@@ -3029,7 +3062,7 @@ namespace AssistantRobot
             modifyList.Add(ts.enableAttSwitch.IsChecked.ToString());
             modifyList.Add(ts.enableFosKeepSwitch.IsChecked.ToString());
             modifyList.Add(ts.enableFosTrackSwitch.IsChecked.ToString());
-            
+
             Task.Run(new Action(() =>
             {
                 tsr.RefreshPartParameters(modifyList);
@@ -3214,6 +3247,9 @@ namespace AssistantRobot
                 await Task.Delay(25);
             }
 
+            gsd.EndConnectionToSensorServer();
+            while (ifActionSensorDataCatched) await Task.Delay(500);
+
             urdp.ActiveBreakCommunicationConncect();
             ClearAllEvents(urdp);
 
@@ -3251,6 +3287,24 @@ namespace AssistantRobot
             catch
             {
                 Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Error on disconnect events of object with type \'" + objectHasEvents.GetType().ToString() + "\'.");
+            }
+        }
+
+        /// <summary>
+        /// 打开动作传感器连接
+        /// </summary>
+        /// <returns>返回连接结果</returns>
+        public bool StartActionSensorConnection()
+        {
+            if (gsd.ConnectToSensorServer())
+            {
+                ifActionSensorDataCatched = true;
+                return true;
+            }
+            else
+            {
+                ifActionSensorDataCatched = false;
+                return false;
             }
         }
 
@@ -4917,6 +4971,8 @@ namespace AssistantRobot
             GalactophoreDetectorInitialization();
             ThyroidScannerInitialization();
 
+
+            GetSensorDatasInitialization();
             return 0;
         }
 
@@ -4930,7 +4986,7 @@ namespace AssistantRobot
             sqlsc = new SQLServerConnector();
             sqlsc.OnSendDataBaseNotAttached += new SQLServerExchangeBase.SendVoid(DataBaseCanNotBeAttached);
 
-            if (ToolParameterRefresh(currentToolType))
+            if (ToolParameterRefresh(currentToolType, currentToolWhole))
             {
                 dataBaseInitialDone = true;
                 return true;
@@ -4941,8 +4997,10 @@ namespace AssistantRobot
         /// <summary>
         /// 工具参数根据数据库读取结果更新
         /// </summary>
+        /// <param name="NeededToolType">所需工具类型</param>
+        /// <param name="NeededToolWhole">所需工具完整标定</param>
         /// <returns>返回更新结果</returns>
-        private bool ToolParameterRefresh(ToolType NeededToolType)
+        private bool ToolParameterRefresh(ToolType NeededToolType, bool NeededToolWhole)
         {
             double[] searchBase = sqlsc.SearchToolBaseInformation((int)NeededToolType);
             var collectionWithAbnormalParameters =
@@ -4964,7 +5022,7 @@ namespace AssistantRobot
                 return false;
             }
 
-            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType);
+            double[,] searchForce = sqlsc.SearchToolForceInformation((int)NeededToolType, NeededToolWhole);
             collectionWithAbnormalParameters =
                 from element in searchForce.Cast<double>()
                 where element < -0.5
@@ -4975,6 +5033,8 @@ namespace AssistantRobot
             }
 
             currentToolType = NeededToolType;
+            currentToolWhole = NeededToolWhole;
+
             if (currentRobotHanged =
                 (
                 Math.Abs(searchPosition[1]) + Math.Abs(searchPosition[2]) +
@@ -4996,8 +5056,15 @@ namespace AssistantRobot
 
             if (currentToolType == ToolType.Probe_LA523)
             {
-                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
+                if (currentToolWhole)
+                    currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbeWhole;
+                else
+                    currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.ProbePrecise;
             }
+            else if (currentToolType == ToolType.Needle)
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.PuncturePrecise;
+            else
+                currentToolForceModifyingMode = UR30003Connector.ForceModifiedMode.NoModified;
 
             currentToolTcpEndPointCordinates = new double[] {
                 searchBase[0], searchBase[1], searchBase[2],
@@ -5077,6 +5144,23 @@ namespace AssistantRobot
             tsr.LoadParametersFromXmlAndOutput();
         }
 
+
+
+
+
+
+
+
+        /// <summary>
+        /// 初始化信号采集模块
+        /// </summary>
+        private void GetSensorDatasInitialization()
+        {
+            gsd = new GetSensorDatas();
+
+            gsd.OnSendSensorConnectionBroken += new GetSensorDatas.SendBool(GSDBrokenState);
+            gsd.OnSendSensorDatas += new GetSensorDatas.SendDoubleArray(GSDSensorDatas);
+        }
         #endregion
 
         #region BoundEvent
@@ -5430,6 +5514,96 @@ namespace AssistantRobot
             ThyroidScannerForceSensorCleared = Status;
         }
 
+
+
+
+
+
+        /// <summary>
+        /// GSD连接断开反馈
+        /// </summary>
+        /// <param name="BrokenState">断开状态</param>
+        private void GSDBrokenState(bool BrokenState)
+        {
+            ifActionSensorDataCatched = false;
+            if (!BrokenState)
+            {
+                if (ifUsingSerialPort) sc.SendOpenRelay(); // 急停按钮按下
+                EnableAll = false;
+                if (currentPage == ShowPage.ThyroidScanning)
+                    mw.Dispatcher.BeginInvoke(new Action(StopMotionNowThyroidScanningModule));
+                else
+                    ShowDialogAtUIThread("动作捕捉传感器连接由于未知原因发生中断，机械臂急停！", "错误", 35);
+
+                Logger.HistoryPrinting(Logger.Level.ERROR, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Action sensor connection is unexpectly broken.");
+            }
+            else
+                Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Action sensor connection is actively broken.");
+        }
+
+        /// <summary>
+        /// 获得动作传感器数据
+        /// </summary>
+        /// <param name="datas">传感器数据</param>
+        private void GSDSensorDatas(double[] datas)
+        {
+            if (!ifActionCatchStart) return;
+
+            double[] recvPos = new double[] { datas[0], datas[1] };
+            double[] recvAtt = new double[] { datas[2], datas[3], datas[4], datas[5] };
+            double[] recvFos = new double[] { 
+                3992.0 * Math.Exp(-0.5633 * datas[6]), 
+                3992.0 * Math.Exp(-0.5633 * datas[7]),
+                3992.0 * Math.Exp(-0.5633 * datas[8]),
+                3992.0 * Math.Exp(-0.5633 * datas[9]) };
+
+            if (actionCatchedNum == 0)
+            {
+                firstActionCatched[0] = recvPos[0];
+                firstActionCatched[1] = recvPos[1];
+                firstActionCatched[2] = recvAtt[0];
+                firstActionCatched[3] = recvAtt[1];
+                firstActionCatched[4] = recvAtt[2];
+                firstActionCatched[5] = recvAtt[3];
+                firstActionCatched[6] = recvFos[0];
+                firstActionCatched[7] = recvFos[1];
+                firstActionCatched[8] = recvFos[2];
+                firstActionCatched[9] = recvFos[3];
+                actionCatchedNum = 1;
+                return;
+            }
+
+            double[] sendCommand = new double[6];
+
+            // 位置指令
+            sendCommand[0] = recvPos[0] - firstActionCatched[0];
+            sendCommand[1] = recvPos[1] - firstActionCatched[1];
+
+            // 姿态指令
+            Quatnum q0 = new Quatnum(new double[] { firstActionCatched[2], firstActionCatched[3], firstActionCatched[4], firstActionCatched[5] });
+            Quatnum qrt = new Quatnum(recvAtt);
+            double[] q0ToQrt = URMath.Quatnum2AxisAngle(URMath.FindTransitQuatnum(q0, qrt));
+            double q0ToQrtAngle = URMath.LengthOfArray(q0ToQrt);
+            double[] q0ToQrtAxis = new double[] { q0ToQrt[0] / q0ToQrtAngle, q0ToQrt[1] / q0ToQrtAngle, q0ToQrt[2] / q0ToQrtAngle };
+            double[] q0ToQrtAxisAtQ0 = URMath.FindDirectionToSecondReferenceFromFirstReference(q0ToQrtAxis, q0);
+            double[] q0ToQrtAtQ0 = new double[] { q0ToQrtAngle * q0ToQrtAxisAtQ0[0], q0ToQrtAngle * q0ToQrtAxisAtQ0[1], q0ToQrtAngle * q0ToQrtAxisAtQ0[2] };
+            sendCommand[2] = q0ToQrtAtQ0[0];
+            sendCommand[3] = q0ToQrtAtQ0[1];
+            sendCommand[4] = q0ToQrtAtQ0[2];
+
+            // 压力指令
+            double pressure = Math.Max(recvFos[3],
+                                                Math.Max(recvFos[2],
+                                                    Math.Max(recvFos[1], recvFos[0])));
+            if (pressure < 3.0) pressure = 3.0;
+            if (pressure > 6.0) pressure = 6.0;
+            sendCommand[5] = -pressure;
+
+            tsr.RefreshAimPostion(actionCatchedNum, sendCommand);
+            actionCatchedNum++;
+            if (actionCatchedNum > int.MaxValue - 100) actionCatchedNum = 1;
+        }
+
         #region Null Event Callback Functions
         private void URNullEventHandler()
         { return; }
@@ -5438,8 +5612,7 @@ namespace AssistantRobot
         private void URNullEventHandler(object nullObject)
         { return; }
         #endregion
-
         #endregion
-
+         
     }
 }

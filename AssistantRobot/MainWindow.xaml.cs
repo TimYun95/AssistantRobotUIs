@@ -43,6 +43,7 @@ namespace AssistantRobot
 
         private byte modelInitialResult = 0;
         private bool appInitialResult = true;
+        private bool actionSensorConnectResult = true;
 
         public MainWindow()
         {
@@ -68,6 +69,9 @@ namespace AssistantRobot
 
             // Model初始化
             modelInitialResult = urvm.ModelInitialization();
+
+            // 连接动作传感器
+            actionSensorConnectResult = urvm.StartActionSensorConnection();
 
             // 建立部分绑定
             PartialBindingsEstablish();
@@ -241,7 +245,7 @@ namespace AssistantRobot
             bindingFromStopDistanceThyroidToStopDistanceThyroidText.ConverterParameter = valueP50D0A400;
             BindingOperations.SetBinding(stopDistanceThyroidText, Label.ContentProperty, bindingFromStopDistanceThyroidToStopDistanceThyroidText);
 
-
+            // change
             // 绑定：maxLoopDistThyroid.Value {属性} ==> maxLoopDistThyroidText.Content {Flyout控件}
             Binding bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText = new Binding();
             bindingFromMaxLoopDistThyroidToMaxLoopDistThyroidText.ElementName = "maxLoopDistThyroid";
@@ -281,6 +285,13 @@ namespace AssistantRobot
                 return;
             }
 
+            // 动作传感器连接失败
+            if (!actionSensorConnectResult)
+            {
+                ReadyToClose();
+                return;
+            }
+
             // UR连接
             urvm.StartConnection();
         }
@@ -301,12 +312,20 @@ namespace AssistantRobot
             if (modelInitialResult == 1)
             {
                 await urvm.ShowDialog("资源配置检查过程出错！", "错误", 1);
+
+                urvm.ImmediateCloseWin();
+                return;
             }
             else if (modelInitialResult == 2)
             {
                 await urvm.ShowDialog("数据库数据更新过程出错！", "错误", 12);
+
+                urvm.ImmediateCloseWin();
+                return;
             }
-            urvm.ImmediateCloseWin();
+
+            if (!actionSensorConnectResult)
+                urvm.ImmediateCloseWin();
         }
 
         private void btnPowerOff_Click(object sender, RoutedEventArgs e)
