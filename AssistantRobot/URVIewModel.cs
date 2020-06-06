@@ -2104,7 +2104,7 @@ namespace AssistantRobot
         {
             List<byte> sendDatas = new List<byte>();
 
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 4; ++i)
             {
                 sendDatas.AddRange(
                     BitConverter.GetBytes(
@@ -2115,23 +2115,12 @@ namespace AssistantRobot
                     double.Parse(originalDatas[i][0]))), 0))));
             }
 
-            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[3][0]) ? 1 : 0));
+            for (int i = 4; i < 6; ++i)
+            {
+                sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[i][0]) ? 1 : 0));
+            }
 
-            // {vibratingAttitudeMaxAtSmoothPart}
-            // {vibratingAttitudeMinAtSteepPart}
-            // {vibratingAttitudeMaxAtSteepPart}
-
-            sendDatas.AddRange(
-                    BitConverter.GetBytes(
-                    IPAddress.HostToNetworkOrder(
-                    BitConverter.ToInt32(
-                    BitConverter.GetBytes(
-                    Convert.ToSingle(
-                    double.Parse(originalDatas[7][0]))), 0))));
-
-            // {movingStopDistance}
-
-            for (int i = 9; i < 11; ++i)
+            for (int i = 6; i < 15; ++i)
             {
                 sendDatas.AddRange(
                     BitConverter.GetBytes(
@@ -2142,44 +2131,10 @@ namespace AssistantRobot
                     double.Parse(originalDatas[i][0]))), 0))));
             }
 
-            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[11][0]) ? 1 : 0));
-
-            sendDatas.AddRange(
-                    BitConverter.GetBytes(
-                    IPAddress.HostToNetworkOrder(
-                    BitConverter.ToInt32(
-                    BitConverter.GetBytes(
-                    Convert.ToSingle(
-                    double.Parse(originalDatas[12][0]))), 0))));
-
-            sendDatas.Add((byte)((GalactophoreDetector.VibratingMagnitude)Enum.Parse(typeof(GalactophoreDetector.VibratingMagnitude), originalDatas[13][0])));
-            sendDatas.Add((byte)((GalactophoreDetector.MovingLevel)Enum.Parse(typeof(GalactophoreDetector.MovingLevel), originalDatas[14][0])));
-            sendDatas.Add((byte)((GalactophoreDetector.DetectingIntensity)Enum.Parse(typeof(GalactophoreDetector.DetectingIntensity), originalDatas[15][0])));
-            sendDatas.Add((byte)((GalactophoreDetector.AligningDegree)Enum.Parse(typeof(GalactophoreDetector.AligningDegree), originalDatas[16][0])));
-
-            for (int i = 17; i < 21; ++i)
+            for (int i = 15; i < 17; ++i)
             {
-                sendDatas.AddRange(
-                    BitConverter.GetBytes(
-                    IPAddress.HostToNetworkOrder(
-                    BitConverter.ToInt32(
-                    BitConverter.GetBytes(
-                    Convert.ToSingle(
-                    double.Parse(originalDatas[i][0]))), 0))));
+                sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[i][0]) ? 1 : 0));
             }
-
-            sendDatas.Add(Convert.ToByte(bool.Parse(originalDatas[21][0]) ? 1 : 0));
-
-            sendDatas.Add((byte)((GalactophoreDetector.ScanningRegion)Enum.Parse(typeof(GalactophoreDetector.ScanningRegion), originalDatas[22][0])));
-            sendDatas.Add((byte)((GalactophoreDetector.IdentifyBoundary)Enum.Parse(typeof(GalactophoreDetector.IdentifyBoundary), originalDatas[23][0])));
-
-            sendDatas.AddRange(
-                    BitConverter.GetBytes(
-                    IPAddress.HostToNetworkOrder(
-                    BitConverter.ToInt32(
-                    BitConverter.GetBytes(
-                    Convert.ToSingle(
-                    double.Parse(originalDatas[24][0]))), 0))));
 
             urvmr_lp.SendPipeDataStream(URViewModelRemote_LocalPart.AppProtocolStatus.RemoteScanConfiguration, sendDatas);
         }
