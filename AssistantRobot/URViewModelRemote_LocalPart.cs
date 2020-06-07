@@ -358,7 +358,21 @@ namespace AssistantRobot
         }
 
         /// <summary>
-        /// 应用协议指令 换页数据报格式
+        /// 应用协议指令 远程扫描部分配置参数数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanAimPosDatagram : byte
+        {
+            SignalNum = 0,
+            AimPosX = 4,
+            AimPosY = 12,
+            AimPosZ = 20,
+            AimAttX = 28,
+            AimAttY = 36,
+            AimAttZ = 44
+        }
+
+        /// <summary>
+        /// 应用协议指令 远程扫描目标位置数据报格式
         /// </summary>
         public enum AppProtocolAdjustPartRemoteScanConfigurationSetDatagram : byte
         {
@@ -572,7 +586,7 @@ namespace AssistantRobot
                     urvm.TransferPartConfiguration(UnpackPartRemoteScanConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
                 case AppProtocolCommand.RefreshRemoteScanAimPos:
-                    //urvm.TransferPartConfiguration(UnpackPartRemoteScanAimPosition(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
+                    urvm.RefreshAimPosFromRemote(UnpackPartRemoteScanAimPosition(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
 
                 case AppProtocolCommand.NotifyRemoteConnected:
@@ -801,6 +815,11 @@ namespace AssistantRobot
             return returnedString;
         }
 
+        /// <summary>
+        /// 解包远程扫描部分配置参数
+        /// </summary>
+        /// <param name="bufferBytes">待解包配置参数</param>
+        /// <returns>返回解包后的结果</returns>
         protected List<string> UnpackPartRemoteScanConfigurationParameters(byte[] bufferBytes)
         {
             List<string> returnedString = new List<string>(7);
@@ -828,12 +847,47 @@ namespace AssistantRobot
 
             return returnedString;
         }
-        
 
+        /// <summary>
+        /// 解包远程扫描目标位置
+        /// </summary>
+        /// <param name="bufferBytes">待解包目标位置参数</param>
+        /// <returns>返回解包后的结果</returns>
+        protected List<string> UnpackPartRemoteScanAimPosition(byte[] bufferBytes)
+        {
+            List<string> returnedString = new List<string>(7);
 
+            returnedString.Add(IPAddress.NetworkToHostOrder(
+                                    BitConverter.ToInt32(bufferBytes,
+                                                                        (byte)AppProtocolRemoteScanAimPosDatagram.SignalNum)).ToString());
 
-
-
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                                    IPAddress.NetworkToHostOrder(
+                                    BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimPosX))).ToString());
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                         IPAddress.NetworkToHostOrder(
+                         BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimPosY))).ToString());
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                         IPAddress.NetworkToHostOrder(
+                         BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimPosZ))).ToString());
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                         IPAddress.NetworkToHostOrder(
+                         BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimAttX))).ToString());
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                         IPAddress.NetworkToHostOrder(
+                         BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimAttY))).ToString());
+            returnedString.Add(BitConverter.Int64BitsToDouble(
+                         IPAddress.NetworkToHostOrder(
+                         BitConverter.ToInt64(bufferBytes,
+                                                             (byte)AppProtocolRemoteScanAimPosDatagram.AimAttZ))).ToString());
+           
+            return returnedString;
+        }
 
         #endregion
 
