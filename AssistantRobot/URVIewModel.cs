@@ -2947,12 +2947,39 @@ namespace AssistantRobot
         /// </summary>
         public void ModifyControlParametersInRunWorkThyroidScannerModule()
         {
+            List<byte> modifyList = new List<byte>(100);
+
+            modifyList.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                ts.factorPosSlider.Value / 4.0 + 0.25)), 0))));
+            modifyList.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                ts.factorAttSlider.Value / 4.0 + 0.25)), 0))));
+            modifyList.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                BitConverter.ToInt32(
+                BitConverter.GetBytes(
+                Convert.ToSingle(
+                ts.factorFosSlider.Value / 2.0 + 0.5)), 0))));
+
+            modifyList.Add(Convert.ToByte(ts.enablePosSwitch.IsChecked.Value ? 1 : 0));
+            modifyList.Add(Convert.ToByte(ts.enableAttSwitch.IsChecked.Value ? 1 : 0));
+            modifyList.Add(Convert.ToByte(ts.enableFosKeepSwitch.IsChecked.Value ? 1 : 0));
+            modifyList.Add(Convert.ToByte(ts.enableFosTrackSwitch.IsChecked.Value ? 1 : 0));
+
             Task.Run(new Action(() =>
             {
-                ////////
-                ///////
-                ///////
-
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, modifyList.ToArray(),
+                    CommunicationModel.AppProtocolCommand.AdjustPartRemoteScanConfigurationSet);
             }));
         }
         #endregion
@@ -5826,15 +5853,31 @@ namespace AssistantRobot
             sendCommand[5] = -pressure;
 
             //tsr.RefreshAimPostion(actionCatchedNum, sendCommand);
-            Task.Run(new Action(() =>
+
+            List<byte> nextPosCmd = new List<byte>(100);
+
+            nextPosCmd.AddRange(
+                BitConverter.GetBytes(
+                IPAddress.HostToNetworkOrder(
+                actionCatchedNum)));
+
+            for (int num = 0; num < 6; ++num)
             {
-                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, null,
-                    CommunicationModel.AppProtocolCommand.StopRemoteScanImmediately);
-                Logger.HistoryPrinting(Logger.Level.WARN, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Thyroid scanning module is stopped immediately if necessary.");
-            }));
+                nextPosCmd.AddRange(
+                   BitConverter.GetBytes(
+                   IPAddress.HostToNetworkOrder(
+                   BitConverter.DoubleToInt64Bits(
+                   sendCommand[num]))));
+            }
 
             actionCatchedNum++;
             if (actionCatchedNum > int.MaxValue - 100) actionCatchedNum = 1;
+
+            Task.Run(new Action(() =>
+            {
+                cm.SendCmd(CommunicationModel.TCPProtocolKey.NormalData, nextPosCmd.ToArray(),
+                    CommunicationModel.AppProtocolCommand.RefreshRemoteScanAimPos);
+            }));
         }
         #endregion
 

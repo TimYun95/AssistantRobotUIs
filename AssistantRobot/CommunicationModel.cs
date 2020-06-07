@@ -356,6 +356,8 @@ namespace AssistantRobot
             RecoveryFromStopRemoteScanImmediately = 152,
             ExitRemoteScanMode = 161,
 
+            AdjustPartRemoteScanConfigurationSet = 171,
+            RefreshRemoteScanAimPos = 172,
 
             NotifyRemoteConnected = 251
         }
@@ -401,6 +403,34 @@ namespace AssistantRobot
         public enum AppProtocolAutoPowerOnDatagram : byte
         {
             WhetherAutoPowerOn = 0, // byte: 0--No 1--Yes
+        }
+
+        /// <summary>
+        /// 应用协议指令 远程扫描部分配置参数数据报格式
+        /// </summary>
+        public enum AppProtocolRemoteScanAimPosDatagram : byte
+        {
+            SignalNum = 0,
+            AimPosX = 4,
+            AimPosY = 12,
+            AimPosZ = 20,
+            AimAttX = 28,
+            AimAttY = 36,
+            AimAttZ = 44
+        }
+
+        /// <summary>
+        /// 应用协议指令 远程扫描目标位置数据报格式
+        /// </summary>
+        public enum AppProtocolAdjustPartRemoteScanConfigurationSetDatagram : byte
+        {
+            PosRatio = 0,
+            AttRatio = 4,
+            FosRatio = 8,
+            PosSwitch = 12,
+            AttSwitch = 13,
+            FosKeepSwitch = 14,
+            FosTrackSwitch = 15
         }
 
         /// <summary>
