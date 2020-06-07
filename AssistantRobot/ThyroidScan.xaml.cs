@@ -165,6 +165,47 @@ namespace AssistantRobot
             e.Handled = true;
         }
 
+        private void gridSetting_MouseOnlyDown(object sender, RoutedEventArgs e)
+        {
+            string buttonName = (e.OriginalSource as IconButton).Name;
+            char axis = 'z'; bool ifPos = true;
+            switch (buttonName)
+            {
+                case "iconXPSettingThyroid":
+                    axis = 'x'; ifPos = true;
+                    break;
+                case "iconXNSettingThyroid":
+                    axis = 'x'; ifPos = false;
+                    break;
+                case "iconYPSettingThyroid":
+                    axis = 'y'; ifPos = true;
+                    break;
+                case "iconYNSettingThyroid":
+                    axis = 'y'; ifPos = false;
+                    break;
+                case "iconZPSettingThyroid":
+                    axis = 'z'; ifPos = true;
+                    break;
+                case "iconZNSettingThyroid":
+                    axis = 'z'; ifPos = false;
+                    break;
+                default:
+                    break;
+            }
+
+            urvm.BaseMovingParameterSet(true, 5.0);
+            urvm.BaseMovingTranslationBegin(axis, ifPos);
+
+            e.Handled = true;
+        }
+
+        private void gridSetting_MouseOnlyUp(object sender, RoutedEventArgs e)
+        {
+            urvm.BaseMovingEnd();
+
+            e.Handled = true;
+        }
+
 
     }
 }

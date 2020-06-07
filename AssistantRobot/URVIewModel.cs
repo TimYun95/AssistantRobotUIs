@@ -5160,12 +5160,12 @@ namespace AssistantRobot
         private void BindingItemsThyroidScannerMoveEnable()
         {
             // 绑定：ThyroidScanConfMovingEnable {属性} ==> iconMoveSettingThyroid {ThyroidScanner控件}
-            Binding bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore = new Binding();
-            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Source = this;
-            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Path = new PropertyPath("BreastScanConfMovingEnable");
-            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.Mode = BindingMode.OneWay;
-            bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            BindingOperations.SetBinding(gd.iconMoveSettingGalactophore, Grid.IsEnabledProperty, bindingFromBreastScanConfMovingEnableToIconMoveSettingGalactophore);
+            Binding bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid = new Binding();
+            bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid.Source = this;
+            bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid.Path = new PropertyPath("ThyroidScanConfMovingEnable");
+            bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid.Mode = BindingMode.OneWay;
+            bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            BindingOperations.SetBinding(ts.iconMoveSettingThyroid, Grid.IsEnabledProperty, bindingFromThyroidScanConfMovingEnableToIconMoveSettingThyroid);
         }
         #endregion
 
@@ -5205,9 +5205,10 @@ namespace AssistantRobot
             }
             Logger.HistoryPrinting(Logger.Level.INFO, MethodBase.GetCurrentMethod().DeclaringType.FullName, "Starts with successful checked.");
 
+            GetSensorDatasInitialization();
+
             if (!CommunicationModelInitialization()) return 9;
 
-            GetSensorDatasInitialization();
             return 0;
         }
 
