@@ -402,7 +402,7 @@
             
             <Controls:Flyout x:Name="settingsFlyoutThyroid" Position="Right"
                              Header="甲状腺扫描模块设置" Controls:ControlsHelper.HeaderFontSize="24"
-							 IsModal="True" IsPinned="False" IsOpenChanged="settingsFlyoutPuncture_IsOpenChanged">
+							 IsModal="True" IsPinned="False" IsOpenChanged="settingsFlyoutThyroid_IsOpenChanged">
                 <Grid Margin="60 10 40 10">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
