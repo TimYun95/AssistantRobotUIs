@@ -409,7 +409,7 @@ namespace AssistantRobot
             e.Handled = true;
         }
 
-        private void settingsFlyoutPuncture_IsOpenChanged(object sender, RoutedEventArgs e)
+        private void settingsFlyoutThyroid_IsOpenChanged(object sender, RoutedEventArgs e)
         {
             bool nowState = (e.OriginalSource as Flyout).IsOpen;
             if (!nowState) urvm.SaveConfParameters(URViewModel.ConfPage.ThyroidScan);
