@@ -5082,7 +5082,7 @@ namespace AssistantRobot
             Binding bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch = new Binding();
             bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Source = this;
             bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Path = new PropertyPath("IfEnableForceKeepingTSR");
-            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Mode = BindingMode.TwoWay;
+            bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.Mode = BindingMode.OneWay;
             bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             BindingOperations.SetBinding(ts.enableFosKeepSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableForceKeepingTSRToEnableFosKeepSwitch);
 
@@ -5090,7 +5090,7 @@ namespace AssistantRobot
             Binding bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch = new Binding();
             bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Source = this;
             bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Path = new PropertyPath("IfEnableForceTrackingTSR");
-            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Mode = BindingMode.TwoWay;
+            bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.Mode = BindingMode.OneWay;
             bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             BindingOperations.SetBinding(ts.enableFosTrackSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableForceTrackingTSRToEnableFosTrackSwitch);
 
@@ -5206,7 +5206,7 @@ namespace AssistantRobot
             Binding bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch = new Binding();
             bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Source = this;
             bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Path = new PropertyPath("IfEnableAttitudeTrackingTSR");
-            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Mode = BindingMode.TwoWay;
+            bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.Mode = BindingMode.OneWay;
             bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             BindingOperations.SetBinding(ts.enableAttSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableAttitudeTrackingTSRToEnableAttSwitch);
 
@@ -5214,7 +5214,7 @@ namespace AssistantRobot
             Binding bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch = new Binding();
             bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Source = this;
             bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Path = new PropertyPath("IfEnableTranslationTrackingTSR");
-            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Mode = BindingMode.TwoWay;
+            bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.Mode = BindingMode.OneWay;
             bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             BindingOperations.SetBinding(ts.enablePosSwitch, ToggleSwitch.IsCheckedProperty, bindingFromIfEnableTranslationTrackingTSRToEnablePosSwitch);
         }
