@@ -3568,6 +3568,52 @@ namespace AssistantRobot
                 tsr.RefreshPartParameters(modifyList);
             }));
         }
+
+        /// <summary>
+        /// 远程更改部分控制变量
+        /// </summary>
+        /// <param name="conf">部分变量</param>
+        public void TransferPartConfiguration(List<string> conf)
+        {
+            if (Math.Abs(double.Parse(conf[0]) - (ts.factorPosSlider.Value / 4.0 + 0.25)) > 0.1)
+            {
+                ts.factorPosSlider.Value = double.Parse(conf[0]); return;
+            }
+            if (Math.Abs(double.Parse(conf[1]) - (ts.factorAttSlider.Value / 4.0 + 0.25)) > 0.1)
+            {
+                ts.factorAttSlider.Value = double.Parse(conf[1]); return;
+            }
+            if (Math.Abs(double.Parse(conf[2]) - (ts.factorFosSlider.Value / 2.0 + 0.5)) > 0.1)
+            {
+                ts.factorFosSlider.Value = double.Parse(conf[2]); return;
+            }
+
+            if (bool.Parse(conf[3]) != ts.enablePosSwitch.IsChecked)
+            {
+                ts.enablePosSwitch.IsChecked = bool.Parse(conf[3]);
+                ModifyControlParametersInRunWorkThyroidScannerModule(); return;
+            }
+            if (bool.Parse(conf[4]) != ts.enableAttSwitch.IsChecked)
+            {
+                ts.enableAttSwitch.IsChecked = bool.Parse(conf[4]);
+                ModifyControlParametersInRunWorkThyroidScannerModule(); return;
+            }
+            if (bool.Parse(conf[5]) != ts.enableFosKeepSwitch.IsChecked)
+            {
+                ts.enableFosKeepSwitch.IsChecked = bool.Parse(conf[5]);
+                ModifyControlParametersInRunWorkThyroidScannerModule(); return;
+            }
+            if (bool.Parse(conf[6]) != ts.enableFosTrackSwitch.IsChecked)
+            {
+                ts.enableFosTrackSwitch.IsChecked = bool.Parse(conf[6]);
+                ModifyControlParametersInRunWorkThyroidScannerModule(); return;
+            }
+        }
+
+
+
+
+
         #endregion
 
         #region SaveModuleConfParams

@@ -308,6 +308,8 @@ namespace AssistantRobot
             RecoveryFromStopRemoteScanImmediately = 152,
             ExitRemoteScanMode = 161,
 
+            AdjustPartRemoteScanConfigurationSet = 171,
+            RefreshRemoteScanAimPos = 172,
 
             NotifyRemoteConnected = 251
         }
@@ -353,6 +355,20 @@ namespace AssistantRobot
         public enum AppProtocolAutoPowerOnDatagram : byte
         {
             WhetherAutoPowerOn = 0, // byte: 0--No 1--Yes
+        }
+
+        /// <summary>
+        /// 应用协议指令 换页数据报格式
+        /// </summary>
+        public enum AppProtocolAdjustPartRemoteScanConfigurationSetDatagram : byte
+        {
+            PosRatio = 0,
+            AttRatio = 4,
+            FosRatio = 8,
+            PosSwitch = 12,
+            AttSwitch = 13,
+            FosKeepSwitch = 14,
+            FosTrackSwitch = 15
         }
 
         /// <summary>
@@ -551,6 +567,12 @@ namespace AssistantRobot
                     break;
                 case AppProtocolCommand.ExitRemoteScanMode:
                     urvm.ExitThyroidScanningModule();
+                    break;
+                case AppProtocolCommand.AdjustPartRemoteScanConfigurationSet:
+                    urvm.TransferPartConfiguration(UnpackPartRemoteScanConfigurationParameters(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
+                    break;
+                case AppProtocolCommand.RefreshRemoteScanAimPos:
+                    //urvm.TransferPartConfiguration(UnpackPartRemoteScanAimPosition(getBytes.Skip((byte)AppProtocol.DataContent).ToArray()));
                     break;
 
                 case AppProtocolCommand.NotifyRemoteConnected:
@@ -778,6 +800,40 @@ namespace AssistantRobot
 
             return returnedString;
         }
+
+        protected List<string> UnpackPartRemoteScanConfigurationParameters(byte[] bufferBytes)
+        {
+            List<string> returnedString = new List<string>(7);
+
+            returnedString.Add(BitConverter.ToSingle(
+                                    BitConverter.GetBytes(
+                                    IPAddress.NetworkToHostOrder(
+                                    BitConverter.ToInt32(bufferBytes,
+                                                                        (byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.PosRatio))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                                    BitConverter.GetBytes(
+                                    IPAddress.NetworkToHostOrder(
+                                    BitConverter.ToInt32(bufferBytes,
+                                                                        (byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.AttRatio))), 0).ToString());
+            returnedString.Add(BitConverter.ToSingle(
+                                    BitConverter.GetBytes(
+                                    IPAddress.NetworkToHostOrder(
+                                    BitConverter.ToInt32(bufferBytes,
+                                                                        (byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.FosRatio))), 0).ToString());
+
+            returnedString.Add((bufferBytes[(byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.PosSwitch] == 1).ToString());
+            returnedString.Add((bufferBytes[(byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.AttSwitch] == 1).ToString());
+            returnedString.Add((bufferBytes[(byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.FosKeepSwitch] == 1).ToString());
+            returnedString.Add((bufferBytes[(byte)AppProtocolAdjustPartRemoteScanConfigurationSetDatagram.FosTrackSwitch] == 1).ToString());
+
+            return returnedString;
+        }
+        
+
+
+
+
+
 
         #endregion
 

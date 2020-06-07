@@ -72,7 +72,7 @@ namespace AssistantRobot
                 baseContorlPage,
                 galactophoreDetectPage,
                 thyroidScanPage);
-
+            
             // 绑定必要元素
             urvm.BindingItems();
 
