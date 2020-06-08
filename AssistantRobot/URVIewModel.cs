@@ -5586,7 +5586,7 @@ namespace AssistantRobot
             Quatnum qrt = new Quatnum(recvAtt);
             double[] q0ToQrt = URMath.Quatnum2AxisAngle(URMath.FindTransitQuatnum(q0, qrt));
             double q0ToQrtAngle = URMath.LengthOfArray(q0ToQrt);
-            if (q0ToQrtAngle < 0.001)
+            if (Math.Abs(q0ToQrtAngle) < 0.001)
             {
                 sendCommand[2] = 0;
                 sendCommand[3] = 0;
