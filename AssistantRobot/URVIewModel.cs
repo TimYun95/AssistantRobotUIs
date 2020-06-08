@@ -3552,7 +3552,7 @@ namespace AssistantRobot
         /// <summary>
         /// 在模块工作中更改部分控制变量
         /// </summary>
-        public void ModifyControlParametersInRunWorkThyroidScannerModule()
+        private void ModifyControlParametersInRunWorkThyroidScannerModule()
         {
             if (mw.CheckAccess())
                 ModifyControlParametersInRunWorkThyroidScannerModuleInner();
