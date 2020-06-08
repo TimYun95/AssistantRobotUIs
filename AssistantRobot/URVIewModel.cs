@@ -5848,7 +5848,7 @@ namespace AssistantRobot
                 sendCommand[2] = 0;
                 sendCommand[3] = 0;
                 sendCommand[4] = 0;
-            } 
+            }
             else
             {
                 double[] q0ToQrtAxis = new double[] { q0ToQrt[0] / q0ToQrtAngle, q0ToQrt[1] / q0ToQrtAngle, q0ToQrt[2] / q0ToQrtAngle };
