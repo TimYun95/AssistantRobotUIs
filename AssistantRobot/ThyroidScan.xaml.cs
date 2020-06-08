@@ -147,7 +147,7 @@ namespace AssistantRobot
             bool result = await urvm.ShowBranchDialog("是否开始扫查？", "提问");
 
             // 确认参数配置
-            if (result) urvm.ReadyAndStartGalactophoreDetectModule();
+            if (result) urvm.ReadyAndStartThyroidScanningModule();
         }
 
         private void iconStopThyroid_Click(object sender, RoutedEventArgs e)
