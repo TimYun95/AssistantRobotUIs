@@ -5578,18 +5578,29 @@ namespace AssistantRobot
             // 位置指令
             sendCommand[0] = recvPos[0] - firstActionCatched[0];
             sendCommand[1] = recvPos[1] - firstActionCatched[1];
+            sendCommand[0] /= 1000.0;
+            sendCommand[1] /= 1000.0;
 
             // 姿态指令
             Quatnum q0 = new Quatnum(new double[] { firstActionCatched[2], firstActionCatched[3], firstActionCatched[4], firstActionCatched[5] });
             Quatnum qrt = new Quatnum(recvAtt);
             double[] q0ToQrt = URMath.Quatnum2AxisAngle(URMath.FindTransitQuatnum(q0, qrt));
             double q0ToQrtAngle = URMath.LengthOfArray(q0ToQrt);
-            double[] q0ToQrtAxis = new double[] { q0ToQrt[0] / q0ToQrtAngle, q0ToQrt[1] / q0ToQrtAngle, q0ToQrt[2] / q0ToQrtAngle };
-            double[] q0ToQrtAxisAtQ0 = URMath.FindDirectionToSecondReferenceFromFirstReference(q0ToQrtAxis, q0);
-            double[] q0ToQrtAtQ0 = new double[] { q0ToQrtAngle * q0ToQrtAxisAtQ0[0], q0ToQrtAngle * q0ToQrtAxisAtQ0[1], q0ToQrtAngle * q0ToQrtAxisAtQ0[2] };
-            sendCommand[2] = q0ToQrtAtQ0[0];
-            sendCommand[3] = q0ToQrtAtQ0[1];
-            sendCommand[4] = q0ToQrtAtQ0[2];
+            if (q0ToQrtAngle < 0.001)
+            {
+                sendCommand[2] = 0;
+                sendCommand[3] = 0;
+                sendCommand[4] = 0;
+            }
+            else
+            {
+                double[] q0ToQrtAxis = new double[] { q0ToQrt[0] / q0ToQrtAngle, q0ToQrt[1] / q0ToQrtAngle, q0ToQrt[2] / q0ToQrtAngle };
+                double[] q0ToQrtAxisAtQ0 = URMath.FindDirectionToSecondReferenceFromFirstReference(q0ToQrtAxis, q0);
+                double[] q0ToQrtAtQ0 = new double[] { -q0ToQrtAngle * q0ToQrtAxisAtQ0[1], -q0ToQrtAngle * q0ToQrtAxisAtQ0[2], q0ToQrtAngle * q0ToQrtAxisAtQ0[0] };
+                sendCommand[2] = q0ToQrtAtQ0[0];
+                sendCommand[3] = q0ToQrtAtQ0[1];
+                sendCommand[4] = q0ToQrtAtQ0[2];
+            }
 
             // 压力指令
             double pressure = Math.Max(recvFos[3],
@@ -5613,6 +5624,6 @@ namespace AssistantRobot
         { return; }
         #endregion
         #endregion
-         
+
     }
 }
